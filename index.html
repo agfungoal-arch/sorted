@@ -179,7 +179,7 @@ body{background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMac
   <div class="screen gate" id="scr-gate">
     <div class="lock">🔒</div>
     <h2>Private Space</h2>
-    <p>Nothing here is shared, saved as chat,<br>or used for anything. Ever.<br>Not even Sorted keeps a record.</p>
+    <p>Your words and photos are never stored —<br>not by the app, not by us, not for training.<br>We keep only anonymous usage counts.</p>
     <button class="cta purple-btn" onclick="enterPrivate()">Enter Private Space</button>
     <div class="footnote">Health answers are education, not diagnosis.<br>Always free. Never paywalled.</div>
   </div>
@@ -225,7 +225,7 @@ body{background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMac
   <div class="askbar" id="askbar">
     <input type="file" id="file" accept="image/*" hidden>
     <button class="cam" onclick="document.getElementById('file').click()">📷</button>
-    <textarea id="inp" rows="1" placeholder="Message Sorted…"></textarea>
+    <textarea id="inp" rows="1" maxlength="2000" placeholder="Message Sorted…"></textarea>
     <button class="send" onclick="send()">➤</button>
   </div>
 
@@ -244,9 +244,10 @@ const BACKEND = localStorage.getItem('sorted_backend') ||
   (BACKEND_PROD.startsWith('http') ? BACKEND_PROD : 'http://localhost:8787');
 let DEVICE = localStorage.getItem('sorted_device') ||
   (localStorage.setItem('sorted_device', 'd' + Math.random().toString(36).slice(2) + Date.now().toString(36)), localStorage.getItem('sorted_device'));
+const PILOT = 'sp26-k7x9m-pilot'; // shared beta token (speed bump vs drive-by abuse)
 function sendEvent(event, mode){ // fire-and-forget, anonymous
-  try{ fetch(BACKEND+'/event',{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({device_id:DEVICE,event,mode:mode||null})}); }catch(e){}
+  try{ fetch(BACKEND+'/event',{method:'POST',headers:{'Content-Type':'application/json','x-pilot-token':PILOT},
+    body:JSON.stringify({device_id:DEVICE,event,mode:mode||null})}).catch(()=>{}); }catch(e){}
 }
 
 /* ============ STATE ============ */
@@ -298,13 +299,13 @@ let fuChecked=false;
 async function checkFollowups(){
   if(fuChecked) return; fuChecked=true;
   try{
-    const r=await fetch(BACKEND+'/followups?device='+DEVICE); const list=await r.json();
+    const r=await fetch(BACKEND+'/followups?device='+DEVICE,{headers:{'x-pilot-token':PILOT}}); const list=await r.json();
     if(!list.length) return;
     const f=list[0]; sendEvent('followup_shown');
     const el=document.createElement('div');
     el.className='door purple-door';
     el.innerHTML=`<div class="ic">🔒</div><h4>Checking in, as promised</h4><p>You asked me something a few days back. Better now, or time for that doctor visit? Tap to talk — private as always.</p>`;
-    el.onclick=()=>{ fetch(BACKEND+'/followups/done',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:f.id})}); el.remove(); enterPrivate();
+    el.onclick=()=>{ fetch(BACKEND+'/followups/done',{method:'POST',headers:{'Content-Type':'application/json','x-pilot-token':PILOT},body:JSON.stringify({id:f.id,device_id:DEVICE})}).catch(()=>{}); el.remove(); enterPrivate();
       setTimeout(()=>addThem('Friday, as promised — any better? Honest answer. If it\'s not clearly improving, this week is derm week and I can help you prep for it.'),400); };
     $('greet').after(el);
   }catch(e){}
@@ -395,7 +396,7 @@ async function send(auto){
     if(!navigator.onLine) throw {offline:true};
     const ctrl=new AbortController(); const to=setTimeout(()=>ctrl.abort(),45000);
     const res=await fetch(BACKEND+'/ask',{
-      method:'POST', headers:{'Content-Type':'application/json'}, signal:ctrl.signal,
+      method:'POST', headers:{'Content-Type':'application/json','x-pilot-token':PILOT}, signal:ctrl.signal,
       body:JSON.stringify({ mode, messages:hist.slice(-12), image:img?{data:img.b64,media_type:img.mime}:null,
         occasion: mode==='verdict'?occasion:null, profile:P, device_id:DEVICE })
     });
@@ -406,8 +407,9 @@ async function send(auto){
     render(mode, data, hist);
   }catch(err){
     th.remove();
-    if(err.offline || !navigator.onLine) addThem(`No internet, boss. Your question is safe — hit send again when you're back online.`);
-    else addThem(`Hmm — busy moment on my side. Give it another go in a few seconds. Your photo was not kept.`);
+    if(text) $('inp').value=text; // give his words back so one tap resends
+    if(err.offline || !navigator.onLine) addThem(`No internet, boss. I've put your message back in the box — hit send when you're online.`);
+    else addThem(`Hmm — busy moment on my side. Your message is back in the box — try again in a few seconds. Your photo was not kept.`);
   }
   occasion=null;
 }
@@ -438,7 +440,7 @@ function render(mode, d, hist){
       addThem(d.reply);
       if(d.doctor) addHTML(`<div class="docbox"><b>The honest line:</b> ${esc(d.doctor.action)} Say: "${esc(d.doctor.script)}" ${esc(d.doctor.cost||'')} 🤝</div>`);
     }
-    privThread.push({role:'assistant', content:d.reply});
+    hist.push({role:'assistant', content:d.reply}); // correct thread, whatever mode triggered it
   }
   else if(d.type==='product'){
     addHTML(`<div class="vcard">
@@ -458,7 +460,9 @@ function render(mode, d, hist){
       <div class="steps">${(d.steps||[]).map(s=>`<div>✂️ ${esc(s)}</div>`).join('')}</div>
       ${d.hinglish?`<div class="hi">"${esc(d.hinglish)}"</div>`:''}
     </div>`);
-    addHTML(`<button class="cta gold" onclick="saveCard(${JSON.stringify(d).replace(/"/g,'&quot;')})">Save card to phone</button>`);
+    { const w=document.createElement('div'); w.style.alignSelf='stretch';
+      const b=document.createElement('button'); b.className='cta gold'; b.textContent='Save card to phone';
+      b.addEventListener('click', ()=>saveCard(d)); w.appendChild(b); chatEl().appendChild(w); scrollBottom(); }
     if(d.note) addThem(d.note);
     threads.barber.push({role:'assistant', content:d.style+': '+(d.steps||[]).join('; ')});
   }
@@ -507,7 +511,7 @@ function renderMemory(){
   $('memlist').innerHTML = rows.map(([k,v],i)=>`
     <div class="prow"><div><b>${k}</b><span>${esc(String(v))}</span></div>
     <span style="font-size:12px;color:var(--rolex);cursor:pointer;" onclick="editMem(${i})">edit</span></div>`).join('')
-    + `<div class="prow" style="border-color:var(--royal-line);"><div><b style="color:var(--royal-dk);">Private Space</b><span>Nothing stored. By design.</span></div><span>🔒</span></div>
+    + `<div class="prow" style="border-color:var(--royal-line);"><div><b style="color:var(--royal-dk);">Private Space</b><span>Messages never stored. Only anonymous usage counts exist.</span></div><span>🔒</span></div>
     <p class="small" style="text-align:center;margin-top:8px;">Everything here lives on this phone · never sold · never trains AI</p>`;
 }
 function editMem(i){

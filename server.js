@@ -7,9 +7,27 @@ const express = require('express');
 const cors = require('cors');
 const app = express();
 app.use(cors());
-app.use(express.json({ limit: '8mb' }));
+app.use(express.json({ limit: '1500kb' }));
 
 const KEY = process.env.ANTHROPIC_API_KEY;
+const PILOT_TOKEN = process.env.PILOT_TOKEN; // if set, all routes require x-pilot-token header
+
+/* ---------- RATE LIMIT (in-memory sliding window) + AUTH ---------- */
+const hits = new Map();
+function limitOk(key, max, winMs) {
+  const now = Date.now();
+  const arr = (hits.get(key) || []).filter(t => now - t < winMs);
+  arr.push(now); hits.set(key, arr);
+  if (hits.size > 5000) hits.clear(); // memory guard
+  return arr.length <= max;
+}
+function gate(req, res) {
+  if (PILOT_TOKEN && req.headers['x-pilot-token'] !== PILOT_TOKEN) { res.status(401).json({ error: 'unauthorized' }); return false; }
+  const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.ip || 'x';
+  const dev = (req.body && req.body.device_id) || req.query.device || 'anon';
+  if (!limitOk('ip:' + ip, 40, 300000) || !limitOk('dev:' + dev, 30, 300000)) { res.status(429).json({ error: 'slow down' }); return false; }
+  return true;
+}
 const MODEL = process.env.MODEL || 'claude-sonnet-4-5';
 const PORT = process.env.PORT || 8787;
 const SB_URL = process.env.SUPABASE_URL;
@@ -33,19 +51,19 @@ const logEvent = (device_id, event, mode) => sb('events', 'POST', { device_id, e
 
 /* ---------- DETERMINISTIC RED-FLAG LAYER (runs BEFORE the model, in code) ---------- */
 const RED_FLAGS = [
-  { rx: /blood.*(urine|pee|stool|semen)|(urine|pee|stool).*blood/i,
+  { rx: /blood.*(urine|pee|stool|semen)|(urine|pee|stool|semen).*blood|khoon.*(peshaab|urine|pee|potty)|peshaab.*khoon/i,
     action: 'Urologist or GP within 2-3 days. This is not a wait-and-watch.',
     script: 'Blood in urine/stool since [date], with/without pain.' },
-  { rx: /(lump|swelling).*(testic|groin|ball)|testic.*(lump|pain|swell)/i,
+  { rx: /(lump|swelling|gaanth|ganth).*(testic|groin|ball)|testic.*(lump|pain|swell)/i,
     action: 'Doctor this week. Most lumps are harmless — but only an exam can say so.',
     script: 'I found a lump/swelling in the testicle/groin area, first noticed [date].' },
-  { rx: /fever.*rash|rash.*fever/i,
+  { rx: /fever.*rash|rash.*fever|bukhaar.*rash/i,
     action: 'See a doctor within 24-48 hours. Fever + rash together needs eyes on it.',
     script: 'Fever with a spreading rash since [date].' },
-  { rx: /chest pain|can'?t breathe|breathless|difficulty breathing/i,
+  { rx: /chest.{0,15}(pain|paining|tight|pressure|heavy)|pain.{0,10}chest|can'?t breathe|breathless|difficulty breathing|saans (nahi|phool)/i,
     action: 'This could be an emergency. Call 112 or get to a hospital now.',
     script: 'Chest pain / breathing difficulty — emergency.' },
-  { rx: /(want|thoughts?).*(end|kill|hurt).*(myself|my life)|suicid/i,
+  { rx: /suicid|kill myself|end (my life|it all)|don'?t want to (live|be here)|no reason to live|(want|thoughts?|thinking).*(end|kill|hurt).*(myself|my life)|marna chahta|khudkushi/i,
     action: 'Talk to a human right now: Tele-MANAS 14416 (free, 24x7, confidential). You matter, and this is exactly what they are there for.',
     script: 'Tele-MANAS: 14416' },
   { rx: /mole.*(chang|grow|bleed)|(chang|grow|bleed).*mole/i,
@@ -145,8 +163,11 @@ async function askClaude(mode, messages, image, occasion, profile, extraCtx) {
 /* ---------- ROUTES ---------- */
 app.post('/ask', async (req, res) => {
   try {
+    if (!gate(req, res)) return;
     const { mode, messages = [], image, occasion, profile, device_id } = req.body || {};
     if (!PROMPTS[mode]) return res.status(400).json({ error: 'bad mode' });
+    // cap message lengths server-side (cost + DoS guard)
+    for (const m of messages) if (typeof m.content === 'string') m.content = m.content.slice(0, 4000);
 
     const lastUser = [...messages].reverse().find(m => m.role === 'user');
     const lastText = lastUser && typeof lastUser.content === 'string' ? lastUser.content : '';
@@ -183,12 +204,14 @@ app.post('/ask', async (req, res) => {
 });
 
 app.post('/event', async (req, res) => {
+  if (!gate(req, res)) return;
   const { device_id, event, mode } = req.body || {};
-  if (device_id && event) await logEvent(device_id, event, mode || null);
+  if (device_id && event && String(event).length < 40) await logEvent(String(device_id).slice(0, 60), String(event), mode ? String(mode).slice(0, 20) : null);
   res.json({ ok: true });
 });
 
 app.get('/followups', async (req, res) => {
+  if (!gate(req, res)) return;
   const d = req.query.device;
   if (!d) return res.json([]);
   const rows = await sb('followups', 'GET', null, `?device_id=eq.${encodeURIComponent(d)}&status=eq.pending&due_date=lte.${new Date().toISOString().slice(0, 10)}&select=id,topic,due_date`);
@@ -196,8 +219,9 @@ app.get('/followups', async (req, res) => {
 });
 
 app.post('/followups/done', async (req, res) => {
-  const { id } = req.body || {};
-  if (id) await sb(`followups?id=eq.${id}`, 'PATCH', { status: 'done' });
+  if (!gate(req, res)) return;
+  const { id, device_id } = req.body || {};
+  if (id && device_id) await sb(`followups?id=eq.${encodeURIComponent(id)}&device_id=eq.${encodeURIComponent(device_id)}`, 'PATCH', { status: 'done' });
   res.json({ ok: true });
 });
 
