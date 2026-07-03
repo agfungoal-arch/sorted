@@ -239,7 +239,7 @@ body{background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMac
 
 <script>
 /* ============ CONFIG ============ */
-const BACKEND_PROD = 'BACKEND_URL_HERE'; // ← set to Render URL after deploy
+const BACKEND_PROD = 'https://sorted-grew.onrender.com';
 const BACKEND = localStorage.getItem('sorted_backend') ||
   (BACKEND_PROD.startsWith('http') ? BACKEND_PROD : 'http://localhost:8787');
 let DEVICE = localStorage.getItem('sorted_device') ||
