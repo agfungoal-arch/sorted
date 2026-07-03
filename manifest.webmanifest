@@ -1,0 +1,12 @@
+{
+  "name": "Sorted",
+  "short_name": "Sorted",
+  "description": "Your no-judgment guy for looks, style and the stuff you won't ask anyone.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#F8F6F1",
+  "theme_color": "#F8F6F1",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

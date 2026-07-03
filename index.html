@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F8F6F1">
+<title>Sorted — your no-judgment guy</title>
+<link rel="manifest" href="manifest.webmanifest">
+<style>
+:root{
+  --ivory:#F8F6F1; --paper:#FFFFFF; --mist:#EFECE4; --line:#E3DFD3; --line2:#D6D1C2;
+  --text:#1F2B26; --dim:#66716B; --faint:#98A19A;
+  --rolex:#006039; --rolex-dk:#004D2E; --rolex-lt:#E7F0EA;
+  --gold:#A37E2C; --gold-lt:#F4EDDC;
+  --ready:#006039; --almost:#B07C1F; --notyet:#B04A38;
+  --royal:#5B4A9E; --royal-lt:#F0EDF9; --royal-line:#D8D1EE; --royal-dk:#463877;
+  --bg:var(--ivory); --bubble-them:var(--paper); --bubble-line:var(--line);
+}
+.purple{ --bg:var(--royal-lt); --bubble-line:var(--royal-line); }
+*{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+body{background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-serif; transition:background .4s;}
+#app{max-width:520px; margin:0 auto; min-height:100dvh; display:flex; flex-direction:column; position:relative;}
+.screen{display:none; flex:1; flex-direction:column; padding:calc(14px + env(safe-area-inset-top)) 18px 110px;}
+.screen.on{display:flex;}
+/* header */
+.hdr{display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;}
+.brand{letter-spacing:.18em; font-weight:800; font-size:17px; color:var(--rolex); cursor:pointer;}
+.brand em{color:var(--gold); font-style:normal;}
+.back{background:none; border:none; color:var(--rolex-dk); font-size:15px; font-weight:700; cursor:pointer; padding:6px 8px 6px 0;}
+.purple .back{color:var(--royal-dk);}
+.avatar{width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,var(--gold),#7A5A1A); color:#FFF9EA; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px; cursor:pointer;}
+/* onboarding */
+.ob{justify-content:center; text-align:center; padding-bottom:40px; background:linear-gradient(180deg,var(--ivory) 60%,#EDF3EE);}
+.logo{font-size:36px; letter-spacing:.22em; font-weight:800; color:var(--rolex);}
+.logo em{color:var(--gold); font-style:normal;}
+.tagline{color:var(--dim); font-size:14px; line-height:1.65; margin:14px 0 34px;}
+.tagline b{color:var(--rolex-dk);}
+.field{background:var(--paper); border:1px solid var(--line); border-radius:14px; padding:15px 16px; margin-bottom:12px; display:flex; align-items:center; gap:12px; text-align:left;}
+.field input[type=text]{border:none; outline:none; flex:1; font-size:15px; background:none; color:var(--text);}
+.field label{flex:1; font-size:14px;}
+.field input[type=checkbox]{width:20px; height:20px; accent-color:var(--rolex);}
+.cta{background:var(--rolex); color:#fff; font-weight:700; border:none; border-radius:14px; padding:16px; font-size:16px; width:100%; cursor:pointer; box-shadow:0 6px 18px rgba(0,96,57,.22); letter-spacing:.02em;}
+.cta:active{transform:scale(.98);}
+.cta.ghost{background:var(--paper); color:var(--rolex); border:1px solid var(--rolex); box-shadow:none;}
+.cta.gold{background:var(--gold);}
+.cta.purple-btn{background:var(--royal);}
+.mini-link{background:none; border:none; color:var(--faint); font-size:12.5px; text-decoration:underline; margin-top:14px; cursor:pointer;}
+.footnote{font-size:11px; color:var(--faint); margin-top:16px; line-height:1.6;}
+/* home doors */
+.greet{color:var(--dim); font-size:14.5px; margin-bottom:14px;}
+.door{background:var(--paper); border:1px solid var(--line); border-radius:18px; padding:18px; margin-bottom:12px; cursor:pointer; box-shadow:0 1px 3px rgba(31,43,38,.05); transition:border-color .15s;}
+.door:active{border-color:var(--rolex);}
+.door .ic{font-size:22px;}
+.door h4{font-size:16px; margin:7px 0 3px; color:var(--rolex-dk);}
+.door p{font-size:12.5px; color:var(--dim); line-height:1.5;}
+.door.purple-door{border-color:var(--royal-line); background:linear-gradient(180deg,#fff,#F7F5FC);}
+.door.purple-door h4{color:var(--royal-dk);}
+.chip{display:inline-block; font-size:10px; letter-spacing:.08em; padding:3px 9px; border-radius:20px; background:var(--gold-lt); border:1px solid #E4D5AE; color:var(--gold); margin-top:8px; font-weight:700;}
+.chip.p{background:var(--royal-lt); border-color:var(--royal-line); color:var(--royal);}
+/* chat */
+.chat{flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:10px; padding-bottom:8px;}
+.msg{max-width:84%; padding:12px 14px; border-radius:16px; font-size:14.5px; line-height:1.55; white-space:pre-wrap; word-break:break-word;}
+.them{background:var(--bubble-them); border:1px solid var(--bubble-line); border-bottom-left-radius:4px; align-self:flex-start; box-shadow:0 1px 2px rgba(31,43,38,.04);}
+.me{background:var(--rolex-lt); border:1px solid #CBDDD2; color:#123A28; border-bottom-right-radius:4px; align-self:flex-end;}
+.purple .me{background:#E4DEF5; border-color:var(--royal-line); color:var(--royal-dk);}
+.pic{max-width:60%; border-radius:14px; border:1px solid var(--line2); align-self:flex-end;}
+.sys{font-size:11px; color:var(--faint); text-align:center; margin:4px 0;}
+/* verdict card */
+.vcard{background:var(--paper); border:1px solid var(--line); border-radius:18px; padding:18px; align-self:stretch; box-shadow:0 2px 8px rgba(31,43,38,.06); animation:rise .35s ease; position:relative; overflow:hidden;}
+@keyframes rise{from{opacity:0; transform:translateY(12px) scale(.97);} to{opacity:1; transform:none;}}
+.vtag{font-size:11px; letter-spacing:.2em; color:var(--faint);}
+.vword{font-size:32px; font-weight:800; margin:4px 0 4px;}
+.vword.ready{color:var(--ready);} .vword.almost{color:var(--almost);} .vword.notyet{color:var(--notyet);} .vword.cant{color:var(--faint); font-size:22px;}
+.vcard ol{padding-left:20px; margin:10px 0;}
+.vcard li{font-size:13.5px; margin-bottom:6px; line-height:1.5;}
+.fixbox{background:var(--gold-lt); border:1px solid #E4D5AE; border-radius:12px; padding:11px 13px; font-size:13.5px; line-height:1.55;}
+.fixbox b{color:var(--gold);}
+.fixbox.go{background:var(--rolex-lt); border-color:#BED8C9;} .fixbox.go b{color:var(--rolex);}
+.shimmer::after{content:''; position:absolute; top:0; left:-80%; width:60%; height:100%; background:linear-gradient(100deg,transparent,rgba(163,126,44,.16),transparent); animation:sweep .7s ease .3s 1;}
+@keyframes sweep{to{left:120%;}}
+.fbrow{display:flex; gap:8px; margin-top:12px;}
+.fbrow button{flex:1; background:var(--ivory); border:1px solid var(--line); color:var(--dim); border-radius:10px; padding:9px; font-size:12.5px; cursor:pointer;}
+.fbrow button.hit{border-color:var(--rolex); color:var(--rolex); font-weight:700;}
+/* flags & product */
+.flag{display:inline-block; font-size:11px; padding:3px 10px; border-radius:20px; margin:6px 6px 0 0; font-weight:700;}
+.flag.bad{background:#F9E9E5; border:1px solid #E8C4BB; color:var(--notyet);}
+.flag.ok{background:var(--rolex-lt); border:1px solid #BED8C9; color:var(--rolex);}
+.fresh{font-size:10.5px; color:var(--faint); margin-top:10px;}
+.alt{border:1px solid #BED8C9; background:linear-gradient(180deg,#fff,#F4F9F6); border-radius:14px; padding:12px 14px; margin-top:10px;}
+.alt b{color:var(--rolex); font-size:13.5px;}
+/* doctor box */
+.docbox{background:var(--rolex-lt); border:1px solid #BED8C9; border-radius:12px; padding:13px 14px; font-size:13.5px; line-height:1.6; align-self:stretch;}
+.docbox b{color:var(--rolex);}
+/* barber card */
+.bcard{background:linear-gradient(165deg,#00512F,#003C23); border:1px solid var(--gold); border-radius:20px; padding:20px; text-align:center; color:#F3EFE2; align-self:stretch; box-shadow:0 8px 24px rgba(0,77,46,.25);}
+.bcard .t{letter-spacing:.18em; font-size:10px; color:#D9BC6F;}
+.bcard h3{font-size:20px; margin:8px 0 2px; color:#fff;}
+.bcard .steps{text-align:left; margin-top:12px;}
+.bcard .steps div{border-bottom:1px dashed rgba(255,255,255,.22); padding:9px 2px; font-size:13.5px;}
+.bcard .steps b{color:#EBD9A8;}
+.bcard .hi{color:#BFD5C8; font-size:12px; margin-top:12px; font-style:italic;}
+/* occasion chips */
+.chips{display:flex; flex-wrap:wrap; gap:8px; margin:10px 0;}
+.chips button{background:var(--rolex-lt); border:1px solid #BED8C9; color:var(--rolex); font-size:12.5px; padding:8px 14px; border-radius:20px; cursor:pointer; font-weight:600;}
+.chips button.sel{background:var(--rolex); color:#fff;}
+/* input bar */
+.askbar{position:fixed; bottom:0; left:0; right:0; margin:0 auto; max-width:520px; background:var(--paper); border-top:1px solid var(--line); padding:12px 14px calc(14px + env(safe-area-inset-bottom)); display:flex; gap:10px; align-items:flex-end; z-index:20;}
+.purple .askbar{background:#FBFAFE; border-color:var(--royal-line);}
+.cam{width:42px; height:42px; border-radius:50%; background:var(--rolex-lt); border:1px solid #CBDDD2; font-size:18px; cursor:pointer; flex-shrink:0;}
+.purple .cam{background:var(--royal-lt); border-color:var(--royal-line);}
+.askbar textarea{flex:1; background:var(--ivory); border:1px solid var(--line); border-radius:20px; padding:11px 16px; font-size:14.5px; color:var(--text); outline:none; resize:none; max-height:110px; font-family:inherit;}
+.purple .askbar textarea{background:#F3F0FA; border-color:var(--royal-line);}
+.send{width:42px; height:42px; border-radius:50%; background:var(--rolex); border:none; color:#fff; font-size:16px; cursor:pointer; flex-shrink:0;}
+.purple .send{background:var(--royal);}
+/* thinking */
+.think{align-self:flex-start; background:var(--bubble-them); border:1px solid var(--bubble-line); border-radius:16px; border-bottom-left-radius:4px; padding:12px 16px; font-size:13px; color:var(--dim); line-height:1.7;}
+.think .ln{opacity:0; animation:ln .4s forwards;}
+@keyframes ln{to{opacity:1;}}
+/* privacy rows */
+.prow{display:flex; justify-content:space-between; align-items:center; gap:10px; background:var(--paper); border:1px solid var(--line); border-radius:14px; padding:14px 16px; margin-bottom:10px;}
+.prow div b{font-size:14px; display:block; margin-bottom:2px;}
+.prow div span{font-size:11.5px; color:var(--dim); line-height:1.4;}
+.tog{width:46px; height:26px; border-radius:15px; background:var(--rolex); position:relative; flex-shrink:0;}
+.tog::after{content:''; position:absolute; right:3px; top:3px; width:20px; height:20px; border-radius:50%; background:#fff;}
+.tog.off{background:#C8C2B2;} .tog.off::after{right:auto; left:3px;}
+.danger{color:var(--notyet); border:1px solid #E8C4BB; background:#F9E9E5; border-radius:14px; padding:15px; text-align:center; font-size:14px; font-weight:700; margin-top:14px; cursor:pointer;}
+/* private gate */
+.gate{justify-content:center; text-align:center;}
+.gate .lock{font-size:40px;}
+.gate h2{color:var(--royal-dk); font-size:19px; margin:10px 0 6px;}
+.gate p{color:var(--royal); font-size:13.5px; line-height:1.7; margin-bottom:22px;}
+.pnote{background:#fff; border:1px solid var(--royal-line); border-radius:12px; padding:10px 14px; font-size:12.5px; color:var(--royal-dk); margin-bottom:12px;}
+/* toast */
+#toast{position:fixed; bottom:100px; left:50%; transform:translateX(-50%); background:var(--rolex-dk); color:#fff; font-size:13px; padding:10px 18px; border-radius:22px; opacity:0; transition:.3s; z-index:99; pointer-events:none; max-width:86%; text-align:center;}
+#toast.show{opacity:1;}
+/* settings sheet */
+.sheet{position:fixed; inset:0; background:rgba(31,43,38,.45); display:none; align-items:flex-end; z-index:50;}
+.sheet.on{display:flex;}
+.sheet .panel{background:var(--ivory); width:100%; max-width:520px; margin:0 auto; border-radius:22px 22px 0 0; padding:22px 18px calc(24px + env(safe-area-inset-bottom)); max-height:80dvh; overflow-y:auto;}
+.sheet h3{color:var(--rolex-dk); font-size:16px; margin-bottom:12px;}
+.small{font-size:12px; color:var(--dim); line-height:1.6;}
+@media (prefers-reduced-motion:reduce){ *{animation:none !important; transition:none !important;} }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ONBOARD -->
+  <div class="screen ob" id="scr-onboard">
+    <div class="logo">S<em>O</em>RTED</div>
+    <div class="tagline">Honest answers on looks, style &amp; the stuff<br>you won't ask anyone. Zero judgment.<br><b>No real name. Ever.</b></div>
+    <div class="field"><input type="text" id="ob-name" placeholder='Pick a name — any name. "Rocky" works.' maxlength="20"></div>
+    <div class="field"><label for="ob-age">I'm 18 or older</label><input type="checkbox" id="ob-age"></div>
+    <div class="field"><label for="ob-city">City (for climate &amp; prices — optional)</label></div>
+    <div class="field" style="margin-top:-6px;"><input type="text" id="ob-city" placeholder="e.g. Gurgaon" maxlength="30"></div>
+    <button class="cta" onclick="finishOnboard()">Enter →</button>
+    <button class="mini-link" onclick="openSheet('privacy-info')">What do you store about me?</button>
+    <div class="footnote">Photos are analyzed, then deleted · Private Space chats are never saved · Delete everything anytime</div>
+  </div>
+
+  <!-- HOME -->
+  <div class="screen" id="scr-home">
+    <div class="hdr"><div class="brand">S<em>O</em>RTED</div><div class="avatar" id="av" onclick="go('memory')">?</div></div>
+    <div class="greet" id="greet">Scene kya hai?</div>
+    <div class="door" onclick="go('verdict')"><div class="ic">📸</div><h4>Am I ready?</h4><p>Event coming? Send a photo of the outfit — honest verdict in under a minute.</p><span class="chip">MOST USED</span></div>
+    <div class="door purple-door" onclick="go('gate')"><div class="ic">🔒</div><h4>Private Space</h4><p>The questions you won't ask anyone. Never saved. Always free.</p><span class="chip p">PRIVATE MODE</span></div>
+    <div class="door" onclick="go('product')"><div class="ic">🧴</div><h4>Check a product</h4><p>Snap any label — is it clean, is it marketing, what's better?</p></div>
+    <div class="door" onclick="go('barber')"><div class="ic">💈</div><h4>Barber card</h4><p>Haircut coming? Get the exact words to tell your barber.</p></div>
+  </div>
+
+  <!-- VERDICT -->
+  <div class="screen" id="scr-verdict">
+    <div class="hdr"><button class="back" onclick="go('home')">← Am I ready?</button><div class="avatar" onclick="go('memory')" id="av2">?</div></div>
+    <div class="chat" id="chat-verdict"></div>
+  </div>
+
+  <!-- PRIVATE GATE -->
+  <div class="screen gate" id="scr-gate">
+    <div class="lock">🔒</div>
+    <h2>Private Space</h2>
+    <p>Nothing here is shared, saved as chat,<br>or used for anything. Ever.<br>Not even Sorted keeps a record.</p>
+    <button class="cta purple-btn" onclick="enterPrivate()">Enter Private Space</button>
+    <div class="footnote">Health answers are education, not diagnosis.<br>Always free. Never paywalled.</div>
+  </div>
+
+  <!-- PRIVATE -->
+  <div class="screen" id="scr-private">
+    <div class="hdr"><button class="back" onclick="leavePrivate()">← 🔒 Private Space</button><span style="font-size:11px;color:var(--royal);">no history saved</span></div>
+    <div class="pnote">🔐 Private mode. This conversation disappears when you leave.</div>
+    <div class="chat" id="chat-private"></div>
+  </div>
+
+  <!-- PRODUCT -->
+  <div class="screen" id="scr-product">
+    <div class="hdr"><button class="back" onclick="go('home')">← Check a product</button><div class="avatar" onclick="go('memory')" id="av3">?</div></div>
+    <div class="chat" id="chat-product"></div>
+  </div>
+
+  <!-- BARBER -->
+  <div class="screen" id="scr-barber">
+    <div class="hdr"><button class="back" onclick="go('home')">← Barber card</button><div class="avatar" onclick="go('memory')" id="av4">?</div></div>
+    <div class="chat" id="chat-barber"></div>
+  </div>
+
+  <!-- MEMORY -->
+  <div class="screen" id="scr-memory">
+    <div class="hdr"><button class="back" onclick="go('home')">← What Sorted remembers</button></div>
+    <div id="memlist"></div>
+    <button class="cta ghost" style="margin-top:6px;" onclick="go('privacy')">Privacy Center →</button>
+  </div>
+
+  <!-- PRIVACY -->
+  <div class="screen" id="scr-privacy">
+    <div class="hdr"><button class="back" onclick="go('memory')">← Privacy Center</button></div>
+    <p class="small" style="margin-bottom:14px;">Plain language. No lawyer-speak. This is everything.</p>
+    <div class="prow"><div><b>Auto-delete photos</b><span>Analyzed, then gone. Not stored, not trained on.</span></div><div class="tog"></div></div>
+    <div class="prow"><div><b>Private Space history</b><span>OFF — never saved. Only you remember those chats.</span></div><div class="tog off"></div></div>
+    <div class="prow"><div><b>Memory on this phone only</b><span>Your profile lives in this browser, not on our servers.</span></div><div class="tog"></div></div>
+    <div class="prow" onclick="exportData()" style="cursor:pointer;"><div><b>Export my data</b><span>Everything, one file, right now.</span></div><span style="color:var(--faint);">→</span></div>
+    <div class="danger" onclick="deleteEverything()">Delete everything — instant</div>
+  </div>
+
+  <!-- ASK BAR -->
+  <div class="askbar" id="askbar">
+    <input type="file" id="file" accept="image/*" hidden>
+    <button class="cam" onclick="document.getElementById('file').click()">📷</button>
+    <textarea id="inp" rows="1" placeholder="Message Sorted…"></textarea>
+    <button class="send" onclick="send()">➤</button>
+  </div>
+
+  <div id="toast"></div>
+
+  <!-- SHEETS -->
+  <div class="sheet" id="sheet" onclick="if(event.target===this)this.classList.remove('on')">
+    <div class="panel" id="sheet-body"></div>
+  </div>
+</div>
+
+<script>
+/* ============ CONFIG ============ */
+const BACKEND_PROD = 'BACKEND_URL_HERE'; // ← set to Render URL after deploy
+const BACKEND = localStorage.getItem('sorted_backend') ||
+  (BACKEND_PROD.startsWith('http') ? BACKEND_PROD : 'http://localhost:8787');
+let DEVICE = localStorage.getItem('sorted_device') ||
+  (localStorage.setItem('sorted_device', 'd' + Math.random().toString(36).slice(2) + Date.now().toString(36)), localStorage.getItem('sorted_device'));
+function sendEvent(event, mode){ // fire-and-forget, anonymous
+  try{ fetch(BACKEND+'/event',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({device_id:DEVICE,event,mode:mode||null})}); }catch(e){}
+}
+
+/* ============ STATE ============ */
+let P = JSON.parse(localStorage.getItem('sorted_profile') || 'null'); // profile
+let screen = 'home';
+let pendingImage = null;          // {b64, mime, url}
+let threads = { verdict:[], product:[], barber:[] }; // api message history (text only)
+let privThread = [];              // in-memory only, never persisted
+let occasion = null;
+
+/* ============ HELPERS ============ */
+const $ = id => document.getElementById(id);
+const chatEl = () => $('chat-' + (screen==='private'?'private':screen));
+function toast(t){ const el=$('toast'); el.textContent=t; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),2600); }
+function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+function save(){ localStorage.setItem('sorted_profile', JSON.stringify(P)); }
+function scrollBottom(){ const c=chatEl(); if(c) setTimeout(()=>c.scrollTop=c.scrollHeight,60); }
+
+function go(s){
+  screen=s;
+  document.querySelectorAll('.screen').forEach(x=>x.classList.remove('on'));
+  $('scr-'+s).classList.add('on');
+  document.body.classList.toggle('purple', s==='private');
+  $('askbar').style.display = ['verdict','private','product','barber'].includes(s)?'flex':'none';
+  $('inp').placeholder = s==='private' ? 'Ask anything…' : s==='product' ? 'Or ask: best sunscreen under ₹400?' : 'Message Sorted…';
+  if(s==='home') renderHome();
+  if(s==='memory') renderMemory();
+  if(['verdict','product','barber'].includes(s) && !threads[s].rendered){ seed(s); threads[s].rendered=true; }
+  scrollBottom();
+}
+
+/* ============ ONBOARD ============ */
+function finishOnboard(){
+  const name=$('ob-name').value.trim();
+  if(!name) return toast('Pick any name — even "Boss" works.');
+  if(!$('ob-age').checked) return toast('Sorted is for 18+ only.');
+  P = { name, city:$('ob-city').value.trim()||null, skinTone:null, faceShape:null, sizes:null, styleWins:[], notes:[] };
+  save(); sendEvent('activated'); go('home');
+}
+function renderHome(){
+  const h=new Date().getHours();
+  const g = h>=23||h<5 ? `Late night thought, ${P.name}? The Private Space is open.` :
+            h<12 ? `Morning, ${P.name}. Scene kya hai?` : `Scene kya hai, ${P.name}?`;
+  $('greet').textContent=g;
+  ['av','av2','av3','av4'].forEach(i=>{ if($(i)) $(i).textContent=P.name[0].toUpperCase(); });
+  checkFollowups();
+}
+let fuChecked=false;
+async function checkFollowups(){
+  if(fuChecked) return; fuChecked=true;
+  try{
+    const r=await fetch(BACKEND+'/followups?device='+DEVICE); const list=await r.json();
+    if(!list.length) return;
+    const f=list[0]; sendEvent('followup_shown');
+    const el=document.createElement('div');
+    el.className='door purple-door';
+    el.innerHTML=`<div class="ic">🔒</div><h4>Checking in, as promised</h4><p>You asked me something a few days back. Better now, or time for that doctor visit? Tap to talk — private as always.</p>`;
+    el.onclick=()=>{ fetch(BACKEND+'/followups/done',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:f.id})}); el.remove(); enterPrivate();
+      setTimeout(()=>addThem('Friday, as promised — any better? Honest answer. If it\'s not clearly improving, this week is derm week and I can help you prep for it.'),400); };
+    $('greet').after(el);
+  }catch(e){}
+}
+
+/* ============ SEED MESSAGES ============ */
+function seed(s){
+  if(s==='verdict') addThem(`Event coming up? Send me a photo of the outfit — or two options and I'll pick. First time? Send whatever you're wearing right now. Pajama verdicts are a tradition here. 📸`);
+  if(s==='product') addThem(`Snap a product label, or just ask — "best deo without aluminium under ₹300?" I'll tell you what's real and what's marketing.`);
+  if(s==='barber') addThem(`Haircut coming? Send a selfie (analyzed, then deleted) and tell me the vibe — office-safe, fresh change, low maintenance. You'll get a card to show your barber. 💈`);
+}
+function enterPrivate(){
+  go('private'); privThread=[];
+  $('chat-private').innerHTML='';
+  addThem(`Private mode. Whatever's on your mind — skin stuff, down-there stuff, sweat, hair fall, weight — ask straight. No judgment, no record, and I'll always tell you when it's doctor-time.`, true);
+}
+function leavePrivate(){ privThread=[]; $('chat-private').innerHTML=''; go('home'); }
+
+/* ============ CHAT RENDER ============ */
+function addThem(text, instant){ const d=document.createElement('div'); d.className='msg them'; d.textContent=text; chatEl().appendChild(d); scrollBottom(); }
+function addMe(text){ const d=document.createElement('div'); d.className='msg me'; d.textContent=text; chatEl().appendChild(d); scrollBottom(); }
+function addPic(url){ const i=document.createElement('img'); i.className='pic'; i.src=url; chatEl().appendChild(i); scrollBottom(); }
+function addSys(t){ const d=document.createElement('div'); d.className='sys'; d.textContent=t; chatEl().appendChild(d); scrollBottom(); }
+function addHTML(html){ const d=document.createElement('div'); d.style.alignSelf='stretch'; d.innerHTML=html; chatEl().appendChild(d); scrollBottom(); return d; }
+
+function thinking(lines){
+  const d=document.createElement('div'); d.className='think';
+  d.innerHTML = lines.map((l,i)=>`<div class="ln" style="animation-delay:${i*0.8}s">${l}</div>`).join('');
+  chatEl().appendChild(d); scrollBottom(); return d;
+}
+
+/* ============ IMAGE HANDLING ============ */
+$('file').addEventListener('change', async e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const b64 = await compress(f);
+  pendingImage = b64;
+  addPic(b64.url);
+  addSys('Photo attached — analyzed, then deleted. Always.');
+  if(screen==='verdict' && !occasion) askOccasion();
+  e.target.value='';
+});
+function compress(file){
+  return new Promise(res=>{
+    const img=new Image();
+    img.onload=()=>{
+      const M=1280, r=Math.min(1, M/Math.max(img.width,img.height));
+      const c=document.createElement('canvas'); c.width=img.width*r; c.height=img.height*r;
+      c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+      const url=c.toDataURL('image/jpeg',.82);
+      res({ b64:url.split(',')[1], mime:'image/jpeg', url });
+    };
+    img.src=URL.createObjectURL(file);
+  });
+}
+function askOccasion(){
+  const wrap=addHTML(`<div class="msg them" style="max-width:100%;">What's the occasion?
+    <div class="chips" id="occ">
+      ${['Office','Wedding / function','Date','Casual','Festival','Interview'].map(o=>`<button onclick="pickOcc(this,'${o}')">${o}</button>`).join('')}
+    </div></div>`);
+}
+function pickOcc(btn,o){
+  occasion=o;
+  btn.parentElement.querySelectorAll('button').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+  send(true);
+}
+
+/* ============ SEND / API ============ */
+async function send(auto){
+  const inp=$('inp'); const text=inp.value.trim();
+  if(!text && !pendingImage) return;
+  if(text){ addMe(text); inp.value=''; }
+  const mode = screen==='private'?'private':screen;
+  const hist = mode==='private'?privThread:threads[mode];
+  if(text) hist.push({role:'user', content:text});
+  if(pendingImage && !text) hist.push({role:'user', content: mode==='verdict' ? `[photo attached]${occasion?' Occasion: '+occasion:''}` : '[photo attached]'});
+
+  const img = pendingImage; pendingImage=null;
+  const thinkLines = {
+    verdict:['Checking the fit…','· colour vs your undertone','· drape & proportions','· footwear match'],
+    private:['Thinking this through properly…'],
+    product:['Reading the label…','· checking ingredient flags','· checking the claims'],
+    barber:['Reading your face shape…','· matching styles that suit you']
+  }[mode];
+  const th=thinking(thinkLines);
+
+  try{
+    if(!navigator.onLine) throw {offline:true};
+    const ctrl=new AbortController(); const to=setTimeout(()=>ctrl.abort(),45000);
+    const res=await fetch(BACKEND+'/ask',{
+      method:'POST', headers:{'Content-Type':'application/json'}, signal:ctrl.signal,
+      body:JSON.stringify({ mode, messages:hist.slice(-12), image:img?{data:img.b64,media_type:img.mime}:null,
+        occasion: mode==='verdict'?occasion:null, profile:P, device_id:DEVICE })
+    });
+    clearTimeout(to);
+    if(!res.ok) throw new Error('api');
+    const data=await res.json();
+    th.remove();
+    render(mode, data, hist);
+  }catch(err){
+    th.remove();
+    if(err.offline || !navigator.onLine) addThem(`No internet, boss. Your question is safe — hit send again when you're back online.`);
+    else addThem(`Hmm — busy moment on my side. Give it another go in a few seconds. Your photo was not kept.`);
+  }
+  occasion=null;
+}
+
+/* ============ RENDER RESPONSES ============ */
+function render(mode, d, hist){
+  if(d.reply_pre) addThem(d.reply_pre);
+
+  if(d.type==='verdict'){
+    const cls={READY:'ready',ALMOST:'almost','NOT THIS ONE':'notyet'}[d.verdict]||'cant';
+    const shim=d.verdict==='READY'?' shimmer':'';
+    addHTML(`<div class="vcard${shim}">
+      <div class="vtag">VERDICT</div>
+      <div class="vword ${cls}">${esc(d.verdict)}${d.verdict==='READY'?' ✓':''}</div>
+      <ol>${(d.reasons||[]).slice(0,3).map(r=>`<li>${esc(r)}</li>`).join('')}</ol>
+      ${d.fix?`<div class="fixbox${d.verdict==='READY'?' go':''}"><b>${d.verdict==='READY'?'Go.':'The fix:'}</b> ${esc(d.fix)}</div>`:''}
+      <div class="fbrow"><button onclick="fb(this,1)">👍 Helped</button><button onclick="fb(this,0)">😐 Meh</button></div>
+    </div>`);
+    if(d.memory_note){ P.notes.push(d.memory_note); if(d.skinTone&&!P.skinTone)P.skinTone=d.skinTone; if(d.faceShape&&!P.faceShape)P.faceShape=d.faceShape; save(); addSys('Saved to memory: '+d.memory_note+'  (edit anytime in your profile)'); }
+    if(d.followup) addThem(d.followup);
+    hist.push({role:'assistant', content:`VERDICT: ${d.verdict}. ${(d.reasons||[]).join(' ')} FIX: ${d.fix||''}`});
+  }
+  else if(d.type==='private'){
+    if(d.red_flag && d.doctor){
+      addThem(d.reply);
+      addHTML(`<div class="docbox"><b>Do this:</b> ${esc(d.doctor.action)}<br><br><b>Say exactly:</b> "${esc(d.doctor.script)}"<br><span style="color:var(--dim); font-size:12px;">${esc(d.doctor.cost||'')}</span></div>`);
+    } else {
+      addThem(d.reply);
+      if(d.doctor) addHTML(`<div class="docbox"><b>The honest line:</b> ${esc(d.doctor.action)} Say: "${esc(d.doctor.script)}" ${esc(d.doctor.cost||'')} 🤝</div>`);
+    }
+    privThread.push({role:'assistant', content:d.reply});
+  }
+  else if(d.type==='product'){
+    addHTML(`<div class="vcard">
+      ${d.name?`<b style="font-size:15px;">${esc(d.name)}</b>`:''}
+      ${d.price?`<div style="font-size:12px;color:var(--dim);">${esc(d.price)}</div>`:''}
+      <div>${(d.flags||[]).map(f=>`<span class="flag ${f.ok?'ok':'bad'}">${f.ok?'✓':'✕'} ${esc(f.label)}</span>`).join('')}</div>
+      ${d.note?`<p style="font-size:13.5px;color:var(--dim);margin-top:10px;line-height:1.6;">${esc(d.note)}</p>`:''}
+      ${(d.alternatives||[]).map(a=>`<div class="alt"><b>Better → ${esc(a.name)}</b> ${a.price?'· '+esc(a.price):''}<div>${(a.flags||[]).map(f=>`<span class="flag ok">✓ ${esc(f)}</span>`).join('')}</div></div>`).join('')}
+      <div class="fresh">Label-read by AI · formulations change — check the pack · never sponsored</div>
+    </div>`);
+    threads.product.push({role:'assistant', content: (d.name||'')+' '+(d.note||'')});
+  }
+  else if(d.type==='barber'){
+    addHTML(`<div class="bcard" id="bc">
+      <div class="t">SHOW THIS TO YOUR BARBER</div>
+      <h3>${esc(d.style)}</h3>
+      <div class="steps">${(d.steps||[]).map(s=>`<div>✂️ ${esc(s)}</div>`).join('')}</div>
+      ${d.hinglish?`<div class="hi">"${esc(d.hinglish)}"</div>`:''}
+    </div>`);
+    addHTML(`<button class="cta gold" onclick="saveCard(${JSON.stringify(d).replace(/"/g,'&quot;')})">Save card to phone</button>`);
+    if(d.note) addThem(d.note);
+    threads.barber.push({role:'assistant', content:d.style+': '+(d.steps||[]).join('; ')});
+  }
+  else { // chat fallback
+    addThem(d.reply||'Say that again?');
+    hist.push({role:'assistant', content:d.reply||''});
+  }
+}
+function fb(btn,v){ btn.classList.add('hit'); btn.parentElement.querySelectorAll('button').forEach(b=>{if(b!==btn)b.disabled=true;}); sendEvent(v?'helped':'meh','verdict'); toast(v?'Noted. 🤝':'Noted — I\'ll sharpen up.'); }
+
+/* ============ BARBER CARD PNG ============ */
+function saveCard(d){
+  const c=document.createElement('canvas'); c.width=1080; c.height=1350; const x=c.getContext('2d');
+  const g=x.createLinearGradient(0,0,0,1350); g.addColorStop(0,'#00512F'); g.addColorStop(1,'#00301C');
+  x.fillStyle=g; x.fillRect(0,0,1080,1350);
+  x.strokeStyle='#A37E2C'; x.lineWidth=6; x.strokeRect(40,40,1000,1270);
+  x.fillStyle='#D9BC6F'; x.font='600 34px -apple-system,Arial'; x.textAlign='center';
+  x.fillText('S H O W   T H I S   T O   Y O U R   B A R B E R',540,160);
+  x.fillStyle='#FFFFFF'; x.font='800 72px -apple-system,Arial';
+  wrapText(x,d.style,540,300,900,80);
+  x.font='400 40px -apple-system,Arial'; x.fillStyle='#F3EFE2'; x.textAlign='left';
+  let y=460; (d.steps||[]).forEach(s=>{ y=wrapText(x,'✂️  '+s,120,y,840,54)+40;
+    x.strokeStyle='rgba(255,255,255,.25)'; x.setLineDash([8,10]); x.beginPath(); x.moveTo(120,y-20); x.lineTo(960,y-20); x.stroke(); x.setLineDash([]); });
+  if(d.hinglish){ x.fillStyle='#BFD5C8'; x.font='italic 36px -apple-system,Arial'; x.textAlign='center'; wrapText(x,'"'+d.hinglish+'"',540,y+60,880,48); }
+  x.fillStyle='#A37E2C'; x.font='700 30px -apple-system,Arial'; x.textAlign='center'; x.fillText('S O R T E D',540,1280);
+  const a=document.createElement('a'); a.download='sorted-barber-card.png'; a.href=c.toDataURL('image/png'); a.click();
+  toast('Card saved ✓ Show it Saturday.');
+}
+function wrapText(x,t,cx,y,maxW,lh){
+  const words=t.split(' '); let line='';
+  for(const w of words){ const test=line+w+' ';
+    if(x.measureText(test).width>maxW && line){ x.fillText(line.trim(),cx,y); line=w+' '; y+=lh; } else line=test; }
+  x.fillText(line.trim(),cx,y); return y;
+}
+
+/* ============ MEMORY / PRIVACY ============ */
+function renderMemory(){
+  const rows=[
+    ['Name', P.name],
+    ['City', P.city||'— not set'],
+    ['Skin tone', P.skinTone||'— learns from your first photo'],
+    ['Face shape', P.faceShape||'— learns from your first selfie'],
+    ['Sizes', P.sizes||'— tell me anytime'],
+    ['Style wins', P.notes.length?P.notes.slice(-4).join(' · '):'— your READY verdicts land here'],
+  ];
+  $('memlist').innerHTML = rows.map(([k,v],i)=>`
+    <div class="prow"><div><b>${k}</b><span>${esc(String(v))}</span></div>
+    <span style="font-size:12px;color:var(--rolex);cursor:pointer;" onclick="editMem(${i})">edit</span></div>`).join('')
+    + `<div class="prow" style="border-color:var(--royal-line);"><div><b style="color:var(--royal-dk);">Private Space</b><span>Nothing stored. By design.</span></div><span>🔒</span></div>
+    <p class="small" style="text-align:center;margin-top:8px;">Everything here lives on this phone · never sold · never trains AI</p>`;
+}
+function editMem(i){
+  const keys=['name','city','skinTone','faceShape','sizes','notes'];
+  if(keys[i]==='notes'){ if(confirm('Clear style memory?')){P.notes=[];save();renderMemory();} return; }
+  const v=prompt('Update '+keys[i]+':', P[keys[i]]||''); if(v!==null){ P[keys[i]]=v.trim()||null; save(); renderMemory(); renderHome(); }
+}
+function exportData(){
+  const blob=new Blob([JSON.stringify(P,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.download='sorted-my-data.json'; a.href=URL.createObjectURL(blob); a.click();
+  toast('Your data — one file, all of it.');
+}
+function deleteEverything(){
+  if(!confirm('Sure? Gone in 5 seconds, no recovery.')) return;
+  localStorage.clear(); privThread=[]; threads={verdict:[],product:[],barber:[]};
+  toast('Done. Nothing remains.');
+  setTimeout(()=>location.reload(),1200);
+}
+
+/* ============ SHEETS ============ */
+function openSheet(which){
+  const s=$('sheet'); const b=$('sheet-body');
+  if(which==='privacy-info') b.innerHTML=`<h3>What Sorted stores</h3><p class="small">
+    · Your pseudonym and optional city — on this phone only.<br>
+    · Style memory (skin tone, sizes, what got a READY) — on this phone only.<br>
+    · Photos: sent for analysis, deleted immediately after. Never stored, never used for training.<br>
+    · Private Space: nothing. No history exists.<br>
+    · You can export or delete everything, instantly, from the Privacy Center.<br><br>
+    Health answers are education, not medical advice. For anything serious, Sorted will always push you to a real doctor.</p>`;
+  s.classList.add('on');
+}
+
+/* ============ INPUT UX ============ */
+$('inp').addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); send(); }});
+$('inp').addEventListener('input',function(){ this.style.height='auto'; this.style.height=Math.min(this.scrollHeight,110)+'px'; });
+
+/* ============ BOOT ============ */
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+if(P){ go('home'); } else { $('scr-onboard').classList.add('on'); $('askbar').style.display='none'; }
+</script>
+</body>
+</html>
