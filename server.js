@@ -8,6 +8,7 @@ const cors = require('cors');
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '1500kb' }));
+app.use(express.static(__dirname)); // serve the app itself (index.html etc.) — one origin, no CDN dependency
 
 const KEY = process.env.ANTHROPIC_API_KEY;
 const PILOT_TOKEN = process.env.PILOT_TOKEN; // if set, all routes require x-pilot-token header
