@@ -163,10 +163,10 @@ body{background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMac
   <div class="screen" id="scr-home">
     <div class="hdr"><div class="brand">S<em>O</em>RTED</div><div class="avatar" id="av" onclick="go('memory')">?</div></div>
     <div class="greet" id="greet">Scene kya hai?</div>
-    <div class="door" onclick="go('verdict')"><div class="ic">📸</div><h4>Am I ready?</h4><p>Event coming? Send a photo of the outfit — honest verdict in under a minute.</p><span class="chip">MOST USED</span></div>
-    <div class="door purple-door" onclick="go('gate')"><div class="ic">🔒</div><h4>Private Space</h4><p>The questions you won't ask anyone. Never saved. Always free.</p><span class="chip p">PRIVATE MODE</span></div>
-    <div class="door" onclick="go('product')"><div class="ic">🧴</div><h4>Check a product</h4><p>Snap any label — is it clean, is it marketing, what's better?</p></div>
-    <div class="door" onclick="go('barber')"><div class="ic">💈</div><h4>Barber card</h4><p>Haircut coming? Get the exact words to tell your barber.</p></div>
+    <div class="door" onclick="go('verdict')"><div class="ic">📸</div><h4>What do I wear?</h4><p>Shaadi, office do, date. Send one outfit, or a photo of the open wardrobe — you get ONE answer: wear this.</p><span class="chip">MOST USED</span></div>
+    <div class="door purple-door" onclick="go('gate')"><div class="ic">🔒</div><h4>Private Space</h4><p>Rashes, sweat, hair fall, bedroom worries — the stuff you google at 2am. Ask properly. Never saved.</p><span class="chip p">PRIVATE MODE</span></div>
+    <div class="door" onclick="go('product')"><div class="ic">🧴</div><h4>Check a product</h4><p>That "48-hour protection" deo. The ₹499 charcoal facewash. Real or marketing? Snap the label.</p></div>
+    <div class="door" onclick="go('barber')"><div class="ic">💈</div><h4>Barber card</h4><p>Stop saying "kuch bhi kar do". Walk in with exact instructions — Hindi included.</p></div>
   </div>
 
   <!-- VERDICT -->
@@ -223,8 +223,9 @@ body{background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMac
 
   <!-- ASK BAR -->
   <div class="askbar" id="askbar">
-    <input type="file" id="file" accept="image/*" hidden>
-    <button class="cam" onclick="document.getElementById('file').click()">📷</button>
+    <input type="file" id="file" accept="image/*" capture="environment" hidden>
+    <input type="file" id="file-gal" accept="image/*" hidden>
+    <button class="cam" onclick="openCamSheet()">📷</button>
     <textarea id="inp" rows="1" maxlength="2000" placeholder="Message Sorted…"></textarea>
     <button class="send" onclick="send()">➤</button>
   </div>
@@ -272,7 +273,7 @@ function go(s){
   $('scr-'+s).classList.add('on');
   document.body.classList.toggle('purple', s==='private');
   $('askbar').style.display = ['verdict','private','product','barber'].includes(s)?'flex':'none';
-  $('inp').placeholder = s==='private' ? 'Ask anything…' : s==='product' ? 'Or ask: best sunscreen under ₹400?' : 'Message Sorted…';
+  $('inp').placeholder = s==='private' ? 'Ask anything…' : s==='product' ? 'Is this deo aluminium-free?' : s==='verdict' ? 'Shaadi tonight — what do I wear?' : 'Message Sorted…';
   if(s==='home') renderHome();
   if(s==='memory') renderMemory();
   if(['verdict','product','barber'].includes(s) && !threads[s].rendered){ seed(s); threads[s].rendered=true; }
@@ -313,14 +314,28 @@ async function checkFollowups(){
 
 /* ============ SEED MESSAGES ============ */
 function seed(s){
-  if(s==='verdict') addThem(`Event coming up? Send me a photo of the outfit — or two options and I'll pick. First time? Send whatever you're wearing right now. Pajama verdicts are a tradition here. 📸`);
-  if(s==='product') addThem(`Snap a product label, or just ask — "best deo without aluminium under ₹300?" I'll tell you what's real and what's marketing.`);
-  if(s==='barber') addThem(`Haircut coming? Send a selfie (analyzed, then deleted) and tell me the vibe — office-safe, fresh change, low maintenance. You'll get a card to show your barber. 💈`);
+  if(s==='verdict') addThem(`Too many options is my department. 📸
+
+· One outfit → straight verdict
+· Open wardrobe, one photo → I pick THE outfit for tonight
+· "What goes with this blue kurta?" → I build the combination
+
+Tell me the occasion and shoot.`);
+  if(s==='product') addThem(`Snap any label, or ask straight:
+
+· "Is this deo actually aluminium-free?"
+· "Sunscreen under ₹400 for oily skin?"
+· "Rosemary water — real or a scam?"
+
+No brand pays me. You get it straight.`);
+  if(s==='barber') addThem(`Selfie + your scene — "office-safe but fresh", "wedding next week", "zero maintenance".
+
+You get exact instructions to show your barber, Hindi line included. No more "kuch bhi kar do". 💈`);
 }
 function enterPrivate(){
   go('private'); privThread=[];
   $('chat-private').innerHTML='';
-  addThem(`Private mode. Whatever's on your mind — skin stuff, down-there stuff, sweat, hair fall, weight — ask straight. No judgment, no record, and I'll always tell you when it's doctor-time.`, true);
+  addThem(`Private mode. Groin stuff, sweat, hair fall, bedroom worries, weight — ask like you'd ask a doctor-friend at 2am. Straight answers, zero judgment, and I'll tell you honestly when it's doctor-time.`, true);
 }
 function leavePrivate(){ privThread=[]; $('chat-private').innerHTML=''; go('home'); }
 
@@ -338,7 +353,17 @@ function thinking(lines){
 }
 
 /* ============ IMAGE HANDLING ============ */
-$('file').addEventListener('change', async e=>{
+function openCamSheet(){
+  const s=$('sheet'); const b=$('sheet-body');
+  b.innerHTML=`<h3>Add a photo</h3>
+    <button class="cta" style="margin-bottom:10px;" onclick="$('sheet').classList.remove('on');$('file').click()">📷 &nbsp;Click a fresh photo</button>
+    <button class="cta ghost" onclick="$('sheet').classList.remove('on');$('file-gal').click()">🖼️ &nbsp;Choose from gallery</button>
+    <p class="small" style="text-align:center;margin-top:12px;">Analyzed, then deleted. Always.</p>`;
+  s.classList.add('on');
+}
+$('file-gal').addEventListener('change', e=>handleFile(e));
+$('file').addEventListener('change', e=>handleFile(e));
+async function handleFile(e){
   const f=e.target.files[0]; if(!f) return;
   const b64 = await compress(f);
   pendingImage = b64;
@@ -346,7 +371,7 @@ $('file').addEventListener('change', async e=>{
   addSys('Photo attached — analyzed, then deleted. Always.');
   if(screen==='verdict' && !occasion) askOccasion();
   e.target.value='';
-});
+}
 function compress(file){
   return new Promise(res=>{
     const img=new Image();
@@ -419,7 +444,7 @@ function render(mode, d, hist){
   if(d.reply_pre) addThem(d.reply_pre);
 
   if(d.type==='verdict'){
-    const cls={READY:'ready',ALMOST:'almost','NOT THIS ONE':'notyet'}[d.verdict]||'cant';
+    const cls={READY:'ready','WEAR THIS':'ready',ALMOST:'almost','NOT THIS ONE':'notyet'}[d.verdict]||'cant';
     const shim=d.verdict==='READY'?' shimmer':'';
     addHTML(`<div class="vcard${shim}">
       <div class="vtag">VERDICT</div>
