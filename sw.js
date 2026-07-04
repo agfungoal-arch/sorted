@@ -1,4 +1,4 @@
-const CACHE = 'sorted-v2';
+const CACHE = 'sorted-v3';
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', e => {
   e.waitUntil(
@@ -7,10 +7,10 @@ self.addEventListener('activate', e => {
       .then(() => self.clients.claim())
   );
 });
-// Network-first: always try fresh (so updates ship instantly), fall back to cache offline. Never touch the API.
+// Network-first (updates ship instantly), cache fallback offline. Never touch the API.
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
-  if (e.request.method !== 'GET' || url.pathname.includes('/ask') || url.origin.includes('onrender')) return;
+  if (e.request.method !== 'GET' || url.pathname.match(/\/(ask|event|followups|polls|push|cron)/)) return;
   e.respondWith(
     fetch(e.request).then(res => {
       const copy = res.clone();
@@ -18,4 +18,20 @@ self.addEventListener('fetch', e => {
       return res;
     }).catch(() => caches.match(e.request))
   );
+});
+// Push: lock screen is always discreet — never reveals content.
+self.addEventListener('push', e => {
+  e.waitUntil(self.registration.showNotification('Sorted', {
+    body: 'Sorted has a thought.',
+    icon: 'icon.svg',
+    badge: 'icon.svg',
+    tag: 'sorted-checkin'
+  }));
+});
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  e.waitUntil(clients.matchAll({ type: 'window' }).then(list => {
+    for (const c of list) if ('focus' in c) return c.focus();
+    return clients.openWindow('./');
+  }));
 });

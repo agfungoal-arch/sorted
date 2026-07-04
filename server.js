@@ -1,56 +1,61 @@
-/* SORTED backend — single file. Node 18+. Deps: express, cors.
-   Run:  ANTHROPIC_API_KEY=sk-... node server.js
-   Optional DB (Supabase): set SUPABASE_URL + SUPABASE_SERVICE_KEY — without them, DB features no-op gracefully.
-   Photos pass through to Claude and are NEVER written to disk or logged. */
+/* SORTED backend v2 — Node 18+. Deps: express, cors, web-push.
+   Env: ANTHROPIC_API_KEY (req) · MODEL · SUPABASE_URL · SUPABASE_SERVICE_KEY · PILOT_TOKEN · VAPID_PUBLIC · VAPID_PRIVATE · CRON_SECRET
+   Photos pass through to Claude and are NEVER written to disk or logged. Private chats are never stored. */
 
 const express = require('express');
 const cors = require('cors');
+let webpush = null; try { webpush = require('web-push'); } catch (e) { console.log('web-push not installed — push disabled'); }
+
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '1500kb' }));
-app.use(express.static(__dirname)); // serve the app itself (index.html etc.) — one origin, no CDN dependency
+app.use(express.static(__dirname));
 
 const KEY = process.env.ANTHROPIC_API_KEY;
-const PILOT_TOKEN = process.env.PILOT_TOKEN; // if set, all routes require x-pilot-token header
+const MODEL = process.env.MODEL || 'claude-sonnet-5';
+const PORT = process.env.PORT || 8787;
+const SB_URL = process.env.SUPABASE_URL;
+const SB_KEY = process.env.SUPABASE_SERVICE_KEY;
+const PILOT_TOKEN = process.env.PILOT_TOKEN;
+const CRON_SECRET = process.env.CRON_SECRET;
+if (!KEY) { console.error('Set ANTHROPIC_API_KEY'); process.exit(1); }
+if (webpush && process.env.VAPID_PUBLIC && process.env.VAPID_PRIVATE) {
+  webpush.setVapidDetails('mailto:agfun.goal@gmail.com', process.env.VAPID_PUBLIC, process.env.VAPID_PRIVATE);
+} else { webpush = null; }
 
-/* ---------- RATE LIMIT (in-memory sliding window) + AUTH ---------- */
+/* ---------- RATE LIMIT + AUTH ---------- */
 const hits = new Map();
 function limitOk(key, max, winMs) {
   const now = Date.now();
   const arr = (hits.get(key) || []).filter(t => now - t < winMs);
   arr.push(now); hits.set(key, arr);
-  if (hits.size > 5000) hits.clear(); // memory guard
+  if (hits.size > 5000) hits.clear();
   return arr.length <= max;
 }
 function gate(req, res) {
   if (PILOT_TOKEN && req.headers['x-pilot-token'] !== PILOT_TOKEN) { res.status(401).json({ error: 'unauthorized' }); return false; }
   const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.ip || 'x';
   const dev = (req.body && req.body.device_id) || req.query.device || 'anon';
-  if (!limitOk('ip:' + ip, 40, 300000) || !limitOk('dev:' + dev, 30, 300000)) { res.status(429).json({ error: 'slow down' }); return false; }
+  if (!limitOk('ip:' + ip, 60, 300000) || !limitOk('dev:' + dev, 40, 300000)) { res.status(429).json({ error: 'slow down' }); return false; }
   return true;
 }
-const MODEL = process.env.MODEL || 'claude-sonnet-4-5';
-const PORT = process.env.PORT || 8787;
-const SB_URL = process.env.SUPABASE_URL;
-const SB_KEY = process.env.SUPABASE_SERVICE_KEY;
-if (!KEY) { console.error('Set ANTHROPIC_API_KEY'); process.exit(1); }
 
-/* ---------- SUPABASE (REST, no SDK) — all functions no-op without env ---------- */
-async function sb(path, method = 'GET', body = null, params = '') {
+/* ---------- SUPABASE REST ---------- */
+async function sb(path, method = 'GET', body = null, params = '', prefer = 'return=representation') {
   if (!SB_URL || !SB_KEY) return null;
   try {
     const res = await fetch(`${SB_URL}/rest/v1/${path}${params}`, {
       method,
-      headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Type': 'application/json', Prefer: 'return=representation' },
+      headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Type': 'application/json', Prefer: prefer },
       body: body ? JSON.stringify(body) : undefined,
     });
     if (!res.ok) { console.error('sb', path, res.status); return null; }
-    return await res.json();
+    const t = await res.text(); return t ? JSON.parse(t) : [];
   } catch (e) { console.error('sb', e.message); return null; }
 }
 const logEvent = (device_id, event, mode) => sb('events', 'POST', { device_id, event, mode });
 
-/* ---------- DETERMINISTIC RED-FLAG LAYER (runs BEFORE the model, in code) ---------- */
+/* ---------- RED FLAGS (deterministic, pre-model) ---------- */
 const RED_FLAGS = [
   { rx: /blood.*(urine|pee|stool|semen)|(urine|pee|stool|semen).*blood|khoon.*(peshaab|urine|pee|potty)|peshaab.*khoon/i,
     action: 'Urologist or GP within 2-3 days. This is not a wait-and-watch.',
@@ -76,53 +81,64 @@ const RED_FLAGS = [
 ];
 const checkRedFlags = t => RED_FLAGS.find(f => f.rx.test(t)) || null;
 
-/* ---------- VOICE + MODE PROMPTS ---------- */
-const VOICE = `You are Sorted — the "sorted elder brother" for Indian men 18-45. Warm, direct, zero judgment, slightly wry. Natural English with light Hinglish where it fits ("scene", "boss", "yaar" — sparingly). Replies are 2-6 lines max. Never flatter falsely. Never shame. No numeric scores ever. One question at a time, only if needed.`;
+/* ---------- VOICE ---------- */
+const VOICE = `You are Sorted — the sorted elder brother for men 18-45. Warm, direct, zero judgment, slightly wry. Replies 2-6 lines max. Never flatter falsely. Never shame. No numeric scores ever. One question at a time, only if needed.
+LANGUAGE: default to clean, natural English only. Use Hindi/Hinglish words ONLY if his profile language is 'hinglish' or he himself writes Hindi/Hinglish first — then mirror lightly. Never open in Hinglish.
+IF HE MENTIONS GEMINI/CHATGPT/ANY OTHER AI: never needy, never bash them, and NEVER wave him off (phrases like "no need to come back" are forbidden). One confident line on what is different here — you remember HIS face, wardrobe and wins; you check on him afterwards; his private questions are not sitting in a big-tech account under his real name; your India product answers are verified — then simply continue being useful on his actual need. You are the friend, not a vendor chasing a sale.
+IF HE DERAILS, TESTS OR ROLEPLAYS: stay Sorted, one light deflection, bring it back to what he needs. Never break character, never get defensive, never capitulate.
+CAPABILITIES: you cannot generate or edit images and cannot browse the web. If asked, say so in ONE short line, then immediately offer the strongest thing you CAN do for that need (e.g. exact search terms to find reference photos + your specific instructions). Never apologize twice.`;
 
+/* ---------- MODE PROMPTS ---------- */
 const PROMPTS = {
   verdict: `${VOICE}
 You judge outfits from a photo + occasion. Understand Indian dress codes (kurta, sherwani, bandhgala, office, festival).
-THE PROBLEM OF PLENTY: his real pain is too many choices, not too few. If the photo shows a wardrobe, a pile, or several garments — or he lists several options — your job is to CHOOSE FOR HIM. Use verdict "WEAR THIS", reasons must name the exact items you picked ("the navy kurta, third from left"), and fix gives the complete head-to-toe combination. ONE answer. Never a menu, never "either works".
+THE PROBLEM OF PLENTY: his real pain is too many choices. If the photo shows a wardrobe, a pile, or several garments — or he lists several options — CHOOSE FOR HIM: verdict "WEAR THIS", reasons name the exact items ("the navy kurta, third from left"), fix gives the complete head-to-toe combination. ONE answer. Never a menu, never "either works".
 Respond ONLY with JSON:
 {"type":"verdict","verdict":"READY"|"ALMOST"|"NOT THIS ONE"|"WEAR THIS"|"CAN'T TELL",
- "reasons":["max 3, specific, reference what you SEE and his known profile"],
+ "reasons":["max 3, specific, reference what you SEE and his profile"],
  "fix":"1-2 concrete actions, or empty if READY (then a confident send-off)",
- "memory_note":"short note worth remembering (e.g. 'navy kurta = wedding winner') or null",
- "skinTone":"only if clearly inferable from photo, else null","faceShape":null,
- "followup":"one short natural line inviting the loop to close (e.g. send a pic after the swap) or null"}
-Rules: if photo too dark/blurry/absent → verdict CAN'T TELL, reasons explain kindly (blame the light, never the man), fix asks for a retake. Most verdicts should be ALMOST with a sharp fix — honest AND actionable. Use his profile (skin tone, past wins) when present and SAY so ("your skin tone").`,
+ "memory_note":"short note worth remembering or null","skinTone":"if clearly inferable else null","faceShape":null,
+ "followup":"one short line inviting the loop to close, or null"}
+If photo too dark/blurry/absent → CAN'T TELL, blame the light never the man, ask for a retake. Most verdicts should be ALMOST with a sharp fix. Use his profile and SAY so ("your skin tone").`,
 
   private: `${VOICE}
-PRIVATE SPACE mode — men's sensitive health (groin, skin, sweat, hair fall, weight, bloating, performance anxiety). Calm, factual, normalizing. NO emojis except at most one 🤝.
-You provide EDUCATION ONLY — never diagnosis, never prescription drugs/doses, never interpret lesions from photos (ask them to see a derm for anything visible on skin that changes). Structure: (1) normalize with a stat if honest, (2) plain-language explanation of the likely CATEGORY, (3) practical self-care this week incl. OTC CATEGORY (e.g. "an antifungal dusting powder — ask the chemist, ~₹120"), (4) the doctor line.
+PRIVATE SPACE — men's sensitive health (groin, skin, sweat, hair fall, weight, bloating, performance anxiety). Calm, factual, normalizing. NO emojis except at most one 🤝.
+EDUCATION ONLY — never diagnosis, never prescription drugs/doses, never interpret lesions from photos (send him to a derm for anything visible that changes). Structure: (1) normalize with an honest stat, (2) plain-language likely CATEGORY, (3) practical self-care this week incl. OTC CATEGORY ("an antifungal dusting powder — ask the chemist, ~₹120"), (4) the doctor line.
 Respond ONLY with JSON:
-{"type":"private","reply":"the main reply, 3-7 lines",
- "doctor":{"action":"when/what kind of doctor + honest cost in ₹","script":"exact words he can say","cost":"₹ range"} or null,
+{"type":"private","reply":"main reply, 3-7 lines",
+ "doctor":{"action":"when/what doctor + honest ₹ cost","script":"exact words he can say","cost":"₹ range"} or null,
  "red_flag":false}
-Include "doctor" whenever symptoms have lasted 2+ weeks, are worsening, or he seems to be delaying. India context: derm visit ₹500-800, GP ₹300-500.`,
+Include "doctor" whenever symptoms are 2+ weeks old, worsening, or he is delaying. India: derm ₹500-800, GP ₹300-500.`,
 
   product: `${VOICE}
-PRODUCT TRUTH mode — Indian men's grooming products. You read labels from photos or answer product questions. Be blunt about marketing claims. Never invent ingredients you cannot see — if unsure, say what you'd need to check and lower confidence. No fear-mongering: parabens are legal and low-risk; state preferences honestly.
+PRODUCT TRUTH — men's grooming products. Read labels from photos or answer product questions. Be blunt about marketing claims. Never invent ingredients you cannot see — if unsure say what you'd check and lower confidence. No fear-mongering (parabens are legal and low-risk; state preferences honestly).
 Respond ONLY with JSON:
-{"type":"product","name":"product name if identifiable or null","price":"₹ if known or null",
+{"type":"product","name":"product name or null","price":"₹ or null",
  "flags":[{"ok":true/false,"label":"e.g. Aluminium salts / Paraben-free"}],
- "note":"1-3 blunt sentences incl. any claim-check ('48-hr protection is marketing')",
- "alternatives":[{"name":"","price":"₹ approx","flags":["max 3 short positives"]}] (max 2, only if genuinely helpful),
+ "note":"1-3 blunt sentences incl. claim-check",
+ "alternatives":[{"name":"","price":"₹ approx","flags":["max 3 short positives"]}],
  "confidence":"verified-list"|"label-read"|"general-knowledge"}
-If VERIFIED PRODUCT DATA is provided below, prefer it over your own knowledge and set confidence "verified-list".
-For text questions (no photo): recommend max 2 products with honest reasoning + 1 anti-recommendation pattern to avoid.`,
+If VERIFIED PRODUCT DATA is provided, prefer it and set confidence "verified-list". Text questions: max 2 recommendations + 1 pattern to avoid.`,
 
   barber: `${VOICE}
-BARBER CARD mode. From a selfie (face shape, hair type) and/or his description, recommend ONE haircut (+beard treatment) that suits him. Practical, Indian-barbershop language.
+BARBER CARD. From a selfie and/or description recommend ONE haircut (+beard treatment) that suits him. Practical barbershop language.
 Respond ONLY with JSON:
-{"type":"barber","style":"name e.g. 'Mid Fade · Scissor Top'",
- "steps":["3-4 exact instructions with clipper numbers","e.g. Sides: 2 number, fade to 4"],
- "hinglish":"one line he can say aloud: 'Bhaiya — sides pe 2 number fade, upar scissor se, length rakhna.'",
+{"type":"barber","style":"e.g. 'Mid Fade · Scissor Top'",
+ "steps":["3-4 exact instructions with clipper numbers"],
+ "hinglish":"one line to say aloud at the shop — in ENGLISH by default; Hindi only if his language is hinglish",
  "note":"one short encouraging line or maintenance tip"}
-If no selfie: ask ONE question OR give a safe versatile recommendation based on what he said. Never invent face-shape claims without a photo.`,
+No selfie: ask ONE question OR give a safe versatile recommendation. Never invent face-shape claims without a photo. You cannot show generated preview images — if asked, give exact Google/Pinterest search terms instead, in one line.`,
+
+  profile: `${VOICE}
+PROFILE SCAN. From this one selfie, read what helps style advice. Be kind and factual; no scores, no attractiveness judgment.
+Respond ONLY with JSON:
+{"type":"profile","skinTone":"e.g. 'warm, medium-deep'","undertone":"warm|cool|neutral|olive",
+ "faceShape":"e.g. 'oval, strong jaw'","hair":"e.g. 'thick, straight, slight recession'","beard":"e.g. 'medium density, patchy cheeks'",
+ "note":"one warm line about what this unlocks (colour picks, cut choices) — no flattery"}
+If image unusable, return {"type":"profile","error":"retake","note":"kind one-liner asking for better light"}.`,
 };
 
-/* ---------- SKU CONTEXT (verified product data injection) ---------- */
+/* ---------- SKU CONTEXT ---------- */
 async function skuContext(text) {
   if (!SB_URL || !text) return '';
   const words = (text.match(/[a-zA-Z]{4,}/g) || []).slice(0, 5);
@@ -131,14 +147,13 @@ async function skuContext(text) {
   const rows = await sb('sku_products', 'GET', null, `?or=(${q})&limit=3&select=name,brand,price_band,flags,claim_notes,last_verified`);
   if (!rows || !rows.length) return '';
   return '\nVERIFIED PRODUCT DATA (curated, dated — prefer this):\n' + rows.map(r =>
-    `- ${r.name} (${r.brand||''}) ${r.price_band||''} flags:${JSON.stringify(r.flags)} notes:${r.claim_notes||''} verified:${r.last_verified}`).join('\n');
+    `- ${r.name} (${r.brand || ''}) ${r.price_band || ''} flags:${JSON.stringify(r.flags)} notes:${r.claim_notes || ''} verified:${r.last_verified}`).join('\n');
 }
 
-/* ---------- CLAUDE CALL ---------- */
+/* ---------- CLAUDE ---------- */
 async function askClaude(mode, messages, image, occasion, profile, extraCtx) {
-  const profileCtx = profile ? `\nHIS PROFILE (use it, mention it when relevant): name:${profile.name}, city:${profile.city || 'unknown'}, skinTone:${profile.skinTone || 'unknown'}, faceShape:${profile.faceShape || 'unknown'}, sizes:${profile.sizes || 'unknown'}, styleWins:${(profile.notes || []).slice(-5).join('; ') || 'none yet'}` : '';
+  const profileCtx = profile ? `\nHIS PROFILE (use it, mention it when relevant): name:${profile.name}, language:${profile.lang || 'english'}, city:${profile.city || 'unknown'}, skinTone:${profile.skinTone || 'unknown'}, faceShape:${profile.faceShape || 'unknown'}, sizes:${profile.sizes || 'unknown'}, styleWins:${(profile.notes || []).slice(-5).join('; ') || 'none yet'}` : '';
   const sys = PROMPTS[mode] + profileCtx + (occasion ? `\nOCCASION: ${occasion}` : '') + (extraCtx || '');
-
   const apiMessages = messages.filter(m => m.content).map(m => ({ role: m.role, content: m.content }));
   if (image && apiMessages.length) {
     const last = apiMessages[apiMessages.length - 1];
@@ -148,7 +163,6 @@ async function askClaude(mode, messages, image, occasion, profile, extraCtx) {
     ];
   }
   if (!apiMessages.length) apiMessages.push({ role: 'user', content: 'Hi' });
-
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: { 'x-api-key': KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
@@ -168,41 +182,31 @@ app.post('/ask', async (req, res) => {
     if (!gate(req, res)) return;
     const { mode, messages = [], image, occasion, profile, device_id } = req.body || {};
     if (!PROMPTS[mode]) return res.status(400).json({ error: 'bad mode' });
-    // cap message lengths server-side (cost + DoS guard)
     for (const m of messages) if (typeof m.content === 'string') m.content = m.content.slice(0, 4000);
 
     const lastUser = [...messages].reverse().find(m => m.role === 'user');
     const lastText = lastUser && typeof lastUser.content === 'string' ? lastUser.content : '';
-
-    // deterministic red-flag check — before the model, always
     const flag = checkRedFlags(lastText);
     if (flag) {
       if (device_id) {
         logEvent(device_id, 'red_flag', mode);
         sb('followups', 'POST', { device_id, due_date: new Date(Date.now() + 2 * 864e5).toISOString().slice(0, 10), topic: 'urgent-followup', status: 'pending' });
       }
-      return res.json({
-        type: 'private', red_flag: true,
+      return res.json({ type: 'private', red_flag: true,
         reply: "Stop — this one isn't a wait-and-watch, and I'd be a bad friend if I pretended otherwise.",
-        doctor: { action: flag.action, script: flag.script, cost: '' },
-      });
+        doctor: { action: flag.action, script: flag.script, cost: '' } });
     }
 
     const extraCtx = mode === 'product' ? await skuContext(lastText) : '';
     const data = await askClaude(mode, messages, image, occasion, profile, extraCtx);
-
     if (device_id) {
       logEvent(device_id, mode === 'verdict' ? 'verdict_given' : mode + '_used', mode);
-      // schedule the day-7 nudge when health advice included a doctor line
       if (mode === 'private' && data.doctor) {
         sb('followups', 'POST', { device_id, due_date: new Date(Date.now() + 7 * 864e5).toISOString().slice(0, 10), topic: 'health-followup', status: 'pending' });
       }
     }
     res.json(data);
-  } catch (e) {
-    console.error(e.message);
-    res.status(500).json({ error: 'upstream' });
-  }
+  } catch (e) { console.error(e.message); res.status(500).json({ error: 'upstream' }); }
 });
 
 app.post('/event', async (req, res) => {
@@ -227,6 +231,80 @@ app.post('/followups/done', async (req, res) => {
   res.json({ ok: true });
 });
 
-app.get('/health', (_, res) => res.json({ ok: true, db: !!SB_URL }));
+/* ---------- PUSH ---------- */
+app.post('/push/subscribe', async (req, res) => {
+  if (!gate(req, res)) return;
+  const { device_id, sub } = req.body || {};
+  if (!device_id || !sub || !sub.endpoint) return res.status(400).json({ error: 'bad sub' });
+  await sb(`push_subs?device_id=eq.${encodeURIComponent(device_id)}`, 'DELETE');
+  await sb('push_subs', 'POST', { device_id, sub });
+  if (device_id) logEvent(device_id, 'push_enabled', null);
+  res.json({ ok: true });
+});
 
-app.listen(PORT, () => console.log(`SORTED backend on :${PORT} · model ${MODEL} · db ${SB_URL ? 'connected' : 'off (no-op)'} · photos never stored`));
+/* ---------- CROWD CHECK ---------- */
+app.post('/polls', async (req, res) => {
+  if (!gate(req, res)) return;
+  const { device_id, question, img } = req.body || {};
+  if (!device_id || !img || img.length > 400000) return res.status(400).json({ error: 'bad poll' });
+  const open = await sb('polls', 'GET', null, `?device_id=eq.${encodeURIComponent(device_id)}&status=eq.open&select=id`);
+  if (open && open.length >= 2) return res.status(429).json({ error: 'max 2 open polls' });
+  const row = await sb('polls', 'POST', { device_id, question: String(question || 'This look — yes or no?').slice(0, 140), img });
+  logEvent(device_id, 'poll_created', 'crowd');
+  res.json({ ok: true, id: row && row[0] && row[0].id });
+});
+
+app.get('/polls/feed', async (req, res) => {
+  if (!gate(req, res)) return;
+  const d = req.query.device || '';
+  const polls = await sb('polls', 'GET', null, `?status=eq.open&device_id=neq.${encodeURIComponent(d)}&order=created_at.desc&limit=20&select=id,question,img,created_at`);
+  const votes = await sb('poll_votes', 'GET', null, `?device_id=eq.${encodeURIComponent(d)}&select=poll_id`);
+  const voted = new Set((votes || []).map(v => v.poll_id));
+  res.json((polls || []).filter(p => !voted.has(p.id)).slice(0, 1));
+});
+
+app.get('/polls/mine', async (req, res) => {
+  if (!gate(req, res)) return;
+  const d = req.query.device || '';
+  const rows = await sb('polls', 'GET', null, `?device_id=eq.${encodeURIComponent(d)}&order=created_at.desc&limit=1&select=id,question,votes_yes,votes_no,status,created_at`);
+  res.json(rows || []);
+});
+
+app.post('/polls/vote', async (req, res) => {
+  if (!gate(req, res)) return;
+  const { poll_id, device_id, vote } = req.body || {};
+  if (!poll_id || !device_id || !['yes', 'no'].includes(vote)) return res.status(400).json({ error: 'bad vote' });
+  const existing = await sb('poll_votes', 'GET', null, `?poll_id=eq.${poll_id}&device_id=eq.${encodeURIComponent(device_id)}&select=poll_id`);
+  if (existing && existing.length) return res.json({ ok: true, dup: true });
+  await sb('poll_votes', 'POST', { poll_id, device_id, vote });
+  const p = await sb('polls', 'GET', null, `?id=eq.${poll_id}&select=votes_yes,votes_no`);
+  if (p && p[0]) await sb(`polls?id=eq.${poll_id}`, 'PATCH', vote === 'yes' ? { votes_yes: p[0].votes_yes + 1 } : { votes_no: p[0].votes_no + 1 });
+  logEvent(device_id, 'poll_voted', 'crowd');
+  res.json({ ok: true });
+});
+
+/* ---------- CRON (called by GitHub Actions schedule) ---------- */
+app.post('/cron/run', async (req, res) => {
+  if (!CRON_SECRET || req.headers['x-cron-secret'] !== CRON_SECRET) return res.status(401).json({ error: 'no' });
+  let pushed = 0;
+  const due = await sb('followups', 'GET', null, `?status=eq.pending&notified=eq.false&due_date=lte.${new Date().toISOString().slice(0, 10)}&select=id,device_id`) || [];
+  if (webpush && due.length) {
+    const subs = await sb('push_subs', 'GET', null, '?select=device_id,sub') || [];
+    const map = Object.fromEntries(subs.map(s => [s.device_id, s.sub]));
+    for (const f of due) {
+      const sub = map[f.device_id];
+      if (sub) {
+        try { await webpush.sendNotification(sub, JSON.stringify({ t: 'Sorted', b: 'Sorted has a thought.' })); pushed++; }
+        catch (e) { if (e.statusCode === 410 || e.statusCode === 404) await sb(`push_subs?device_id=eq.${encodeURIComponent(f.device_id)}`, 'DELETE'); }
+      }
+      await sb(`followups?id=eq.${f.id}`, 'PATCH', { notified: true });
+    }
+  }
+  const cutoff = new Date(Date.now() - 24 * 3600e3).toISOString();
+  await sb(`polls?status=eq.open&created_at=lt.${cutoff}`, 'PATCH', { status: 'closed', img: null }); // photos auto-purge at close
+  res.json({ ok: true, due: due.length, pushed });
+});
+
+app.get('/health', (_, res) => res.json({ ok: true, db: !!SB_URL, push: !!webpush }));
+
+app.listen(PORT, () => console.log(`SORTED backend v2 on :${PORT} · model ${MODEL} · db ${SB_URL ? 'on' : 'off'} · push ${webpush ? 'on' : 'off'} · photos never stored`));

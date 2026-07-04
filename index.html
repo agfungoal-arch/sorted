@@ -167,7 +167,8 @@ body{background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMac
     <div class="door" onclick="go('verdict')"><div class="ic">📸</div><h4>What do I wear?</h4><p>Shaadi, office do, date. Send one outfit, or a photo of the open wardrobe — you get ONE answer: wear this.</p><span class="chip">MOST USED</span></div>
     <div class="door purple-door" onclick="go('gate')"><div class="ic">🔒</div><h4>Private Space</h4><p>Rashes, sweat, hair fall, bedroom worries — the stuff you google at 2am. Ask properly. Never saved.</p><span class="chip p">PRIVATE MODE</span></div>
     <div class="door" onclick="go('product')"><div class="ic">🧴</div><h4>Check a product</h4><p>That "48-hour protection" deo. The ₹499 charcoal facewash. Real or marketing? Snap the label.</p></div>
-    <div class="door" onclick="go('barber')"><div class="ic">💈</div><h4>Barber card</h4><p>Stop saying "kuch bhi kar do". Walk in with exact instructions — Hindi included.</p></div>
+    <div class="door" onclick="go('barber')"><div class="ic">💈</div><h4>Barber card</h4><p>Walk in with exact instructions instead of "just do something".</p></div>
+    <div class="door" onclick="go('crowd')"><div class="ic">🫂</div><h4>Brotherhood</h4><p>Vote on a brother's look. Get honest votes on yours. Anonymous both ways.</p></div>
   </div>
 
   <!-- VERDICT -->
@@ -202,6 +203,12 @@ body{background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMac
   <div class="screen" id="scr-barber">
     <div class="hdr"><button class="back" onclick="go('home')">← Barber card</button><div class="avatar" onclick="go('memory')" id="av4">?</div></div>
     <div class="chat" id="chat-barber"></div>
+  </div>
+
+  <!-- CROWD -->
+  <div class="screen" id="scr-crowd">
+    <div class="hdr"><button class="back" onclick="go('home')">← 🫂 Brotherhood</button></div>
+    <div id="crowdbox"><p class="small">Loading…</p></div>
   </div>
 
   <!-- MEMORY -->
@@ -277,6 +284,7 @@ function go(s){
   $('inp').placeholder = s==='private' ? 'Ask anything…' : s==='product' ? 'Is this deo aluminium-free?' : s==='verdict' ? 'Shaadi tonight — what do I wear?' : 'Message Sorted…';
   if(s==='home') renderHome();
   if(s==='memory') renderMemory();
+  if(s==='crowd') loadCrowd();
   if(['verdict','product','barber'].includes(s) && !threads[s].rendered){ seed(s); threads[s].rendered=true; }
   scrollBottom();
 }
@@ -286,7 +294,7 @@ function finishOnboard(){
   const name=$('ob-name').value.trim();
   if(!name) return toast('Pick any name — even "Boss" works.');
   if(!$('ob-age').checked) return toast('Sorted is for 18+ only.');
-  P = { name, city:$('ob-city').value.trim()||null, skinTone:null, faceShape:null, sizes:null, styleWins:[], notes:[] };
+  P = { name, city:$('ob-city').value.trim()||null, lang:'english', skinTone:null, faceShape:null, sizes:null, styleWins:[], notes:[] };
   save(); sendEvent('activated'); go('home');
 }
 function renderHome(){
@@ -397,6 +405,7 @@ $('file').addEventListener('change', e=>handleFile(e));
 async function handleFile(e){
   const f=e.target.files[0]; if(!f) return;
   const b64 = await compress(f);
+  if(profileMode){ profileMode=false; e.target.value=''; return profileScan(b64); }
   pendingImage = b64;
   addPic(b64.url);
   addSys('Photo attached — analyzed, then deleted. Always.');
@@ -423,7 +432,7 @@ function askOccasion(){
     </div></div>`);
 }
 function pickOcc(btn,o){
-  occasion=o;
+  occasion=o; lastOccasion=o;
   btn.parentElement.querySelectorAll('button').forEach(b=>b.classList.remove('sel'));
   btn.classList.add('sel');
   send(true);
@@ -433,13 +442,16 @@ function pickOcc(btn,o){
 async function send(auto){
   const inp=$('inp'); const text=inp.value.trim();
   if(!text && !pendingImage) return;
-  if(text){ addMe(text); inp.value=''; }
+  if(text){ addMe(text); inp.value='';
+    if(/[ऀ-ॿ]|\b(bhai|bhaiya|yaar|shaadi|kuch|nahi|nahin|karna|accha|theek|kya)\b/i.test(text) && P.lang!=='hinglish'){ P.lang='hinglish'; save(); }
+  }
   const mode = screen==='private'?'private':screen;
   const hist = mode==='private'?privThread:threads[mode];
   if(text) hist.push({role:'user', content:text});
   if(pendingImage && !text) hist.push({role:'user', content: mode==='verdict' ? `[photo attached]${occasion?' Occasion: '+occasion:''}` : '[photo attached]'});
 
   const img = pendingImage; pendingImage=null;
+  if(img) lastImg = img;
   const thinkLines = {
     verdict:['Checking the fit…','· colour vs your undertone','· drape & proportions','· footwear match'],
     private:['Thinking this through properly…'],
@@ -482,7 +494,7 @@ function render(mode, d, hist){
       <div class="vword ${cls}">${esc(d.verdict)}${d.verdict==='READY'?' ✓':''}</div>
       <ol>${(d.reasons||[]).slice(0,3).map(r=>`<li>${esc(r)}</li>`).join('')}</ol>
       ${d.fix?`<div class="fixbox${d.verdict==='READY'?' go':''}"><b>${d.verdict==='READY'?'Go.':'The fix:'}</b> ${esc(d.fix)}</div>`:''}
-      <div class="fbrow"><button onclick="fb(this,1)">👍 Helped</button><button onclick="fb(this,0)">😐 Meh</button></div>
+      <div class="fbrow"><button onclick="fb(this,1)">👍 Helped</button><button onclick="fb(this,0)">😐 Meh</button><button onclick="crowdAsk()">🫂 Crowd</button></div>
     </div>`);
     if(d.memory_note){ P.notes.push(d.memory_note); if(d.skinTone&&!P.skinTone)P.skinTone=d.skinTone; if(d.faceShape&&!P.faceShape)P.faceShape=d.faceShape; save(); addSys('Saved to memory: '+d.memory_note+'  (edit anytime in your profile)'); }
     if(d.followup) addThem(d.followup);
@@ -497,6 +509,10 @@ function render(mode, d, hist){
       if(d.doctor) addHTML(`<div class="docbox"><b>The honest line:</b> ${esc(d.doctor.action)} Say: "${esc(d.doctor.script)}" ${esc(d.doctor.cost||'')} 🤝</div>`);
     }
     addHTML(`<div class="disc">⚕️ This is not a doctor speaking — it's general education only. For professional advice, please see a doctor.</div>`);
+    if(d.doctor && !P.push && 'Notification' in window && !pushOffered){
+      pushOffered=true;
+      addHTML(`<button class="cta purple-btn" onclick="enablePush(this)">🔔 Check on me later — allow reminders</button>`);
+    }
     hist.push({role:'assistant', content:d.reply}); // correct thread, whatever mode triggered it
   }
   else if(d.type==='product'){
@@ -555,6 +571,83 @@ function wrapText(x,t,cx,y,maxW,lh){
   x.fillText(line.trim(),cx,y); return y;
 }
 
+/* ============ PUSH / CROWD / PROFILE-SELFIE ============ */
+const VAPID='BKA8XykLTY_iSeYUvRR3AaA0ZcJl-2k9kbv1pM1LD2mXDV8qx1xCnwC14tTCS53aAx-KTISFDeLHlgqeB4kyQBM';
+let pushOffered=false, lastImg=null, profileMode=false, lastOccasion=null;
+function urlB64(s){const p='='.repeat((4-s.length%4)%4);const b=(s+p).replace(/-/g,'+').replace(/_/g,'/');const r=atob(b);return Uint8Array.from([...r].map(c=>c.charCodeAt(0)));}
+async function enablePush(btn){
+  if(btn) btn.remove();
+  try{
+    const perm=await Notification.requestPermission();
+    if(perm!=='granted'){ toast("No problem — I'll check in when you open the app."); return; }
+    const reg=await navigator.serviceWorker.ready;
+    const sub=await reg.pushManager.subscribe({userVisibleOnly:true, applicationServerKey:urlB64(VAPID)});
+    await fetch(BACKEND+'/push/subscribe',{method:'POST',headers:{'Content-Type':'application/json','x-pilot-token':PILOT},body:JSON.stringify({device_id:DEVICE,sub})});
+    P.push=true; save(); toast('Done. I will check on you. 🤝');
+  }catch(e){ toast("Reminders need this app on your home screen first (Share → Add to Home Screen)."); }
+}
+function crowdAsk(){
+  if(!lastImg){ toast('Send a photo first, then ask the brotherhood.'); return; }
+  const b=$('sheet-body');
+  b.innerHTML=`<h3>Ask the brotherhood?</h3>
+    <p class="small">Your photo goes to other Sorted men for 24 hours — anonymously, no name attached. Your face will be visible; crop first if you prefer. Photo auto-deletes when the poll closes.</p>
+    <button class="cta" style="margin-top:12px;" onclick="postPoll()">Post it — get honest votes</button>
+    <button class="cta ghost" style="margin-top:8px;" onclick="$('sheet').classList.remove('on')">Cancel</button>`;
+  $('sheet').classList.add('on');
+}
+async function postPoll(){
+  $('sheet').classList.remove('on');
+  try{
+    const r=await fetch(BACKEND+'/polls',{method:'POST',headers:{'Content-Type':'application/json','x-pilot-token':PILOT},
+      body:JSON.stringify({device_id:DEVICE, question:(lastOccasion?lastOccasion+' — yes or no?':'This look — yes or no?'), img:lastImg.url})});
+    if(!r.ok) throw 0;
+    toast('Posted. The brotherhood will speak — check the 🫂 door later.');
+  }catch(e){ toast('Could not post right now — try again in a minute.'); }
+}
+async function loadCrowd(){
+  const box=$('crowdbox'); box.innerHTML='<p class="small">Loading…</p>';
+  try{
+    const h={'x-pilot-token':PILOT};
+    const [mine,feed]=await Promise.all([
+      fetch(BACKEND+'/polls/mine?device='+DEVICE,{headers:h}).then(r=>r.json()),
+      fetch(BACKEND+'/polls/feed?device='+DEVICE,{headers:h}).then(r=>r.json())
+    ]);
+    let html='';
+    if(mine.length){ const m=mine[0];
+      html+=`<div class="vcard" style="margin-bottom:14px;"><div class="vtag">YOUR LOOK · ${m.status==='open'?'votes coming in':'closed'}</div>
+      <div style="font-size:15px;margin:6px 0;">${esc(m.question||'')}</div>
+      <div style="font-size:22px;font-weight:800;color:var(--rolex-dk);">🔥 ${m.votes_yes} &nbsp;·&nbsp; 😐 ${m.votes_no}</div></div>`; }
+    if(feed.length){ const p=feed[0];
+      html+=`<div class="vcard"><div class="vtag">A BROTHER ASKS · anonymous</div>
+      <div style="font-size:14px;margin:6px 0;">${esc(p.question||'')}</div>
+      <img src="${p.img}" style="width:100%;border-radius:12px;border:1px solid var(--line);">
+      <div class="fbrow"><button onclick="voteCrowd(${p.id},'yes')">🔥 Wear it</button><button onclick="voteCrowd(${p.id},'no')">😐 Rethink</button></div></div>`; }
+    else html+=`<div class="msg them" style="max-width:100%;">No looks waiting for your vote right now. Post yours after any verdict — tap 🫂 Crowd on the card.</div>`;
+    box.innerHTML=html;
+  }catch(e){ box.innerHTML='<p class="small">Could not load — check your connection and reopen.</p>'; }
+}
+async function voteCrowd(id,vote){
+  try{ await fetch(BACKEND+'/polls/vote',{method:'POST',headers:{'Content-Type':'application/json','x-pilot-token':PILOT},body:JSON.stringify({poll_id:id,device_id:DEVICE,vote})}); }catch(e){}
+  toast(vote==='yes'?'🔥 passed on. Brother sorted.':'Honest vote passed on.');
+  loadCrowd();
+}
+function profileSelfie(){ profileMode=true; openCamSheet(); }
+async function profileScan(img){
+  toast('Reading your face — a few seconds…');
+  try{
+    const r=await fetch(BACKEND+'/ask',{method:'POST',headers:{'Content-Type':'application/json','x-pilot-token':PILOT},
+      body:JSON.stringify({mode:'profile',messages:[{role:'user',content:'[selfie for profile]'}],image:{data:img.b64,media_type:img.mime},profile:P,device_id:DEVICE})});
+    const d=await r.json();
+    if(d.type==='profile' && !d.error){
+      if(d.skinTone) P.skinTone=d.skinTone+(d.undertone?' · '+d.undertone+' undertone':'');
+      if(d.faceShape) P.faceShape=d.faceShape;
+      if(d.hair) P.notes.push('hair: '+d.hair);
+      if(d.beard) P.notes.push('beard: '+d.beard);
+      save(); renderMemory(); toast(d.note||'Done — this is what I learned. Edit anything.');
+    } else toast(d.note||'Could not read that one — better light and try again?');
+  }catch(e){ toast('Could not read the selfie right now — try again in a minute.'); }
+}
+
 /* ============ MEMORY / PRIVACY ============ */
 function renderMemory(){
   const rows=[
@@ -565,7 +658,7 @@ function renderMemory(){
     ['Sizes', P.sizes||'— tell me anytime'],
     ['Style wins', P.notes.length?P.notes.slice(-4).join(' · '):'— your READY verdicts land here'],
   ];
-  $('memlist').innerHTML = rows.map(([k,v],i)=>`
+  $('memlist').innerHTML = `<button class="cta" style="margin-bottom:14px;" onclick="profileSelfie()">📸 One selfie fills all this in</button>` + rows.map(([k,v],i)=>`
     <div class="prow"><div><b>${k}</b><span>${esc(String(v))}</span></div>
     <span style="font-size:12px;color:var(--rolex);cursor:pointer;" onclick="editMem(${i})">edit</span></div>`).join('')
     + `<div class="prow" style="border-color:var(--royal-line);"><div><b style="color:var(--royal-dk);">Private Space</b><span>Messages never stored. Only anonymous usage counts exist.</span></div><span>🔒</span></div>
