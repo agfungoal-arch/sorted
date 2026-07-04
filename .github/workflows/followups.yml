@@ -1,0 +1,11 @@
+name: sorted-followups
+on:
+  schedule:
+    - cron: '30 3 * * *'
+    - cron: '30 12 * * *'
+  workflow_dispatch:
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - run: curl -s -m 120 -X POST -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" https://sorted-grew.onrender.com/cron/run
