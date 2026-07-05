@@ -562,7 +562,10 @@ function render(mode, d, hist){
     { const w=document.createElement('div'); w.style.alignSelf='stretch';
       const b=document.createElement('button'); b.className='cta gold'; b.textContent='Save card to phone';
       b.addEventListener('click', ()=>saveCard(d)); w.appendChild(b);
-      if(lastImg){ const pb=document.createElement('button'); pb.className='cta ghost'; pb.style.marginTop='8px';
+      if(lastImg){
+        const vb=document.createElement('button'); vb.className='cta'; vb.style.marginTop='8px';
+        vb.textContent='👀 See it on me — AI preview'; vb.addEventListener('click', ()=>seePreview(vb,d)); w.appendChild(vb);
+        const pb=document.createElement('button'); pb.className='cta ghost'; pb.style.marginTop='8px';
         pb.textContent='🫂 Ask the brotherhood about this look'; pb.addEventListener('click', ()=>crowdAsk()); w.appendChild(pb); }
       chatEl().appendChild(w); scrollBottom(); }
     if(d.note) addThem(d.note);
@@ -697,6 +700,21 @@ async function voteCrowd(id,vote){
   toast(vote==='yes'?'🔥 passed on. Brother sorted.':'Honest vote passed on.');
   loadCrowd();
 }
+async function seePreview(btn, d){
+  btn.disabled=true; btn.textContent='Painting your new look… ~15 sec';
+  try{
+    const r=await fetch(BACKEND+'/preview',{method:'POST',headers:{'Content-Type':'application/json','x-pilot-token':PILOT},
+      body:JSON.stringify({device_id:DEVICE, image:{data:lastImg.b64, media_type:lastImg.mime}, style:(d.style||'')+'. '+(d.steps||[]).join('; ')})});
+    const j=await r.json().catch(()=>({}));
+    if(j.img){
+      const i=document.createElement('img'); i.className='pic'; i.style.alignSelf='flex-start'; i.style.maxWidth='78%'; i.src=j.img;
+      chatEl().appendChild(i);
+      addSys('AI preview — approximate. Your barber\'s craft decides the rest.');
+      scrollBottom(); btn.remove();
+    } else if(r.status===429){ addThem('That\'s your 3 previews for today, boss — the barber card has everything he needs anyway.'); btn.remove(); }
+    else throw 0;
+  }catch(e){ btn.disabled=false; btn.textContent='👀 See it on me — AI preview'; toast('Preview didn\'t come through — try once more.'); }
+}
 function profileSelfie(){ profileMode=true; openCamSheet(); }
 async function profileScan(img){
   toast('Reading your face — a few seconds…');
@@ -754,6 +772,7 @@ function openSheet(which){
     · Your pseudonym and optional city — on this phone only.<br>
     · Style memory (skin tone, sizes, what got a READY) — on this phone only.<br>
     · Photos: sent for analysis, deleted immediately after. Never stored, never used for training.<br>
+    · Style previews ("See it on me"): your photo goes to Google's image engine to paint the preview, then is discarded. We never store it.<br>
     · Private Space: nothing. No history exists.<br>
     · You can export or delete everything, instantly, from the Privacy Center.<br><br>
     Health answers are education, not medical advice. For anything serious, Sorted will always push you to a real doctor.</p>`;

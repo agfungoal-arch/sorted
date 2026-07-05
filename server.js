@@ -307,6 +307,31 @@ app.post('/cron/run', async (req, res) => {
   res.json({ ok: true, due: due.length, pushed });
 });
 
-app.get('/health', (_, res) => res.json({ ok: true, db: !!SB_URL, push: !!webpush }));
+/* ---------- AI HAIRSTYLE PREVIEW (Gemini image / nano banana) ---------- */
+const GEMINI_KEY = process.env.GEMINI_API_KEY;
+app.post('/preview', async (req, res) => {
+  try {
+    if (!gate(req, res)) return;
+    if (!GEMINI_KEY) return res.status(503).json({ error: 'preview not configured' });
+    const { device_id, image, style } = req.body || {};
+    if (!image || !image.data) return res.status(400).json({ error: 'need photo' });
+    if (!limitOk('preview:' + (device_id || 'x'), 3, 86400000)) return res.status(429).json({ error: 'daily limit' });
+    const prompt = `Edit this photo: change ONLY the hair and beard to: ${String(style || 'a clean modern haircut').slice(0, 300)}. Keep the person's face, identity, skin tone, expression, clothing and background exactly the same. Photorealistic, natural lighting.`;
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${GEMINI_KEY}`, {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ contents: [{ parts: [{ inline_data: { mime_type: image.media_type || 'image/jpeg', data: image.data } }, { text: prompt }] }] }),
+    });
+    if (!r.ok) throw new Error('gemini ' + r.status + ' ' + (await r.text()).slice(0, 180));
+    const out = await r.json();
+    const parts = (out.candidates && out.candidates[0] && out.candidates[0].content && out.candidates[0].content.parts) || [];
+    const imgPart = parts.find(p => p.inline_data || p.inlineData);
+    if (!imgPart) return res.status(502).json({ error: 'no image returned' });
+    const d = imgPart.inline_data || imgPart.inlineData;
+    if (device_id) logEvent(device_id, 'preview_used', 'barber');
+    res.json({ ok: true, img: `data:${d.mime_type || d.mimeType || 'image/png'};base64,${d.data}` });
+  } catch (e) { console.error(e.message); res.status(500).json({ error: 'preview failed' }); }
+});
+
+app.get('/health', (_, res) => res.json({ ok: true, db: !!SB_URL, push: !!webpush, preview: !!GEMINI_KEY }));
 
 app.listen(PORT, () => console.log(`SORTED backend v2 on :${PORT} · model ${MODEL} · db ${SB_URL ? 'on' : 'off'} · push ${webpush ? 'on' : 'off'} · photos never stored`));
