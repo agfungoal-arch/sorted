@@ -242,6 +242,7 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
     <input type="file" id="file" accept="image/*" capture="environment" hidden>
     <input type="file" id="file-gal" accept="image/*" hidden>
     <button class="cam" onclick="openCamSheet()">📷</button>
+    <button class="cam" onclick="askBroFromBar()" title="Ask the brotherhood">🫂</button>
     <textarea id="inp" rows="1" maxlength="2000" placeholder="Message Sorted…"></textarea>
     <button class="send" onclick="send()">➤</button>
   </div>
@@ -614,13 +615,17 @@ async function enablePush(btn){
     P.push=true; save(); toast('Done. I will check on you. 🤝');
   }catch(e){ toast("Reminders need this app on your home screen first (Share → Add to Home Screen)."); }
 }
+function askBroFromBar(){ // omnipresent: works in every section, incl. Private Space
+  if(lastImg) crowdAsk();
+  else { crowdCapture=true; openCamSheet(); }
+}
 let blurApplied=false;
 function crowdAsk(){
   if(!lastImg){ toast('Send a photo first, then ask for peer review.'); return; }
   blurApplied=false;
   const b=$('sheet-body');
   b.innerHTML=`<h3>Peer review — opinion without bias</h3>
-    <p class="small">Real men vote on the LOOK, not on you — so the face gets blurred first. Photo is anonymous, visible for 24 hours, then auto-deletes.</p>
+    <p class="small">Real men vote on the LOOK, not on you — so the face gets blurred first. Photo is anonymous, visible for 24 hours, then auto-deletes. <b>No intimate or explicit photos</b> — that's instant removal from the beta.</p>
     <canvas id="blurcv" style="margin-top:10px;"></canvas>
     <p class="small" id="blurhint" style="text-align:center;">👆 Tap the face to blur it (tap more spots if needed)</p>
     <button class="cta" id="postbtn" style="margin-top:8px;opacity:.5;" onclick="postPoll()">Post for votes</button>
