@@ -20,14 +20,14 @@
 *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
 html,body{height:100%;}
 body{background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-serif; transition:background .4s;}
-#app{max-width:520px; margin:0 auto; min-height:100dvh; display:flex; flex-direction:column; position:relative;}
+#app{max-width:520px; margin:0 auto; min-height:100vh; min-height:100dvh; display:flex; flex-direction:column; position:relative;}
 .screen{display:none; flex:1; flex-direction:column; padding:calc(14px + env(safe-area-inset-top)) 18px 110px;}
 .screen.on{display:flex;}
 /* header */
 .hdr{display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;}
 .brand{letter-spacing:.18em; font-weight:800; font-size:17px; color:var(--rolex); cursor:pointer;}
 .brand em{color:var(--gold); font-style:normal;}
-.back{background:none; border:none; color:var(--rolex-dk); font-size:15px; font-weight:700; cursor:pointer; padding:6px 8px 6px 0;}
+.back{background:none; border:none; color:var(--rolex-dk); font-size:15px; font-weight:700; cursor:pointer; padding:12px 12px 12px 0; min-height:44px;}
 .purple .back{color:var(--royal-dk);}
 .avatar{width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,var(--gold),#7A5A1A); color:#FFF9EA; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px; cursor:pointer;}
 /* onboarding */
@@ -41,7 +41,8 @@ body{background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMac
 #blurcv{width:100%; border-radius:12px; border:1px solid var(--line); touch-action:manipulation;}
 .tagline b{color:var(--rolex-dk);}
 .field{background:var(--paper); border:1px solid var(--line); border-radius:14px; padding:15px 16px; margin-bottom:12px; display:flex; align-items:center; gap:12px; text-align:left;}
-.field input[type=text]{border:none; outline:none; flex:1; font-size:15px; background:none; color:var(--text);}
+.field input[type=text]{border:none; outline:none; flex:1; font-size:16px; background:none; color:var(--text);}
+input[type=checkbox]{width:26px !important; height:26px !important;}
 .field label{flex:1; font-size:14px;}
 .field input[type=checkbox]{width:20px; height:20px; accent-color:var(--rolex);}
 .cta{background:var(--rolex); color:#fff; font-weight:700; border:none; border-radius:14px; padding:16px; font-size:16px; width:100%; cursor:pointer; box-shadow:0 6px 18px rgba(0,96,57,.22); letter-spacing:.02em;}
@@ -49,7 +50,7 @@ body{background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMac
 .cta.ghost{background:var(--paper); color:var(--rolex); border:1px solid var(--rolex); box-shadow:none;}
 .cta.gold{background:var(--gold);}
 .cta.purple-btn{background:var(--royal);}
-.mini-link{background:none; border:none; color:var(--faint); font-size:12.5px; text-decoration:underline; margin-top:14px; cursor:pointer;}
+.mini-link{background:none; border:none; color:var(--faint); font-size:12.5px; text-decoration:underline; margin-top:8px; cursor:pointer; padding:12px 8px;}
 .footnote{font-size:11px; color:var(--faint); margin-top:16px; line-height:1.6;}
 /* home doors */
 .greet{color:var(--dim); font-size:14.5px; margin-bottom:14px;}
@@ -111,11 +112,11 @@ body{background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMac
 /* input bar */
 .askbar{position:fixed; bottom:0; left:0; right:0; margin:0 auto; max-width:520px; background:var(--paper); border-top:1px solid var(--line); padding:12px 14px calc(14px + env(safe-area-inset-bottom)); display:flex; gap:10px; align-items:flex-end; z-index:20;}
 .purple .askbar{background:#FBFAFE; border-color:var(--royal-line);}
-.cam{width:42px; height:42px; border-radius:50%; background:var(--rolex-lt); border:1px solid #CBDDD2; font-size:18px; cursor:pointer; flex-shrink:0;}
+.cam{width:46px; height:46px; border-radius:50%; background:var(--rolex-lt); border:1px solid #CBDDD2; font-size:18px; cursor:pointer; flex-shrink:0;}
 .purple .cam{background:var(--royal-lt); border-color:var(--royal-line);}
-.askbar textarea{flex:1; background:var(--ivory); border:1px solid var(--line); border-radius:20px; padding:11px 16px; font-size:14.5px; color:var(--text); outline:none; resize:none; max-height:110px; font-family:inherit;}
+.askbar textarea{flex:1; background:var(--ivory); border:1px solid var(--line); border-radius:20px; padding:11px 16px; font-size:16px; color:var(--text); outline:none; resize:none; max-height:110px; font-family:inherit;}
 .purple .askbar textarea{background:#F3F0FA; border-color:var(--royal-line);}
-.send{width:42px; height:42px; border-radius:50%; background:var(--rolex); border:none; color:#fff; font-size:16px; cursor:pointer; flex-shrink:0;}
+.send{width:46px; height:46px; border-radius:50%; background:var(--rolex); border:none; color:#fff; font-size:16px; cursor:pointer; flex-shrink:0;}
 .purple .send{background:var(--royal);}
 /* thinking */
 .think{align-self:flex-start; background:var(--bubble-them); border:1px solid var(--bubble-line); border-radius:16px; border-bottom-left-radius:4px; padding:12px 16px; font-size:13px; color:var(--dim); line-height:1.7;}
@@ -142,7 +143,7 @@ body{background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMac
 /* settings sheet */
 .sheet{position:fixed; inset:0; background:rgba(31,43,38,.45); display:none; align-items:flex-end; z-index:50;}
 .sheet.on{display:flex;}
-.sheet .panel{background:var(--ivory); width:100%; max-width:520px; margin:0 auto; border-radius:22px 22px 0 0; padding:22px 18px calc(24px + env(safe-area-inset-bottom)); max-height:80dvh; overflow-y:auto;}
+.sheet .panel{background:var(--ivory); width:100%; max-width:520px; margin:0 auto; border-radius:22px 22px 0 0; padding:22px 18px calc(24px + env(safe-area-inset-bottom)); max-height:80vh; max-height:80dvh; overflow-y:auto;}
 .sheet h3{color:var(--rolex-dk); font-size:16px; margin-bottom:12px;}
 .small{font-size:12px; color:var(--dim); line-height:1.6;}
 @media (prefers-reduced-motion:reduce){ *{animation:none !important; transition:none !important;} }
@@ -155,8 +156,8 @@ body{background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMac
   <div class="screen ob" id="scr-onboard">
     <div class="logo">S<em>O</em>RTED</div>
     <div class="bigline">Welcome to the men's world.</div>
-    <div class="tagline">Honest verdicts on your look · answers to what you<br>won't ask anyone · unbiased votes from real men,<br>faces blurred. Zero judgment. <b>No real name. Ever.</b></div>
-    <div class="field"><input type="text" id="ob-name" placeholder='Pick a name — any name. "Rocky" works.' maxlength="20"></div>
+    <div class="tagline">Honest verdicts on your look · answers to what you won't ask anyone · unbiased votes from real men, faces blurred. Zero judgment. <b>No real name. Ever.</b></div>
+    <div class="field"><input type="text" id="ob-name" placeholder='Pick any name — "Rocky" works' maxlength="20"></div>
     <div class="field"><label for="ob-age">I'm 18 or older</label><input type="checkbox" id="ob-age"></div>
     <div class="field"><label for="ob-city">City (for climate &amp; prices — optional)</label></div>
     <div class="field" style="margin-top:-6px;"><input type="text" id="ob-city" placeholder="e.g. Gurgaon" maxlength="30"></div>
@@ -185,6 +186,7 @@ body{background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMac
 
   <!-- PRIVATE GATE -->
   <div class="screen gate" id="scr-gate">
+    <div class="hdr" style="position:absolute;top:calc(14px + env(safe-area-inset-top));left:18px;"><button class="back" onclick="go('home')">← Home</button></div>
     <div class="lock">🔒</div>
     <h2>Private Space</h2>
     <p>Your words and photos are never stored —<br>not by the app, not by us, not for training.<br>We keep only anonymous usage counts.</p>
@@ -450,7 +452,8 @@ function pickOcc(btn,o){
 async function send(auto){
   const inp=$('inp'); const text=inp.value.trim();
   if(!text && !pendingImage) return;
-  if(text){ addMe(text); inp.value='';
+  if(text){ addMe(text); inp.value=''; inp.style.height='auto';
+    const scrEl=document.querySelector('.screen.on'); if(scrEl) scrEl.style.paddingBottom='';
     if(/[ऀ-ॿ]|\b(bhai|bhaiya|yaar|shaadi|kuch|nahi|nahin|karna|accha|theek|kya)\b/i.test(text) && P.lang!=='hinglish'){ P.lang='hinglish'; save(); }
   }
   const mode = screen==='private'?'private':screen;
@@ -736,7 +739,12 @@ function openSheet(which){
 
 /* ============ INPUT UX ============ */
 $('inp').addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); send(); }});
-$('inp').addEventListener('input',function(){ this.style.height='auto'; this.style.height=Math.min(this.scrollHeight,110)+'px'; });
+$('inp').addEventListener('input',function(){
+  this.style.height='auto'; this.style.height=Math.min(this.scrollHeight,110)+'px';
+  const ab=$('askbar'), scr=document.querySelector('.screen.on');
+  if(ab && scr){ scr.style.paddingBottom=(ab.offsetHeight+24)+'px'; }
+  const c=chatEl(); if(c) c.scrollTop=c.scrollHeight;
+});
 
 /* ============ BOOT ============ */
 if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
