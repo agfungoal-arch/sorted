@@ -359,7 +359,19 @@ function enterPrivate(){
 function leavePrivate(){ privThread=[]; $('chat-private').innerHTML=''; go('home'); }
 
 /* ============ CHAT RENDER ============ */
-function addThem(text, instant){ const d=document.createElement('div'); d.className='msg them'; d.textContent=text; chatEl().appendChild(d); scrollBottom(); }
+function addThem(text, instant){
+  const d=document.createElement('div'); d.className='msg them';
+  const parts=String(text).split(/(https?:\/\/[^\s)]+)/g);
+  for(const p of parts){
+    if(/^https?:\/\//.test(p)){
+      const a=document.createElement('a'); a.href=p; a.target='_blank'; a.rel='noopener';
+      a.textContent = p.includes('google.com/maps') ? '📍 Open in Maps' : p.replace(/^https?:\/\/(www\.)?/,'').slice(0,42);
+      a.style.cssText='color:var(--rolex);font-weight:700;text-decoration:underline;';
+      d.appendChild(a);
+    } else if(p) d.appendChild(document.createTextNode(p));
+  }
+  chatEl().appendChild(d); scrollBottom();
+}
 function addMe(text){ const d=document.createElement('div'); d.className='msg me'; d.textContent=text; chatEl().appendChild(d); scrollBottom(); }
 function addPic(url){ const i=document.createElement('img'); i.className='pic'; i.src=url; chatEl().appendChild(i); scrollBottom(); }
 function addSys(t){ const d=document.createElement('div'); d.className='sys'; d.textContent=t; chatEl().appendChild(d); scrollBottom(); }
@@ -412,10 +424,12 @@ function snapWebCam(){
 }
 $('file-gal').addEventListener('change', e=>handleFile(e));
 $('file').addEventListener('change', e=>handleFile(e));
+let crowdCapture=false;
 async function handleFile(e){
   const f=e.target.files[0]; if(!f) return;
   const b64 = await compress(f);
   if(profileMode){ profileMode=false; e.target.value=''; return profileScan(b64); }
+  if(crowdCapture){ crowdCapture=false; e.target.value=''; lastImg=b64; return crowdAsk(); }
   pendingImage = b64;
   addPic(b64.url);
   addSys('Photo attached — analyzed, then deleted. Always.');
@@ -546,7 +560,10 @@ function render(mode, d, hist){
     </div>`);
     { const w=document.createElement('div'); w.style.alignSelf='stretch';
       const b=document.createElement('button'); b.className='cta gold'; b.textContent='Save card to phone';
-      b.addEventListener('click', ()=>saveCard(d)); w.appendChild(b); chatEl().appendChild(w); scrollBottom(); }
+      b.addEventListener('click', ()=>saveCard(d)); w.appendChild(b);
+      if(lastImg){ const pb=document.createElement('button'); pb.className='cta ghost'; pb.style.marginTop='8px';
+        pb.textContent='🫂 Ask the brotherhood about this look'; pb.addEventListener('click', ()=>crowdAsk()); w.appendChild(pb); }
+      chatEl().appendChild(w); scrollBottom(); }
     if(d.note) addThem(d.note);
     threads.barber.push({role:'assistant', content:d.style+': '+(d.steps||[]).join('; ')});
   }
@@ -655,7 +672,7 @@ async function loadCrowd(){
       fetch(BACKEND+'/polls/mine?device='+DEVICE,{headers:h}).then(r=>r.json()),
       fetch(BACKEND+'/polls/feed?device='+DEVICE,{headers:h}).then(r=>r.json())
     ]);
-    let html='';
+    let html=`<button class="cta" style="margin-bottom:14px;" onclick="crowdCapture=true;openCamSheet()">📸 Post your look — face blurred, honest votes</button>`;
     if(mine.length){ const m=mine[0];
       html+=`<div class="vcard" style="margin-bottom:14px;"><div class="vtag">YOUR LOOK · ${m.status==='open'?'votes coming in':'closed'}</div>
       <div style="font-size:15px;margin:6px 0;">${esc(m.question||'')}</div>
@@ -665,7 +682,8 @@ async function loadCrowd(){
       <div style="font-size:14px;margin:6px 0;">${esc(p.question||'')}</div>
       <img src="${p.img}" style="width:100%;border-radius:12px;border:1px solid var(--line);">
       <div class="fbrow"><button onclick="voteCrowd(${p.id},'yes')">🔥 Wear it</button><button onclick="voteCrowd(${p.id},'no')">😐 Rethink</button></div></div>`; }
-    else html+=`<div class="msg them" style="max-width:100%;">No looks waiting for your vote right now. Want votes on YOUR look? Get any outfit verdict, then tap 🫂 Peer review on the card — face blurred, fully anonymous.</div>`;
+    else html+=`<div class="msg them" style="max-width:100%;">No looks waiting for your vote right now — check back later. Meanwhile, post YOURS with the button above: face blurred, fully anonymous, votes in by tonight.</div>
+    <button class="cta ghost" style="margin-top:10px;" onclick="loadCrowd()">↻ Check for new looks</button>`;
     box.innerHTML=html;
   }catch(e){ box.innerHTML='<p class="small">Could not load — check your connection and reopen.</p>'; }
 }
