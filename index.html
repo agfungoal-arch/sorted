@@ -35,6 +35,10 @@ body{background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMac
 .logo{font-size:36px; letter-spacing:.22em; font-weight:800; color:var(--rolex);}
 .logo em{color:var(--gold); font-style:normal;}
 .tagline{color:var(--dim); font-size:14px; line-height:1.65; margin:14px 0 34px;}
+.bigline{font-size:21px; font-weight:800; color:var(--rolex-dk); margin-top:16px; letter-spacing:.01em;}
+.peerbar{background:linear-gradient(90deg,var(--rolex-lt),#fff); border:1px solid #BED8C9; border-radius:14px; padding:12px 14px; font-size:12.5px; color:var(--rolex-dk); margin-bottom:14px; cursor:pointer; line-height:1.5;}
+.peerbar b{letter-spacing:.06em;}
+#blurcv{width:100%; border-radius:12px; border:1px solid var(--line); touch-action:manipulation;}
 .tagline b{color:var(--rolex-dk);}
 .field{background:var(--paper); border:1px solid var(--line); border-radius:14px; padding:15px 16px; margin-bottom:12px; display:flex; align-items:center; gap:12px; text-align:left;}
 .field input[type=text]{border:none; outline:none; flex:1; font-size:15px; background:none; color:var(--text);}
@@ -150,7 +154,8 @@ body{background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMac
   <!-- ONBOARD -->
   <div class="screen ob" id="scr-onboard">
     <div class="logo">S<em>O</em>RTED</div>
-    <div class="tagline">Honest answers on looks, style &amp; the stuff<br>you won't ask anyone. Zero judgment.<br><b>No real name. Ever.</b></div>
+    <div class="bigline">Welcome to the men's world.</div>
+    <div class="tagline">Honest verdicts on your look · answers to what you<br>won't ask anyone · unbiased votes from real men,<br>faces blurred. Zero judgment. <b>No real name. Ever.</b></div>
     <div class="field"><input type="text" id="ob-name" placeholder='Pick a name — any name. "Rocky" works.' maxlength="20"></div>
     <div class="field"><label for="ob-age">I'm 18 or older</label><input type="checkbox" id="ob-age"></div>
     <div class="field"><label for="ob-city">City (for climate &amp; prices — optional)</label></div>
@@ -164,11 +169,12 @@ body{background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMac
   <div class="screen" id="scr-home">
     <div class="hdr"><div class="brand">S<em>O</em>RTED</div><div class="avatar" id="av" onclick="go('memory')">?</div></div>
     <div class="greet" id="greet">Scene kya hai?</div>
+    <div class="peerbar" onclick="go('crowd')">🫂 <b>PEER REVIEW</b> — get unbiased votes from real men on your look. Faces blurred, so they judge the outfit, not you. Names never exist.<span id="peercount" style="font-weight:700;"></span></div>
     <div class="door" onclick="go('verdict')"><div class="ic">📸</div><h4>What do I wear?</h4><p>Shaadi, office do, date. Send one outfit, or a photo of the open wardrobe — you get ONE answer: wear this.</p><span class="chip">MOST USED</span></div>
     <div class="door purple-door" onclick="go('gate')"><div class="ic">🔒</div><h4>Private Space</h4><p>Rashes, sweat, hair fall, bedroom worries — the stuff you google at 2am. Ask properly. Never saved.</p><span class="chip p">PRIVATE MODE</span></div>
     <div class="door" onclick="go('product')"><div class="ic">🧴</div><h4>Check a product</h4><p>That "48-hour protection" deo. The ₹499 charcoal facewash. Real or marketing? Snap the label.</p></div>
     <div class="door" onclick="go('barber')"><div class="ic">💈</div><h4>Barber card</h4><p>Walk in with exact instructions instead of "just do something".</p></div>
-    <div class="door" onclick="go('crowd')"><div class="ic">🫂</div><h4>Brotherhood</h4><p>Vote on a brother's look. Get honest votes on yours. Anonymous both ways.</p></div>
+    <div class="door" onclick="go('crowd')"><div class="ic">🫂</div><h4>Peer review</h4><p>Vote on a brother's look, get votes on yours. Blurred faces, no names — opinion without bias.</p></div>
   </div>
 
   <!-- VERDICT -->
@@ -304,6 +310,8 @@ function renderHome(){
   $('greet').textContent=g;
   ['av','av2','av3','av4'].forEach(i=>{ if($(i)) $(i).textContent=P.name[0].toUpperCase(); });
   checkFollowups();
+  fetch(BACKEND+'/polls/feed?device='+DEVICE,{headers:{'x-pilot-token':PILOT}}).then(r=>r.json())
+    .then(f=>{ if(f.length && $('peercount')) $('peercount').textContent=' · 1 look waiting for YOUR vote →'; }).catch(()=>{});
 }
 let fuChecked=false;
 async function checkFollowups(){
@@ -494,7 +502,7 @@ function render(mode, d, hist){
       <div class="vword ${cls}">${esc(d.verdict)}${d.verdict==='READY'?' ✓':''}</div>
       <ol>${(d.reasons||[]).slice(0,3).map(r=>`<li>${esc(r)}</li>`).join('')}</ol>
       ${d.fix?`<div class="fixbox${d.verdict==='READY'?' go':''}"><b>${d.verdict==='READY'?'Go.':'The fix:'}</b> ${esc(d.fix)}</div>`:''}
-      <div class="fbrow"><button onclick="fb(this,1)">👍 Helped</button><button onclick="fb(this,0)">😐 Meh</button><button onclick="crowdAsk()">🫂 Crowd</button></div>
+      <div class="fbrow"><button onclick="fb(this,1)">👍 Helped</button><button onclick="fb(this,0)">😐 Meh</button><button onclick="crowdAsk()">🫂 Peer review</button></div>
     </div>`);
     if(d.memory_note){ P.notes.push(d.memory_note); if(d.skinTone&&!P.skinTone)P.skinTone=d.skinTone; if(d.faceShape&&!P.faceShape)P.faceShape=d.faceShape; save(); addSys('Saved to memory: '+d.memory_note+'  (edit anytime in your profile)'); }
     if(d.followup) addThem(d.followup);
@@ -586,22 +594,54 @@ async function enablePush(btn){
     P.push=true; save(); toast('Done. I will check on you. 🤝');
   }catch(e){ toast("Reminders need this app on your home screen first (Share → Add to Home Screen)."); }
 }
+let blurApplied=false;
 function crowdAsk(){
-  if(!lastImg){ toast('Send a photo first, then ask the brotherhood.'); return; }
+  if(!lastImg){ toast('Send a photo first, then ask for peer review.'); return; }
+  blurApplied=false;
   const b=$('sheet-body');
-  b.innerHTML=`<h3>Ask the brotherhood?</h3>
-    <p class="small">Your photo goes to other Sorted men for 24 hours — anonymously, no name attached. Your face will be visible; crop first if you prefer. Photo auto-deletes when the poll closes.</p>
-    <button class="cta" style="margin-top:12px;" onclick="postPoll()">Post it — get honest votes</button>
+  b.innerHTML=`<h3>Peer review — opinion without bias</h3>
+    <p class="small">Real men vote on the LOOK, not on you — so the face gets blurred first. Photo is anonymous, visible for 24 hours, then auto-deletes.</p>
+    <canvas id="blurcv" style="margin-top:10px;"></canvas>
+    <p class="small" id="blurhint" style="text-align:center;">👆 Tap the face to blur it (tap more spots if needed)</p>
+    <button class="cta" id="postbtn" style="margin-top:8px;opacity:.5;" onclick="postPoll()">Post for votes</button>
     <button class="cta ghost" style="margin-top:8px;" onclick="$('sheet').classList.remove('on')">Cancel</button>`;
   $('sheet').classList.add('on');
+  const cv=$('blurcv'), img=new Image();
+  img.onload=async ()=>{
+    cv.width=img.width; cv.height=img.height;
+    cv.getContext('2d').drawImage(img,0,0);
+    cv.addEventListener('click', ev=>{
+      const r=cv.getBoundingClientRect();
+      pixelate(cv,(ev.clientX-r.left)*cv.width/r.width,(ev.clientY-r.top)*cv.height/r.height);
+      blurApplied=true; $('postbtn').style.opacity=1; $('blurhint').textContent='✓ Blurred. Tap more spots or post.';
+    });
+    if('FaceDetector' in window){ // auto-blur where supported
+      try{
+        const faces=await new FaceDetector({fastMode:true}).detect(cv);
+        for(const f of faces){ const bb=f.boundingBox; pixelate(cv,bb.x+bb.width/2,bb.y+bb.height/2,Math.max(bb.width,bb.height)*0.7); }
+        if(faces.length){ blurApplied=true; $('postbtn').style.opacity=1; $('blurhint').textContent='✓ Face auto-blurred. Tap to blur more, or post.'; }
+      }catch(e){}
+    }
+  };
+  img.src=lastImg.url;
+}
+function pixelate(cv,x,y,rad){
+  const ctx=cv.getContext('2d'); const r=rad||cv.width*0.16;
+  const sx=Math.max(0,x-r), sy=Math.max(0,y-r), s=r*2;
+  const tmp=document.createElement('canvas'); tmp.width=8; tmp.height=8;
+  tmp.getContext('2d').drawImage(cv,sx,sy,s,s,0,0,8,8);
+  ctx.save(); ctx.beginPath(); ctx.arc(x,y,r,0,7); ctx.clip();
+  ctx.imageSmoothingEnabled=false; ctx.drawImage(tmp,0,0,8,8,sx,sy,s,s); ctx.restore();
 }
 async function postPoll(){
+  if(!blurApplied){ toast('Blur the face first — tap it on the photo. Votes should judge the look, not the man.'); return; }
+  const blurred=$('blurcv').toDataURL('image/jpeg',.8);
   $('sheet').classList.remove('on');
   try{
     const r=await fetch(BACKEND+'/polls',{method:'POST',headers:{'Content-Type':'application/json','x-pilot-token':PILOT},
-      body:JSON.stringify({device_id:DEVICE, question:(lastOccasion?lastOccasion+' — yes or no?':'This look — yes or no?'), img:lastImg.url})});
+      body:JSON.stringify({device_id:DEVICE, question:(lastOccasion?lastOccasion+' — yes or no?':'This look — yes or no?'), img:blurred})});
     if(!r.ok) throw 0;
-    toast('Posted. The brotherhood will speak — check the 🫂 door later.');
+    toast('Posted. Unbiased votes incoming — check 🫂 Peer review later.');
   }catch(e){ toast('Could not post right now — try again in a minute.'); }
 }
 async function loadCrowd(){
@@ -622,7 +662,7 @@ async function loadCrowd(){
       <div style="font-size:14px;margin:6px 0;">${esc(p.question||'')}</div>
       <img src="${p.img}" style="width:100%;border-radius:12px;border:1px solid var(--line);">
       <div class="fbrow"><button onclick="voteCrowd(${p.id},'yes')">🔥 Wear it</button><button onclick="voteCrowd(${p.id},'no')">😐 Rethink</button></div></div>`; }
-    else html+=`<div class="msg them" style="max-width:100%;">No looks waiting for your vote right now. Post yours after any verdict — tap 🫂 Crowd on the card.</div>`;
+    else html+=`<div class="msg them" style="max-width:100%;">No looks waiting for your vote right now. Want votes on YOUR look? Get any outfit verdict, then tap 🫂 Peer review on the card — face blurred, fully anonymous.</div>`;
     box.innerHTML=html;
   }catch(e){ box.innerHTML='<p class="small">Could not load — check your connection and reopen.</p>'; }
 }
