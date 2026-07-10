@@ -644,18 +644,18 @@ function render(mode, d, hist){
     if(items.length){
       const sv=document.createElement('button'); sv.className='cta';
       sv.textContent = items.length>1 ? `✓ Save all ${items.length} reminders` : '✓ Save reminder';
-      sv.addEventListener('click', async ()=>{ sv.disabled=true; let ok=0;
-        for(const rd of items){
-          if(rd._saved){ ok++; continue; }
-          try{ const r=await fetch(BACKEND+'/reminders',{method:'POST',headers:{'Content-Type':'application/json','x-pilot-token':PILOT},body:JSON.stringify({device_id:DEVICE,reminder:rd})});
-            if(r.ok){ rd._saved=true; ok++; } }catch(e){}
-        }
-        if(ok===items.length){ sv.remove();
-          toast(ok>1?`All ${ok} locked in. Consider them remembered. 🤝`:'Locked in. Consider it remembered. 🤝');
+      sv.addEventListener('click', async ()=>{ sv.disabled=true;
+        try{
+          const r=await fetch(BACKEND+'/reminders',{method:'POST',headers:{'Content-Type':'application/json','x-pilot-token':PILOT},body:JSON.stringify({device_id:DEVICE,reminders:items})});
+          const j=await r.json().catch(()=>({}));
+          if(!r.ok) throw (j.error||0);
+          sv.remove();
+          toast(j.saved>1?`All ${j.saved} locked in. Consider them remembered. 🤝`:'Locked in. Consider it remembered. 🤝');
+          if(j.skipped) addThem(`Heads up — ${j.skipped} didn't fit: you're at the 50 active reminders cap. Tick a few off and send those again.`);
           const cal=document.createElement('button'); cal.className='cta ghost'; cal.style.marginTop='8px';
           cal.textContent='📅 Also add to phone calendar'; cal.addEventListener('click',()=>icsExportItems(items));
           w.appendChild(cal); loadReminders();
-        } else { sv.disabled=false; toast(ok?`Saved ${ok} of ${items.length} — tap again for the rest.`:'Could not save — try again.'); }
+        }catch(e){ sv.disabled=false; toast(typeof e==='string'?e:'Could not save — try again.'); }
       });
       w.appendChild(sv);
     }

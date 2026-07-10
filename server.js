@@ -140,7 +140,8 @@ Respond ONLY with JSON:
   "due_date":"YYYY-MM-DD","due_time":"HH:MM or null","recur":"yearly"|"weekly"|"monthly"|"none",
   "lead_days": 3 for birthdays/anniversaries (gift-buying time), 1 for errands that need buying something, else 0}],
  "confirm":"one natural line listing everything you caught, elder-brother tone. If a date was ambiguous or garbled, say what you assumed."}
-Birthdays/anniversaries: recur yearly. If one item is unclear, include your best guess and flag it in confirm rather than dropping it.`,
+Birthdays/anniversaries: recur yearly. If one item is unclear, include your best guess and flag it in confirm rather than dropping it.
+MAX 20 items per message. If he lists more than 20, capture the 20 most urgent/dated ones and tell him in confirm to send the rest in a second message.`,
 
   wish: `${VOICE}
 WISH DRAFTING. Draft 2 short messages he can send for the occasion (birthday/anniversary etc.), given who it's for, years if known, and his relationship to them.
@@ -189,7 +190,7 @@ async function askClaude(mode, messages, image, occasion, profile, extraCtx) {
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: { 'x-api-key': KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-    body: JSON.stringify({ model: MODEL, max_tokens: 900, system: sys, messages: apiMessages }),
+    body: JSON.stringify({ model: MODEL, max_tokens: mode === 'remind' ? 2400 : 900, system: sys, messages: apiMessages }),
   });
   if (!res.ok) throw new Error('anthropic ' + res.status + ' ' + (await res.text()).slice(0, 200));
   const out = await res.json();
@@ -359,17 +360,21 @@ app.post('/cron/run', async (req, res) => {
 /* ---------- REMINDERS (Never Forget) ---------- */
 app.post('/reminders', async (req, res) => {
   if (!gate(req, res)) return;
-  const { device_id, reminder } = req.body || {};
-  if (!device_id || !reminder || !reminder.title || !reminder.due_date) return res.status(400).json({ error: 'bad reminder' });
+  const { device_id, reminder, reminders } = req.body || {};
+  // accepts one reminder OR a batch — one call saves a whole voice dump
+  const batch = (Array.isArray(reminders) ? reminders : [reminder]).filter(r => r && r.title && r.due_date).slice(0, 20);
+  if (!device_id || !batch.length) return res.status(400).json({ error: 'bad reminder' });
   const count = await sb('reminders', 'GET', null, `?device_id=eq.${encodeURIComponent(device_id)}&status=eq.active&select=id`);
-  if (count && count.length >= 50) return res.status(429).json({ error: 'max 50 active reminders' });
-  const row = await sb('reminders', 'POST', {
-    device_id, title: String(reminder.title).slice(0, 200), person: reminder.person ? String(reminder.person).slice(0, 60) : null,
-    occasion: String(reminder.occasion || 'other').slice(0, 20), due_date: reminder.due_date, due_time: reminder.due_time || null,
-    recur: String(reminder.recur || 'none').slice(0, 10), lead_days: Math.min(14, Math.max(0, parseInt(reminder.lead_days) || 0)),
-  });
+  const room = 50 - ((count && count.length) || 0);
+  if (room <= 0) return res.status(429).json({ error: 'max 50 active reminders — tick some off first' });
+  const rows = batch.slice(0, room).map(r => ({
+    device_id, title: String(r.title).slice(0, 200), person: r.person ? String(r.person).slice(0, 60) : null,
+    occasion: String(r.occasion || 'other').slice(0, 20), due_date: r.due_date, due_time: r.due_time || null,
+    recur: String(r.recur || 'none').slice(0, 10), lead_days: Math.min(14, Math.max(0, parseInt(r.lead_days) || 0)),
+  }));
+  const out = await sb('reminders', 'POST', rows);
   logEvent(device_id, 'reminder_set', 'remind');
-  res.json({ ok: true, id: row && row[0] && row[0].id });
+  res.json({ ok: true, saved: rows.length, skipped: batch.length - rows.length, id: out && out[0] && out[0].id });
 });
 
 app.get('/reminders', async (req, res) => {
