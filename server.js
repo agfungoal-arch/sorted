@@ -131,6 +131,26 @@ Respond ONLY with JSON:
  "note":"one short encouraging line or maintenance tip"}
 No selfie: ask ONE question OR give a safe versatile recommendation. Never invent face-shape claims without a photo. You cannot show generated preview images — if asked, give exact Google/Pinterest search terms instead, in one line.`,
 
+  remind: `${VOICE}
+REMINDER CAPTURE. He speaks/types messy real life ("wife said get rangoli colours saturday", "call boss 3pm tomorrow", "mom's birthday 12 march"). Parse it into a structured reminder. TODAY's date is provided — resolve all relative dates against it.
+Respond ONLY with JSON:
+{"type":"remind","title":"short clear action, his words cleaned up","person":"who it's for/about or null",
+ "occasion":"birthday"|"anniversary"|"errand"|"call"|"meeting"|"other",
+ "due_date":"YYYY-MM-DD","due_time":"HH:MM or null","recur":"yearly"|"weekly"|"monthly"|"none",
+ "lead_days": 3 for birthdays/anniversaries (gift-buying time), 1 for errands that need buying something, else 0,
+ "confirm":"one natural line confirming what you understood, elder-brother tone"}
+Birthdays/anniversaries: recur yearly. If the date is ambiguous, pick the most likely and say so in confirm.`,
+
+  wish: `${VOICE}
+WISH DRAFTING. Draft 2 short messages he can send for the occasion (birthday/anniversary etc.), given who it's for, years if known, and his relationship to them.
+RULES: 2-3 lines each, sound like a real man typing — warm, specific, zero AI-speak (never "on this auspicious occasion", no poems). Variant 1 = safe/classic, variant 2 = warmer/more personal. Match his language (English default). For wife/partner: genuine warmth. For boss/colleague: respectful, brief.
+Respond ONLY with JSON: {"type":"wish","variants":["msg1","msg2"],"note":"one short optional tip or null"}`,
+
+  gift: `${VOICE}
+GIFT SUGGESTIONS. Given who it's for, the occasion, years (e.g. 25th anniversary carries weight), his city (culture + currency) and his budget, suggest gifts.
+RULES: MAX 3 ideas, each with a one-line "why this works" — decisive, not a catalog. Localize to his culture and price in HIS currency. Practical and buyable (things findable on local e-commerce or nearby shops), not exotic. If years/occasion suggests significance (10th, 25th), acknowledge it.
+Respond ONLY with JSON: {"type":"gift","ideas":[{"name":"","why":"","price":"approx in his currency"}],"note":"one short line or null"}`,
+
   profile: `${VOICE}
 PROFILE SCAN. From this one selfie, read what helps style advice. Be kind and factual; no scores, no attractiveness judgment.
 Respond ONLY with JSON:
@@ -155,7 +175,7 @@ async function skuContext(text) {
 /* ---------- CLAUDE ---------- */
 async function askClaude(mode, messages, image, occasion, profile, extraCtx) {
   const profileCtx = profile ? `\nHIS PROFILE (use it, mention it when relevant): name:${profile.name}, language:${profile.lang || 'english'}, city:${profile.city || 'unknown'}, skinTone:${profile.skinTone || 'unknown'}, faceShape:${profile.faceShape || 'unknown'}, sizes:${profile.sizes || 'unknown'}, styleWins:${(profile.notes || []).slice(-5).join('; ') || 'none yet'}` : '';
-  const sys = PROMPTS[mode] + profileCtx + (occasion ? `\nOCCASION: ${occasion}` : '') + (extraCtx || '');
+  const sys = PROMPTS[mode] + profileCtx + `\nTODAY: ${new Date().toISOString().slice(0, 10)}` + (occasion ? `\nOCCASION: ${occasion}` : '') + (extraCtx || '');
   const apiMessages = messages.filter(m => m.content).map(m => ({ role: m.role, content: m.content }));
   if (image && apiMessages.length) {
     const last = apiMessages[apiMessages.length - 1];
@@ -304,7 +324,68 @@ app.post('/cron/run', async (req, res) => {
   }
   const cutoff = new Date(Date.now() - 24 * 3600e3).toISOString();
   await sb(`polls?status=eq.open&created_at=lt.${cutoff}`, 'PATCH', { status: 'closed', img: null }); // photos auto-purge at close
-  res.json({ ok: true, due: due.length, pushed });
+
+  // reminders: lead-time + day-of pushes, then advance recurring dates
+  let remPushed = 0;
+  const today = new Date().toISOString().slice(0, 10);
+  const soon = new Date(Date.now() + 15 * 864e5).toISOString().slice(0, 10);
+  const rems = await sb('reminders', 'GET', null, `?status=eq.active&due_date=lte.${soon}&select=id,device_id,due_date,lead_days,recur,notified_lead,notified_day&limit=500`) || [];
+  if (rems.length) {
+    const subs2 = await sb('push_subs', 'GET', null, '?select=device_id,sub') || [];
+    const map2 = Object.fromEntries(subs2.map(s => [s.device_id, s.sub]));
+    for (const r of rems) {
+      const leadDate = new Date(new Date(r.due_date) - (r.lead_days || 0) * 864e5).toISOString().slice(0, 10);
+      let patch = null;
+      if (!r.notified_day && r.due_date <= today) patch = { notified_day: true };
+      else if (!r.notified_lead && leadDate <= today && r.due_date > today) patch = { notified_lead: true };
+      if (patch) {
+        const sub = map2[r.device_id];
+        if (sub && webpush) { try { await webpush.sendNotification(sub, JSON.stringify({ t: 'Sorted', b: 'Sorted has a thought.' })); remPushed++; } catch (e) {} }
+        await sb(`reminders?id=eq.${r.id}`, 'PATCH', patch);
+      }
+      if (r.due_date < today && r.recur && r.recur !== 'none') { // roll recurring forward
+        const d = new Date(r.due_date);
+        if (r.recur === 'yearly') d.setFullYear(d.getFullYear() + 1);
+        else if (r.recur === 'monthly') d.setMonth(d.getMonth() + 1);
+        else if (r.recur === 'weekly') d.setDate(d.getDate() + 7);
+        await sb(`reminders?id=eq.${r.id}`, 'PATCH', { due_date: d.toISOString().slice(0, 10), notified_lead: false, notified_day: false });
+      }
+    }
+  }
+  res.json({ ok: true, due: due.length, pushed, remPushed });
+});
+
+/* ---------- REMINDERS (Never Forget) ---------- */
+app.post('/reminders', async (req, res) => {
+  if (!gate(req, res)) return;
+  const { device_id, reminder } = req.body || {};
+  if (!device_id || !reminder || !reminder.title || !reminder.due_date) return res.status(400).json({ error: 'bad reminder' });
+  const count = await sb('reminders', 'GET', null, `?device_id=eq.${encodeURIComponent(device_id)}&status=eq.active&select=id`);
+  if (count && count.length >= 50) return res.status(429).json({ error: 'max 50 active reminders' });
+  const row = await sb('reminders', 'POST', {
+    device_id, title: String(reminder.title).slice(0, 200), person: reminder.person ? String(reminder.person).slice(0, 60) : null,
+    occasion: String(reminder.occasion || 'other').slice(0, 20), due_date: reminder.due_date, due_time: reminder.due_time || null,
+    recur: String(reminder.recur || 'none').slice(0, 10), lead_days: Math.min(14, Math.max(0, parseInt(reminder.lead_days) || 0)),
+  });
+  logEvent(device_id, 'reminder_set', 'remind');
+  res.json({ ok: true, id: row && row[0] && row[0].id });
+});
+
+app.get('/reminders', async (req, res) => {
+  if (!gate(req, res)) return;
+  const d = req.query.device;
+  if (!d) return res.json([]);
+  const rows = await sb('reminders', 'GET', null, `?device_id=eq.${encodeURIComponent(d)}&status=eq.active&order=due_date.asc&limit=30&select=id,title,person,occasion,due_date,due_time,recur,lead_days`);
+  res.json(rows || []);
+});
+
+app.post('/reminders/update', async (req, res) => {
+  if (!gate(req, res)) return;
+  const { id, device_id, status } = req.body || {};
+  if (id && device_id && ['done', 'deleted'].includes(status)) {
+    await sb(`reminders?id=eq.${encodeURIComponent(id)}&device_id=eq.${encodeURIComponent(device_id)}`, 'PATCH', { status });
+  }
+  res.json({ ok: true });
 });
 
 /* ---------- AI HAIRSTYLE PREVIEW (Gemini image / nano banana) ---------- */

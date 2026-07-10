@@ -176,6 +176,7 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
     <div class="door" onclick="go('product')"><div class="ic">🧴</div><h4>Check a product</h4><p>That "48-hour protection" deo. The ₹499 charcoal facewash. Real or marketing? Snap the label.</p></div>
     <div class="door" onclick="go('barber')"><div class="ic">💈</div><h4>Barber card</h4><p>Walk in with exact instructions instead of "just do something".</p></div>
     <div class="door" onclick="go('crowd')"><div class="ic">🫂</div><h4>Peer review</h4><p>Vote on a brother's look, get votes on yours. Blurred faces, no names — opinion without bias.</p></div>
+    <div class="door" onclick="go('remind')"><div class="ic">⏰</div><h4>Never Forget</h4><p>Wife said. Boss said. Birthday coming. Say it once — I remind you in time, draft the wish, suggest the gift.</p></div>
   </div>
 
   <!-- VERDICT -->
@@ -211,6 +212,13 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
   <div class="screen" id="scr-barber">
     <div class="hdr"><button class="back" onclick="go('home')">← Barber card</button><div class="avatar" onclick="go('memory')" id="av4">?</div></div>
     <div class="chat" id="chat-barber"></div>
+  </div>
+
+  <!-- REMIND -->
+  <div class="screen" id="scr-remind">
+    <div class="hdr"><button class="back" onclick="go('home')">← ⏰ Never Forget</button></div>
+    <div id="remlist"></div>
+    <div class="chat" id="chat-remind"></div>
   </div>
 
   <!-- CROWD -->
@@ -272,7 +280,7 @@ function sendEvent(event, mode){ // fire-and-forget, anonymous
 let P = JSON.parse(localStorage.getItem('sorted_profile') || 'null'); // profile
 let screen = 'home';
 let pendingImage = null;          // {b64, mime, url}
-let threads = { verdict:[], product:[], barber:[] }; // api message history (text only)
+let threads = { verdict:[], product:[], barber:[], remind:[] }; // api message history (text only)
 let privThread = [];              // in-memory only, never persisted
 let occasion = null;
 
@@ -289,11 +297,12 @@ function go(s){
   document.querySelectorAll('.screen').forEach(x=>x.classList.remove('on'));
   $('scr-'+s).classList.add('on');
   document.body.classList.toggle('purple', s==='private');
-  $('askbar').style.display = ['verdict','private','product','barber'].includes(s)?'flex':'none';
-  $('inp').placeholder = s==='private' ? 'Ask anything…' : s==='product' ? 'Is this deo aluminium-free?' : s==='verdict' ? 'Shaadi tonight — what do I wear?' : 'Message Sorted…';
+  $('askbar').style.display = ['verdict','private','product','barber','remind'].includes(s)?'flex':'none';
+  $('inp').placeholder = s==='private' ? 'Ask anything…' : s==='product' ? 'Is this deo aluminium-free?' : s==='verdict' ? 'Shaadi tonight — what do I wear?' : s==='remind' ? 'Wife said… boss said… type or speak it' : 'Message Sorted…';
   if(s==='home') renderHome();
   if(s==='memory') renderMemory();
   if(s==='crowd') loadCrowd();
+  if(s==='remind'){ loadReminders(); if(!threads.remind.rendered){ seed('remind'); threads.remind.rendered=true; } }
   if(['verdict','product','barber'].includes(s) && !threads[s].rendered){ seed(s); threads[s].rendered=true; }
   scrollBottom();
 }
@@ -315,6 +324,17 @@ function renderHome(){
   checkFollowups();
   fetch(BACKEND+'/polls/feed?device='+DEVICE,{headers:{'x-pilot-token':PILOT}}).then(r=>r.json())
     .then(f=>{ if(f.length && $('peercount')) $('peercount').textContent=' · 1 look waiting for YOUR vote →'; }).catch(()=>{});
+  fetch(BACKEND+'/reminders?device='+DEVICE,{headers:{'x-pilot-token':PILOT}}).then(r=>r.json()).then(rows=>{
+    const today=new Date().toISOString().slice(0,10);
+    const due=rows.filter(r=>r.due_date<=today);
+    if(due.length && !$('rem-banner')){
+      const el=document.createElement('div'); el.id='rem-banner'; el.className='door';
+      el.style.borderColor='#E4D5AE'; el.style.background='linear-gradient(180deg,#fff,var(--gold-lt))';
+      el.innerHTML=`<div class="ic">⏰</div><h4>Today: ${esc(due[0].title)}${due.length>1?' +'+(due.length-1)+' more':''}</h4><p>Tap to see everything on your plate — wishes and gift ideas included.</p>`;
+      el.onclick=()=>go('remind');
+      $('greet').after(el);
+    }
+  }).catch(()=>{});
 }
 let fuChecked=false;
 async function checkFollowups(){
@@ -351,6 +371,13 @@ No brand pays me. You get it straight.`);
   if(s==='barber') addThem(`Selfie + your scene — "office-safe but fresh", "wedding next week", "zero maintenance".
 
 You get exact instructions to show your barber, Hindi line included. No more "kuch bhi kar do". 💈`);
+  if(s==='remind') addThem(`Say it once, then forget it — that's my job now. ⏰
+
+· "Wife said get rangoli colours, Saturday"
+· "Call boss tomorrow 3pm"
+· "Mom's birthday 12 March"
+
+Birthdays & anniversaries: I remind you 3 days early, draft the message you can copy-paste, and suggest gifts for your budget. Tip: tap the mic on your keyboard and just speak it.`);
 }
 function enterPrivate(){
   go('private'); privThread=[];
@@ -571,6 +598,38 @@ function render(mode, d, hist){
     if(d.note) addThem(d.note);
     threads.barber.push({role:'assistant', content:d.style+': '+(d.steps||[]).join('; ')});
   }
+  else if(d.type==='remind'){
+    const rd={title:d.title,person:d.person,occasion:d.occasion,due_date:d.due_date,due_time:d.due_time,recur:d.recur,lead_days:d.lead_days};
+    addThem(d.confirm||('Got it: '+d.title));
+    const w=document.createElement('div'); w.style.alignSelf='stretch';
+    const sv=document.createElement('button'); sv.className='cta'; sv.textContent='✓ Save reminder';
+    sv.addEventListener('click', async ()=>{ sv.disabled=true;
+      try{ const r=await fetch(BACKEND+'/reminders',{method:'POST',headers:{'Content-Type':'application/json','x-pilot-token':PILOT},body:JSON.stringify({device_id:DEVICE,reminder:rd})});
+        if(!r.ok) throw 0; sv.remove(); toast('Locked in. Consider it remembered. 🤝'); loadReminders();
+      }catch(e){ sv.disabled=false; toast('Could not save — try again.'); } });
+    w.appendChild(sv); chatEl().appendChild(w); scrollBottom();
+    hist.push({role:'assistant', content:d.confirm||d.title});
+  }
+  else if(d.type==='wish'){
+    (d.variants||[]).forEach((v,i)=>{
+      const w=document.createElement('div'); w.className='vcard'; w.style.alignSelf='stretch'; w.style.marginBottom='10px';
+      const p=document.createElement('div'); p.style.cssText='font-size:14px;line-height:1.6;white-space:pre-wrap;'; p.textContent=v; w.appendChild(p);
+      const c=document.createElement('button'); c.className='cta ghost'; c.style.marginTop='10px'; c.textContent='📋 Copy message';
+      c.addEventListener('click',()=>{ navigator.clipboard.writeText(v).then(()=>toast('Copied — paste it in WhatsApp. 🤝')).catch(()=>toast('Long-press the text to copy.')); });
+      w.appendChild(c); chatEl().appendChild(w);
+    });
+    if(d.note) addThem(d.note); scrollBottom();
+    hist.push({role:'assistant', content:(d.variants||[]).join(' / ')});
+  }
+  else if(d.type==='gift'){
+    (d.ideas||[]).forEach(g=>{
+      addHTML(`<div class="vcard" style="margin-bottom:10px;"><b style="font-size:14.5px;">🎁 ${esc(g.name)}</b>
+      <div style="font-size:12px;color:var(--gold);font-weight:700;margin:2px 0;">${esc(g.price||'')}</div>
+      <p style="font-size:13px;color:var(--dim);line-height:1.55;">${esc(g.why||'')}</p></div>`);
+    });
+    if(d.note) addThem(d.note);
+    hist.push({role:'assistant', content:(d.ideas||[]).map(g=>g.name).join(', ')});
+  }
   else { // chat fallback
     addThem(d.reply||'Say that again?');
     hist.push({role:'assistant', content:d.reply||''});
@@ -715,6 +774,69 @@ async function seePreview(btn, d){
     else throw 0;
   }catch(e){ btn.disabled=false; btn.textContent='👀 See it on me — AI preview'; toast('Preview didn\'t come through — try once more.'); }
 }
+/* ============ NEVER FORGET ============ */
+async function loadReminders(){
+  const box=$('remlist'); if(!box) return;
+  try{
+    const rows=await fetch(BACKEND+'/reminders?device='+DEVICE,{headers:{'x-pilot-token':PILOT}}).then(r=>r.json());
+    if(!rows.length){ box.innerHTML=''; return; }
+    box.innerHTML=rows.map(r=>{
+      const d=new Date(r.due_date+'T00:00:00'); const ds=d.toLocaleDateString('en-IN',{day:'numeric',month:'short'});
+      const special=['birthday','anniversary'].includes(r.occasion);
+      return `<div class="vcard" style="margin-bottom:10px;">
+        <b style="font-size:14px;">${special?'🎂':'⏰'} ${esc(r.title)}</b>
+        <div style="font-size:11.5px;color:var(--dim);margin:3px 0 8px;">${ds}${r.due_time?' · '+esc(r.due_time):''}${r.recur!=='none'?' · every '+(r.recur==='yearly'?'year':r.recur==='monthly'?'month':'week'):''}${r.lead_days?' · heads-up '+r.lead_days+'d early':''}</div>
+        <div class="fbrow" style="margin-top:4px;">
+          ${special?`<button onclick="draftWish(${r.id})">💬 Wish</button><button onclick="giftIdeas(${r.id})">🎁 Gift</button>`:''}
+          <button onclick="icsExport(${r.id})">📅 Calendar</button>
+          <button onclick="remDone(${r.id},'done')">✓ Done</button>
+          <button onclick="remDone(${r.id},'deleted')">🗑</button>
+        </div></div>`;
+    }).join('');
+    window._rems=Object.fromEntries(rows.map(r=>[r.id,r]));
+  }catch(e){ box.innerHTML='<p class="small">Could not load reminders — check connection.</p>'; }
+}
+async function remDone(id,status){
+  await fetch(BACKEND+'/reminders/update',{method:'POST',headers:{'Content-Type':'application/json','x-pilot-token':PILOT},body:JSON.stringify({id,device_id:DEVICE,status})}).catch(()=>{});
+  toast(status==='done'?'Done. Like it never worried you. 🤝':'Removed.'); loadReminders();
+}
+function askRemind(text){
+  threads.remind.push({role:'user',content:text});
+  const th=thinking(['On it…']);
+  fetch(BACKEND+'/ask',{method:'POST',headers:{'Content-Type':'application/json','x-pilot-token':PILOT},
+    body:JSON.stringify({mode:arguments[1]||'remind',messages:threads.remind.slice(-8),profile:P,device_id:DEVICE})})
+    .then(r=>r.json()).then(d=>{ th.remove(); render('remind',d,threads.remind); })
+    .catch(()=>{ th.remove(); addThem('Hmm, try that once more.'); });
+}
+function draftWish(id){
+  const r=window._rems[id]; if(!r) return;
+  addMe('Draft the wish for: '+r.title);
+  askRemind(`Draft wish messages. Occasion: ${r.occasion} for ${r.person||'someone close'}. Title: ${r.title}. If years matter and unknown, keep it general.`,'wish');
+}
+function giftIdeas(id){
+  const r=window._rems[id]; if(!r) return;
+  const b=$('sheet-body');
+  b.innerHTML=`<h3>Budget?</h3><div class="chips" style="margin-top:10px;">
+    ${['Small','Mid-range','Premium','Go big'].map(x=>`<button onclick="$('sheet').classList.remove('on');giftGo(${id},'${x}')">${x}</button>`).join('')}
+  </div><p class="small" style="margin-top:10px;">In your local currency — Sorted knows your city.</p>`;
+  $('sheet').classList.add('on');
+}
+function giftGo(id,budget){
+  const r=window._rems[id]; if(!r) return;
+  addMe(`Gift ideas (${budget}) for: `+r.title);
+  askRemind(`Suggest gifts. Occasion: ${r.occasion} for ${r.person||'someone close'} (${r.title}). Budget: ${budget}.`,'gift');
+}
+function icsExport(id){
+  const r=window._rems[id]; if(!r) return;
+  const dt=r.due_date.replace(/-/g,'');
+  const ics=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//SORTED//EN','BEGIN:VEVENT',
+    'UID:sorted-'+id+'@sorted','DTSTART;VALUE=DATE:'+dt,'SUMMARY:'+r.title.replace(/[,;]/g,' '),
+    r.recur==='yearly'?'RRULE:FREQ=YEARLY':'', 'BEGIN:VALARM','TRIGGER:-P'+(r.lead_days||0)+'D','ACTION:DISPLAY','DESCRIPTION:'+r.title.replace(/[,;]/g,' '),'END:VALARM',
+    'END:VEVENT','END:VCALENDAR'].filter(Boolean).join('\r\n');
+  const a=document.createElement('a'); a.download='sorted-reminder.ics';
+  a.href=URL.createObjectURL(new Blob([ics],{type:'text/calendar'})); a.click();
+  toast('Calendar file downloaded — open it to add.');
+}
 function profileSelfie(){ profileMode=true; openCamSheet(); }
 async function profileScan(img){
   toast('Reading your face — a few seconds…');
@@ -773,6 +895,7 @@ function openSheet(which){
     · Style memory (skin tone, sizes, what got a READY) — on this phone only.<br>
     · Photos: sent for analysis, deleted immediately after. Never stored, never used for training.<br>
     · Style previews ("See it on me"): your photo goes to Google's image engine to paint the preview, then is discarded. We never store it.<br>
+    · Reminders you set ARE stored (that's their job) — against your anonymous device ID, never your name. Delete any of them, or everything, anytime.<br>
     · Private Space: nothing. No history exists.<br>
     · You can export or delete everything, instantly, from the Privacy Center.<br><br>
     Health answers are education, not medical advice. For anything serious, Sorted will always push you to a real doctor.</p>`;
