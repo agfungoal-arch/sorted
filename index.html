@@ -9,9 +9,9 @@
 <style>
 :root{
   --ivory:#F8F6F1; --paper:#FFFFFF; --mist:#EFECE4; --line:#E3DFD3; --line2:#D6D1C2;
-  --text:#1F2B26; --dim:#66716B; --faint:#98A19A;
+  --text:#1F2B26; --dim:#5C665F; --faint:#6B746D; --faint2:#98A19A;
   --rolex:#006039; --rolex-dk:#004D2E; --rolex-lt:#E7F0EA;
-  --gold:#A37E2C; --gold-lt:#F4EDDC;
+  --gold:#A37E2C; --gold-dk:#7A5A1A; --gold-lt:#F4EDDC;
   --ready:#006039; --almost:#B07C1F; --notyet:#B04A38;
   --royal:#5B4A9E; --royal-lt:#F0EDF9; --royal-line:#D8D1EE; --royal-dk:#463877;
   --bg:var(--ivory); --bubble-them:var(--paper); --bubble-line:var(--line);
@@ -25,7 +25,7 @@ body{background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMac
 .screen.on{display:flex;}
 /* header */
 .hdr{display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;}
-.brand{letter-spacing:.18em; font-weight:800; font-size:17px; color:var(--rolex); cursor:pointer;}
+.brand{letter-spacing:.18em; font-weight:800; font-size:17px; color:var(--rolex);}
 .brand em{color:var(--gold); font-style:normal;}
 .back{background:none; border:none; color:var(--rolex-dk); font-size:15px; font-weight:700; cursor:pointer; padding:12px 12px 12px 0; min-height:44px;}
 .purple .back{color:var(--royal-dk);}
@@ -44,14 +44,15 @@ body{background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMac
 .field input[type=text]{border:none; outline:none; flex:1; font-size:16px; background:none; color:var(--text);}
 input[type=checkbox]{width:26px !important; height:26px !important;}
 .field label{flex:1; font-size:14px;}
-.field input[type=checkbox]{width:20px; height:20px; accent-color:var(--rolex);}
+.field input[type=checkbox]{accent-color:var(--rolex);}
+:focus-visible{outline:2px solid var(--rolex); outline-offset:2px; border-radius:4px;}
 .cta{background:var(--rolex); color:#fff; font-weight:700; border:none; border-radius:14px; padding:16px; font-size:16px; width:100%; cursor:pointer; box-shadow:0 6px 18px rgba(0,96,57,.22); letter-spacing:.02em;}
 .cta:active{transform:scale(.98);}
 .cta.ghost{background:var(--paper); color:var(--rolex); border:1px solid var(--rolex); box-shadow:none;}
 .cta.gold{background:var(--gold);}
 .cta.purple-btn{background:var(--royal);}
-.mini-link{background:none; border:none; color:var(--faint); font-size:12.5px; text-decoration:underline; margin-top:8px; cursor:pointer; padding:12px 8px;}
-.footnote{font-size:11px; color:var(--faint); margin-top:16px; line-height:1.6;}
+.mini-link{background:none; border:none; color:var(--rolex); font-weight:600; font-size:13px; text-decoration:underline; margin-top:8px; cursor:pointer; padding:12px 8px;}
+.footnote{font-size:11.5px; color:var(--dim); margin-top:16px; line-height:1.6;}
 /* home doors */
 .greet{color:var(--dim); font-size:14.5px; margin-bottom:14px;}
 .door{background:var(--paper); border:1px solid var(--line); border-radius:18px; padding:18px; margin-bottom:12px; cursor:pointer; box-shadow:0 1px 3px rgba(31,43,38,.05); transition:border-color .15s;}
@@ -61,7 +62,7 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
 .door p{font-size:12.5px; color:var(--dim); line-height:1.5;}
 .door.purple-door{border-color:var(--royal-line); background:linear-gradient(180deg,#fff,#F7F5FC);}
 .door.purple-door h4{color:var(--royal-dk);}
-.chip{display:inline-block; font-size:10px; letter-spacing:.08em; padding:3px 9px; border-radius:20px; background:var(--gold-lt); border:1px solid #E4D5AE; color:var(--gold); margin-top:8px; font-weight:700;}
+.chip{display:inline-block; font-size:10.5px; letter-spacing:.08em; padding:3px 9px; border-radius:20px; background:var(--gold-lt); border:1px solid #E4D5AE; color:var(--gold-dk); margin-top:8px; font-weight:700;}
 .chip.p{background:var(--royal-lt); border-color:var(--royal-line); color:var(--royal);}
 /* chat */
 .chat{flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:10px; padding-bottom:8px;}
@@ -80,12 +81,12 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
 .vcard ol{padding-left:20px; margin:10px 0;}
 .vcard li{font-size:13.5px; margin-bottom:6px; line-height:1.5;}
 .fixbox{background:var(--gold-lt); border:1px solid #E4D5AE; border-radius:12px; padding:11px 13px; font-size:13.5px; line-height:1.55;}
-.fixbox b{color:var(--gold);}
+.fixbox b{color:var(--gold-dk);}
 .fixbox.go{background:var(--rolex-lt); border-color:#BED8C9;} .fixbox.go b{color:var(--rolex);}
 .shimmer::after{content:''; position:absolute; top:0; left:-80%; width:60%; height:100%; background:linear-gradient(100deg,transparent,rgba(163,126,44,.16),transparent); animation:sweep .7s ease .3s 1;}
 @keyframes sweep{to{left:120%;}}
 .fbrow{display:flex; gap:8px; margin-top:12px;}
-.fbrow button{flex:1; background:var(--ivory); border:1px solid var(--line); color:var(--dim); border-radius:10px; padding:9px; font-size:12.5px; cursor:pointer;}
+.fbrow button{flex:1; background:var(--ivory); border:1px solid var(--line); color:var(--dim); border-radius:10px; padding:9px; min-height:44px; font-size:12.5px; cursor:pointer;}
 .fbrow button.hit{border-color:var(--rolex); color:var(--rolex); font-weight:700;}
 /* flags & product */
 .flag{display:inline-block; font-size:11px; padding:3px 10px; border-radius:20px; margin:6px 6px 0 0; font-weight:700;}
@@ -107,14 +108,17 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
 .bcard .hi{color:#BFD5C8; font-size:12px; margin-top:12px; font-style:italic;}
 /* occasion chips */
 .chips{display:flex; flex-wrap:wrap; gap:8px; margin:10px 0;}
-.chips button{background:var(--rolex-lt); border:1px solid #BED8C9; color:var(--rolex); font-size:12.5px; padding:8px 14px; border-radius:20px; cursor:pointer; font-weight:600;}
+.chips button{background:var(--rolex-lt); border:1px solid #BED8C9; color:var(--rolex); font-size:13px; padding:11px 15px; min-height:44px; border-radius:22px; cursor:pointer; font-weight:600;}
 .chips button.sel{background:var(--rolex); color:#fff;}
 /* input bar */
-.askbar{position:fixed; bottom:0; left:0; right:0; margin:0 auto; max-width:520px; background:var(--paper); border-top:1px solid var(--line); padding:12px 14px calc(14px + env(safe-area-inset-bottom)); display:flex; gap:10px; align-items:flex-end; z-index:20;}
+.askbar{position:fixed; bottom:0; left:0; right:0; margin:0 auto; max-width:520px; background:var(--paper); border-top:1px solid var(--line); padding:12px 12px calc(14px + env(safe-area-inset-bottom)); display:flex; gap:7px; align-items:flex-end; z-index:20;}
 .purple .askbar{background:#FBFAFE; border-color:var(--royal-line);}
-.cam{width:46px; height:46px; border-radius:50%; background:var(--rolex-lt); border:1px solid #CBDDD2; font-size:18px; cursor:pointer; flex-shrink:0;}
+.cam{width:44px; height:44px; border-radius:50%; background:var(--rolex-lt); border:1px solid #CBDDD2; font-size:17px; cursor:pointer; flex-shrink:0;}
+.cam#brobtn{background:#EFEAF7; border-color:var(--royal-line);}
 .purple .cam{background:var(--royal-lt); border-color:var(--royal-line);}
-.cam.rec{background:#B04A38; border-color:#B04A38; animation:recpulse 1.1s ease-in-out infinite;}
+.cam#micbtn{background:var(--gold-lt); border-color:#E4D5AE;}
+.purple .cam#micbtn{background:#F3EEDD; border-color:#E4D5AE;}
+.cam.rec, .cam#micbtn.rec{background:#B04A38; border-color:#B04A38; animation:recpulse 1.1s ease-in-out infinite;}
 @keyframes recpulse{0%,100%{box-shadow:0 0 0 0 rgba(176,74,56,.45);}50%{box-shadow:0 0 0 9px rgba(176,74,56,0);}}
 .askbar textarea{flex:1; background:var(--ivory); border:1px solid var(--line); border-radius:20px; padding:11px 16px; font-size:16px; color:var(--text); outline:none; resize:none; max-height:110px; font-family:inherit;}
 .purple .askbar textarea{background:#F3F0FA; border-color:var(--royal-line);}
@@ -138,7 +142,8 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
 .gate h2{color:var(--royal-dk); font-size:19px; margin:10px 0 6px;}
 .gate p{color:var(--royal); font-size:13.5px; line-height:1.7; margin-bottom:22px;}
 .pnote{background:#fff; border:1px solid var(--royal-line); border-radius:12px; padding:10px 14px; font-size:12.5px; color:var(--royal-dk); margin-bottom:12px;}
-.disc{align-self:stretch; font-size:11px; color:var(--faint); border-left:3px solid var(--royal-line); padding:4px 0 4px 10px; line-height:1.5;}
+.disc{align-self:stretch; font-size:12px; color:var(--dim); background:#FBFAFE; border-left:3px solid var(--royal); border-radius:0 8px 8px 0; padding:8px 10px; line-height:1.5;}
+.disc b{color:var(--royal-dk);}
 /* toast */
 #toast{position:fixed; bottom:100px; left:50%; transform:translateX(-50%); background:var(--rolex-dk); color:#fff; font-size:13px; padding:10px 18px; border-radius:22px; opacity:0; transition:.3s; z-index:99; pointer-events:none; max-width:86%; text-align:center;}
 #toast.show{opacity:1;}
@@ -161,24 +166,23 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
     <div class="tagline">Honest verdicts on your look · answers to what you won't ask anyone · unbiased votes from real men, faces blurred. Zero judgment. <b>No real name. Ever.</b></div>
     <div class="field"><input type="text" id="ob-name" placeholder='Pick any name — "Rocky" works' maxlength="20"></div>
     <div class="field"><label for="ob-age">I'm 18 or older</label><input type="checkbox" id="ob-age"></div>
-    <div class="field"><label for="ob-city">City (for climate &amp; prices — optional)</label></div>
-    <div class="field" style="margin-top:-6px;"><input type="text" id="ob-city" placeholder="e.g. Gurgaon" maxlength="30"></div>
+    <div class="field"><input type="text" id="ob-city" placeholder="City — for weather &amp; local prices (optional)" maxlength="30"></div>
     <button class="cta" onclick="finishOnboard()">Enter →</button>
-    <button class="mini-link" onclick="openSheet('privacy-info')">What do you store about me?</button>
-    <div class="footnote">Photos are analyzed, then deleted · Private Space chats are never saved · Delete everything anytime</div>
+    <button class="mini-link" onclick="openSheet('privacy-info')">Exactly what's stored, and what isn't →</button>
+    <div class="footnote">Photos for analysis are deleted right after. Private Space chats are never saved. Reminders you set are stored under an anonymous ID — never your name. Delete everything anytime.</div>
   </div>
 
   <!-- HOME -->
   <div class="screen" id="scr-home">
-    <div class="hdr"><div class="brand">S<em>O</em>RTED</div><div class="avatar" id="av" onclick="go('memory')">?</div></div>
-    <div class="greet" id="greet">Scene kya hai?</div>
-    <div class="peerbar" onclick="go('crowd')">🫂 <b>PEER REVIEW</b> — get unbiased votes from real men on your look. Faces blurred, so they judge the outfit, not you. Names never exist.<span id="peercount" style="font-weight:700;"></span></div>
-    <div class="door" onclick="go('verdict')"><div class="ic">📸</div><h4>What do I wear?</h4><p>Shaadi, office do, date. Send one outfit, or a photo of the open wardrobe — you get ONE answer: wear this.</p><span class="chip">MOST USED</span></div>
-    <div class="door purple-door" onclick="go('gate')"><div class="ic">🔒</div><h4>Private Space</h4><p>Rashes, sweat, hair fall, bedroom worries — the stuff you google at 2am. Ask properly. Never saved.</p><span class="chip p">PRIVATE MODE</span></div>
-    <div class="door" onclick="go('product')"><div class="ic">🧴</div><h4>Check a product</h4><p>That "48-hour protection" deo. The ₹499 charcoal facewash. Real or marketing? Snap the label.</p></div>
-    <div class="door" onclick="go('barber')"><div class="ic">💈</div><h4>Barber card</h4><p>Walk in with exact instructions instead of "just do something".</p></div>
-    <div class="door" onclick="go('crowd')"><div class="ic">🫂</div><h4>Peer review</h4><p>Vote on a brother's look, get votes on yours. Blurred faces, no names — opinion without bias.</p></div>
-    <div class="door" onclick="go('remind')"><div class="ic">⏰</div><h4>Never Forget</h4><p>Wife said. Boss said. Birthday coming. Say it once — I remind you in time, draft the wish, suggest the gift.</p></div>
+    <div class="hdr"><div class="brand">S<em>O</em>RTED</div><div class="avatar" id="av" role="button" tabindex="0" aria-label="Your profile and memory" onclick="go('memory')">?</div></div>
+    <div class="greet" id="greet">What's the plan?</div>
+    <div class="peerbar" role="button" tabindex="0" onclick="go('crowd')">🫂 <b>PEER REVIEW</b> — the honest second opinion. Vote on other men's looks, and they vote on yours. Faces always blurred, names never exist.<span id="peercount" style="font-weight:700;"></span></div>
+    <div class="door" role="button" tabindex="0" onclick="go('verdict')"><div class="ic">📸</div><h4>What do I wear?</h4><p>Wedding, office party, a date. Send one outfit, or a photo of the whole wardrobe — you get ONE answer: wear this.</p><span class="chip">MOST USED</span></div>
+    <div class="door purple-door" role="button" tabindex="0" onclick="go('gate')"><div class="ic">🔒</div><h4>Private Space</h4><p>Rashes, sweat, hair fall, bedroom worries — the stuff you google at 2am. Ask properly. Never saved.</p><span class="chip p">PRIVATE MODE</span></div>
+    <div class="door" role="button" tabindex="0" onclick="go('product')"><div class="ic">🧴</div><h4>Check a product</h4><p>That "48-hour protection" deo. The ₹499 charcoal facewash. Real or marketing? Snap the label.</p></div>
+    <div class="door" role="button" tabindex="0" onclick="go('barber')"><div class="ic">💈</div><h4>Barber card</h4><p>Walk in with exact instructions instead of "just do something".</p></div>
+    <div class="door" role="button" tabindex="0" onclick="go('crowd')"><div class="ic">🫂</div><h4>Peer review</h4><p>Post your outfit or new look — get honest votes from other men. Your face blurred, your name never shown.</p></div>
+    <div class="door" role="button" tabindex="0" onclick="go('remind')"><div class="ic">⏰</div><h4>Never Forget</h4><p>Wife said. Boss said. Birthday coming. Say it once — I remind you in time, draft the wish, suggest the gift.</p></div>
   </div>
 
   <!-- VERDICT -->
@@ -192,9 +196,9 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
     <div class="hdr" style="position:absolute;top:calc(14px + env(safe-area-inset-top));left:18px;"><button class="back" onclick="go('home')">← Home</button></div>
     <div class="lock">🔒</div>
     <h2>Private Space</h2>
-    <p>Your words and photos are never stored —<br>not by the app, not by us, not for training.<br>We keep only anonymous usage counts.</p>
+    <p>What you say and share in here is never saved —<br>not by the app, not by us, not for training.<br>It disappears the moment you leave.</p>
     <button class="cta purple-btn" onclick="enterPrivate()">Enter Private Space</button>
-    <div class="footnote">Health answers are education, not diagnosis.<br>Always free. Never paywalled.</div>
+    <div class="footnote">Health answers are education, not a diagnosis — always see a doctor for that.<br>Always free. Never paywalled.</div>
   </div>
 
   <!-- PRIVATE -->
@@ -251,11 +255,11 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
   <div class="askbar" id="askbar">
     <input type="file" id="file" accept="image/*" capture="environment" hidden>
     <input type="file" id="file-gal" accept="image/*" hidden>
-    <button class="cam" onclick="openCamSheet()">📷</button>
-    <button class="cam" onclick="askBroFromBar()" title="Ask the brotherhood">🫂</button>
-    <button class="cam" id="micbtn" onclick="micTap()" title="Speak instead of typing">🎤</button>
-    <textarea id="inp" rows="1" maxlength="2000" placeholder="Message Sorted…"></textarea>
-    <button class="send" onclick="send()">➤</button>
+    <button class="cam" onclick="openCamSheet()" aria-label="Add a photo">📷</button>
+    <button class="cam" id="brobtn" onclick="askBroFromBar()" aria-label="Ask the brotherhood" title="Ask the brotherhood">🫂</button>
+    <button class="cam" id="micbtn" onclick="micTap()" aria-label="Speak instead of typing" title="Speak instead of typing">🎤</button>
+    <textarea id="inp" rows="1" maxlength="2000" placeholder="Message Sorted…" aria-label="Type your message"></textarea>
+    <button class="send" onclick="send()" aria-label="Send">➤</button>
   </div>
 
   <div id="toast"></div>
@@ -312,7 +316,7 @@ let occasion = null;
 const $ = id => document.getElementById(id);
 const chatEl = () => $('chat-' + (screen==='private'?'private':screen));
 function toast(t){ const el=$('toast'); el.textContent=t; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),2600); }
-function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 function save(){ localStorage.setItem('sorted_profile', JSON.stringify(P)); }
 function scrollBottom(){ const c=chatEl(); if(c) setTimeout(()=>c.scrollTop=c.scrollHeight,60); }
 
@@ -322,7 +326,8 @@ function go(s){
   $('scr-'+s).classList.add('on');
   document.body.classList.toggle('purple', s==='private');
   $('askbar').style.display = ['verdict','private','product','barber','remind'].includes(s)?'flex':'none';
-  $('inp').placeholder = s==='private' ? 'Ask anything…' : s==='product' ? 'Is this deo aluminium-free?' : s==='verdict' ? 'Shaadi tonight — what do I wear?' : s==='remind' ? 'Wife said… boss said… type or speak it' : 'Message Sorted…';
+  const hi = P && P.lang==='hinglish';
+  $('inp').placeholder = s==='private' ? 'Ask anything…' : s==='product' ? 'Is this deo aluminium-free?' : s==='verdict' ? (hi?'Shaadi tonight — what do I wear?':'Wedding tonight — what do I wear?') : s==='remind' ? 'Wife said… boss said… type or speak it' : 'Message Sorted…';
   if(s==='home') renderHome();
   if(s==='memory') renderMemory();
   if(s==='crowd') loadCrowd();
@@ -340,9 +345,9 @@ function finishOnboard(){
   save(); sendEvent('activated'); go('home');
 }
 function renderHome(){
-  const h=new Date().getHours();
+  const h=new Date().getHours(), hi=P.lang==='hinglish';
   const g = h>=23||h<5 ? `Late night thought, ${P.name}? The Private Space is open.` :
-            h<12 ? `Morning, ${P.name}. Scene kya hai?` : `Scene kya hai, ${P.name}?`;
+            h<12 ? `Morning, ${P.name}.` : (hi?`Scene kya hai, ${P.name}?`:`What's the plan, ${P.name}?`);
   $('greet').textContent=g;
   ['av','av2','av3','av4'].forEach(i=>{ if($(i)) $(i).textContent=P.name[0].toUpperCase(); });
   checkFollowups();
@@ -425,7 +430,7 @@ function addThem(text, instant){
   chatEl().appendChild(d); scrollBottom();
 }
 function addMe(text){ const d=document.createElement('div'); d.className='msg me'; d.textContent=text; chatEl().appendChild(d); scrollBottom(); }
-function addPic(url){ const i=document.createElement('img'); i.className='pic'; i.src=url; chatEl().appendChild(i); scrollBottom(); }
+function addPic(url){ const i=document.createElement('img'); i.className='pic'; i.src=url; i.alt='Your uploaded photo'; chatEl().appendChild(i); scrollBottom(); }
 function addSys(t){ const d=document.createElement('div'); d.className='sys'; d.textContent=t; chatEl().appendChild(d); scrollBottom(); }
 function addHTML(html){ const d=document.createElement('div'); d.style.alignSelf='stretch'; d.innerHTML=html; chatEl().appendChild(d); scrollBottom(); return d; }
 
@@ -448,7 +453,10 @@ function micTap(){
   // The keyboard's own dictation mic works fine there — hand over to it.
   if(/iPhone|iPad|iPod/.test(navigator.userAgent) && navigator.standalone){
     const inp=$('inp'); inp.focus();
-    toast('Here, use the 🎤 key on your keyboard — speak, then hit send.');
+    // Persistent bubble (not a disappearing toast) so the instruction stays on screen.
+    if(!window._micHintShown){ window._micHintShown=true;
+      addThem('On your iPhone, tap the 🎤 on your keyboard to speak, then hit send. (Apple blocks in-app voice once Sorted lives on your Home Screen — the keyboard mic works perfectly.)');
+    } else toast('Use the 🎤 on your keyboard, then send.');
     return;
   }
   if(!SR){ toast('Voice needs Safari or Chrome — or use the mic key on your keyboard'); $('inp').focus(); return; }
@@ -599,7 +607,7 @@ async function send(auto){
   }catch(err){
     th.remove();
     if(text) $('inp').value=text; // give his words back so one tap resends
-    if(err.cap) addThem(`I've hit my safety limit for today — a guardrail so nobody runs up the bill. Back to normal tomorrow. Your message is in the box.`);
+    if(err.cap) addThem(`I've hit my daily limit — back to normal tomorrow. Your message is saved in the box.`);
     else if(err.offline || !navigator.onLine) addThem(`No internet, boss. I've put your message back in the box — hit send when you're online.`);
     else addThem(`Hmm — busy moment on my side. Your message is back in the box — try again in a few seconds. Your photo was not kept.`);
   }
@@ -612,10 +620,11 @@ function render(mode, d, hist){
 
   if(d.type==='verdict'){
     const cls={READY:'ready','WEAR THIS':'ready',ALMOST:'almost','NOT THIS ONE':'notyet'}[d.verdict]||'cant';
+    const gl={READY:' ✓','WEAR THIS':' ✓',ALMOST:' ~','NOT THIS ONE':' ✕'}[d.verdict]||''; // glyph so colour isn't the only signal
     const shim=d.verdict==='READY'?' shimmer':'';
     addHTML(`<div class="vcard${shim}">
       <div class="vtag">VERDICT</div>
-      <div class="vword ${cls}">${esc(d.verdict)}${d.verdict==='READY'?' ✓':''}</div>
+      <div class="vword ${cls}">${esc(d.verdict)}${gl}</div>
       <ol>${(d.reasons||[]).slice(0,3).map(r=>`<li>${esc(r)}</li>`).join('')}</ol>
       ${d.fix?`<div class="fixbox${d.verdict==='READY'?' go':''}"><b>${d.verdict==='READY'?'Go.':'The fix:'}</b> ${esc(d.fix)}</div>`:''}
       <div class="fbrow"><button onclick="fb(this,1)">👍 Helped</button><button onclick="fb(this,0)">😐 Meh</button><button onclick="crowdAsk()">🫂 Peer review</button></div>
@@ -632,7 +641,7 @@ function render(mode, d, hist){
       addThem(d.reply);
       if(d.doctor) addHTML(`<div class="docbox"><b>The honest line:</b> ${esc(d.doctor.action)} Say: "${esc(d.doctor.script)}" ${esc(d.doctor.cost||'')} 🤝</div>`);
     }
-    addHTML(`<div class="disc">⚕️ This is not a doctor speaking — it's general education only. For professional advice, please see a doctor.</div>`);
+    medDisc();
     if(d.doctor && !P.push && 'Notification' in window && !pushOffered){
       pushOffered=true;
       addHTML(`<button class="cta purple-btn" onclick="enablePush(this)">🔔 Check on me later — allow reminders</button>`);
@@ -663,6 +672,8 @@ function render(mode, d, hist){
       if(lastImg){
         const vb=document.createElement('button'); vb.className='cta'; vb.style.marginTop='8px';
         vb.textContent='👀 See it on me — AI preview'; vb.addEventListener('click', ()=>seePreview(vb,d)); w.appendChild(vb);
+        const vn=document.createElement('div'); vn.className='sys'; vn.style.marginTop='4px';
+        vn.textContent='Your photo is sent to Google\'s image engine to paint this, then discarded.'; w.appendChild(vn);
         const pb=document.createElement('button'); pb.className='cta ghost'; pb.style.marginTop='8px';
         pb.textContent='🫂 Ask the brotherhood about this look'; pb.addEventListener('click', ()=>crowdAsk()); w.appendChild(pb); }
       chatEl().appendChild(w); scrollBottom(); }
@@ -689,7 +700,7 @@ function render(mode, d, hist){
           if(!r.ok) throw (j.error||0);
           sv.remove();
           toast(j.saved>1?`All ${j.saved} locked in. Consider them remembered. 🤝`:'Locked in. Consider it remembered. 🤝');
-          if(j.skipped) addThem(`Heads up — ${j.skipped} didn't fit: you're at the 50 active reminders cap. Tick a few off and send those again.`);
+          if(j.skipped) addThem(`Heads up — ${j.skipped} couldn't be saved: you've hit the 50-reminder cap. Tick a few off and resend those.`);
           const cal=document.createElement('button'); cal.className='cta ghost'; cal.style.marginTop='8px';
           cal.textContent='📅 Also add to phone calendar'; cal.addEventListener('click',()=>icsExportItems(items));
           w.appendChild(cal); loadReminders();
@@ -731,7 +742,7 @@ function render(mode, d, hist){
   else if(d.type==='gift'){
     (d.ideas||[]).forEach(g=>{
       addHTML(`<div class="vcard" style="margin-bottom:10px;"><b style="font-size:14.5px;">🎁 ${esc(g.name)}</b>
-      <div style="font-size:12px;color:var(--gold);font-weight:700;margin:2px 0;">${esc(g.price||'')}</div>
+      <div style="font-size:12px;color:var(--gold-dk);font-weight:700;margin:2px 0;">${esc(g.price||'')}</div>
       <p style="font-size:13px;color:var(--dim);line-height:1.55;">${esc(g.why||'')}</p></div>`);
     });
     if(d.note) addThem(d.note);
@@ -739,9 +750,12 @@ function render(mode, d, hist){
   }
   else { // chat fallback
     addThem(d.reply||'Say that again?');
+    if(d.doctor || d.red_flag) medDisc(); // health answer arriving outside private mode still gets the disclaimer
     hist.push({role:'assistant', content:d.reply||''});
   }
 }
+// Medical disclaimer — one canonical version, shown on every health answer (private, red-flag, or fallback).
+function medDisc(){ addHTML(`<div class="disc">⚕️ <b>Not a doctor speaking</b> — this is general education only. For anything real, please see a doctor.</div>`); }
 function fb(btn,v){ btn.classList.add('hit'); btn.parentElement.querySelectorAll('button').forEach(b=>{if(b!==btn)b.disabled=true;}); sendEvent(v?'helped':'meh','verdict'); toast(v?'Noted. 🤝':'Noted — I\'ll sharpen up.'); }
 
 /* ============ BARBER CARD PNG ============ */
@@ -796,7 +810,8 @@ function crowdAsk(){
   b.innerHTML=`<h3>Peer review — opinion without bias</h3>
     <p class="small">Real men vote on the LOOK, not on you — so the face gets blurred first. Photo is anonymous, visible for 24 hours, then auto-deletes. <b>No intimate or explicit photos</b> — that's instant removal from the beta.</p>
     <canvas id="blurcv" style="margin-top:10px;"></canvas>
-    <p class="small" id="blurhint" style="text-align:center;">👆 Tap the face to blur it (tap more spots if needed)</p>
+    <p class="small" id="blurhint" style="text-align:center;">👆 Tap the face to blur it — or use the button below to blur the whole top safely.</p>
+    <button class="cta ghost" id="fullblur" style="margin-top:8px;" onclick="blurWholeFace()">🕶️ Blur the face area for me</button>
     <button class="cta" id="postbtn" style="margin-top:8px;opacity:.5;" onclick="postPoll()">Post for votes</button>
     <button class="cta ghost" style="margin-top:8px;" onclick="$('sheet').classList.remove('on')">Cancel</button>`;
   $('sheet').classList.add('on');
@@ -818,6 +833,14 @@ function crowdAsk(){
     }
   };
   img.src=lastImg.url;
+}
+function blurWholeFace(){ // guaranteed coverage — blurs the top ~45% band where a face sits, so the fail-safe is over-blur not exposure
+  const cv=$('blurcv'); if(!cv||!cv.width) return;
+  const ctx=cv.getContext('2d'), bandH=Math.round(cv.height*0.45), block=Math.max(8,Math.round(cv.width/22));
+  const tmp=document.createElement('canvas'); tmp.width=Math.ceil(cv.width/block); tmp.height=Math.ceil(bandH/block);
+  tmp.getContext('2d').drawImage(cv,0,0,cv.width,bandH,0,0,tmp.width,tmp.height);
+  ctx.imageSmoothingEnabled=false; ctx.drawImage(tmp,0,0,tmp.width,tmp.height,0,0,cv.width,bandH);
+  blurApplied=true; $('postbtn').style.opacity=1; $('blurhint').textContent='✓ Face area blurred. Tap any other spot to blur more, then post.';
 }
 function pixelate(cv,x,y,rad){
   const ctx=cv.getContext('2d'); const r=rad||cv.width*0.16;
@@ -854,7 +877,7 @@ async function loadCrowd(){
     if(feed.length){ const p=feed[0];
       html+=`<div class="vcard"><div class="vtag">A BROTHER ASKS · anonymous</div>
       <div style="font-size:14px;margin:6px 0;">${esc(p.question||'')}</div>
-      <img src="${p.img}" style="width:100%;border-radius:12px;border:1px solid var(--line);">
+      <img src="${p.img}" alt="Another member's look, face blurred" style="width:100%;border-radius:12px;border:1px solid var(--line);">
       <div class="fbrow"><button onclick="voteCrowd(${p.id},'yes')">🔥 Wear it</button><button onclick="voteCrowd(${p.id},'no')">😐 Rethink</button></div></div>`; }
     else html+=`<div class="msg them" style="max-width:100%;">No looks waiting for your vote right now — check back later. Meanwhile, post YOURS with the button above: face blurred, fully anonymous, votes in by tonight.</div>
     <button class="cta ghost" style="margin-top:10px;" onclick="loadCrowd()">↻ Check for new looks</button>`;
@@ -873,12 +896,12 @@ async function seePreview(btn, d){
       body:JSON.stringify({device_id:DEVICE, image:{data:lastImg.b64, media_type:lastImg.mime}, style:(d.style||'')+'. '+(d.steps||[]).join('; ')})});
     const j=await r.json().catch(()=>({}));
     if(j.img){
-      const i=document.createElement('img'); i.className='pic'; i.style.alignSelf='flex-start'; i.style.maxWidth='78%'; i.src=j.img;
+      const i=document.createElement('img'); i.className='pic'; i.alt='AI preview of your new haircut'; i.style.alignSelf='flex-start'; i.style.maxWidth='78%'; i.src=j.img;
       chatEl().appendChild(i);
       addSys('AI preview — approximate. Your barber\'s craft decides the rest.');
       scrollBottom(); btn.remove();
     } else if(r.status===429){ addThem('That\'s your 3 previews for today, boss — the barber card has everything he needs anyway.'); btn.remove(); }
-    else if(r.status===503){ addThem('Previews are maxed out for today — a guardrail on cost. The barber card still has everything he needs. Back tomorrow.'); btn.remove(); }
+    else if(r.status===503){ addThem('Previews are maxed out for today — back to normal tomorrow. The barber card still has everything he needs.'); btn.remove(); }
     else throw 0;
   }catch(e){ btn.disabled=false; btn.textContent='👀 See it on me — AI preview'; toast('Preview didn\'t come through — try once more.'); }
 }
@@ -973,7 +996,8 @@ function icsExport(id){
 }
 function profileSelfie(){ profileMode=true; openCamSheet(); }
 async function profileScan(img){
-  toast('Reading your face — a few seconds…');
+  const box=$('memlist'); // visible in-place loading, not just a toast that vanishes
+  if(box) box.innerHTML=`<div class="vcard" style="text-align:center;"><div style="font-size:15px;font-weight:700;color:var(--rolex-dk);">🔍 Reading your face…</div><div class="think" style="display:inline-block;margin-top:8px;"><span class="ln" style="animation-delay:0s">· skin tone &amp; undertone</span><br><span class="ln" style="animation-delay:.8s">· face shape</span><br><span class="ln" style="animation-delay:1.6s">· hair &amp; beard</span></div></div>`;
   try{
     const r=await fetch(BACKEND+'/ask',{method:'POST',headers:{'Content-Type':'application/json','x-pilot-token':PILOT},
       body:JSON.stringify({mode:'profile',messages:[{role:'user',content:'[selfie for profile]'}],image:{data:img.b64,media_type:img.mime},profile:P,device_id:DEVICE})});
@@ -984,8 +1008,8 @@ async function profileScan(img){
       if(d.hair) P.notes.push('hair: '+d.hair);
       if(d.beard) P.notes.push('beard: '+d.beard);
       save(); renderMemory(); toast(d.note||'Done — this is what I learned. Edit anything.');
-    } else toast(d.note||'Could not read that one — better light and try again?');
-  }catch(e){ toast('Could not read the selfie right now — try again in a minute.'); }
+    } else { renderMemory(); toast(d.note||'Could not read that one — better light and try again?'); }
+  }catch(e){ renderMemory(); toast('Could not read the selfie right now — try again in a minute.'); }
 }
 
 /* ============ MEMORY / PRIVACY ============ */
@@ -998,16 +1022,37 @@ function renderMemory(){
     ['Sizes', P.sizes||'— tell me anytime'],
     ['Style wins', P.notes.length?P.notes.slice(-4).join(' · '):'— your READY verdicts land here'],
   ];
-  $('memlist').innerHTML = `<button class="cta" style="margin-bottom:14px;" onclick="profileSelfie()">📸 One selfie fills all this in</button>` + rows.map(([k,v],i)=>`
+  const fresh = !P.skinTone && !P.faceShape && !P.notes.length && !P.sizes;
+  const intro = fresh ? `<div class="vcard" style="margin-bottom:14px;background:var(--rolex-lt);border-color:#BED8C9;"><b style="color:var(--rolex-dk);">Nothing here yet — and that's fine.</b><div class="small" style="margin-top:4px;">I learn as we go. One selfie fills in most of this in a few seconds.</div></div>` : '';
+  $('memlist').innerHTML = `<button class="cta" style="margin-bottom:14px;" onclick="profileSelfie()">📸 One selfie fills all this in</button>` + intro + rows.map(([k,v],i)=>`
     <div class="prow"><div><b>${k}</b><span>${esc(String(v))}</span></div>
-    <span style="font-size:12px;color:var(--rolex);cursor:pointer;" onclick="editMem(${i})">edit</span></div>`).join('')
-    + `<div class="prow" style="border-color:var(--royal-line);"><div><b style="color:var(--royal-dk);">Private Space</b><span>Messages never stored. Only anonymous usage counts exist.</span></div><span>🔒</span></div>
+    <button style="background:none;border:none;font-size:13px;color:var(--rolex);font-weight:600;cursor:pointer;padding:10px 8px;min-height:44px;" onclick="editMem(${i})">edit</button></div>`).join('')
+    + `<div class="prow" style="border-color:var(--royal-line);"><div><b style="color:var(--royal-dk);">Private Space</b><span>Messages never stored. Only anonymous usage counts exist.</span></div><span aria-hidden="true">🔒</span></div>
     <p class="small" style="text-align:center;margin-top:8px;">Everything here lives on this phone · never sold · never trains AI</p>`;
 }
 function editMem(i){
   const keys=['name','city','skinTone','faceShape','sizes','notes'];
-  if(keys[i]==='notes'){ if(confirm('Clear style memory?')){P.notes=[];save();renderMemory();} return; }
-  const v=prompt('Update '+keys[i]+':', P[keys[i]]||''); if(v!==null){ P[keys[i]]=v.trim()||null; save(); renderMemory(); renderHome(); }
+  if(keys[i]==='notes'){
+    const b=$('sheet-body');
+    b.innerHTML=`<h3>Clear style memory?</h3><p class="small">This wipes what I've learned from your READY verdicts and selfie. Your name and city stay.</p>
+      <button class="cta" style="margin-top:12px;background:var(--notyet);" onclick="P.notes=[];save();renderMemory();$('sheet').classList.remove('on');toast('Style memory cleared.');">Clear it</button>
+      <button class="cta ghost" style="margin-top:8px;" onclick="$('sheet').classList.remove('on')">Keep it</button>`;
+    $('sheet').classList.add('on'); return;
+  }
+  const label={name:'Name',city:'City',skinTone:'Skin tone',faceShape:'Face shape',sizes:'Sizes'}[keys[i]];
+  const b=$('sheet-body');
+  b.innerHTML=`<h3>Update ${label}</h3>
+    <div class="field"><input type="text" id="memedit" maxlength="80" placeholder="${label}"></div>
+    <button class="cta" style="margin-top:4px;" onclick="saveMem(${i})">Save</button>
+    <button class="cta ghost" style="margin-top:8px;" onclick="$('sheet').classList.remove('on')">Cancel</button>`;
+  $('sheet').classList.add('on');
+  const inp=$('memedit'); inp.value=P[keys[i]]||''; setTimeout(()=>inp.focus(),100);
+}
+function saveMem(i){
+  const keys=['name','city','skinTone','faceShape','sizes'];
+  const v=$('memedit').value.trim();
+  if(keys[i]==='name' && !v){ toast('Name can\'t be blank.'); return; }
+  P[keys[i]]=v||null; save(); renderMemory(); renderHome(); $('sheet').classList.remove('on'); toast('Updated.');
 }
 function exportData(){
   const blob=new Blob([JSON.stringify(P,null,2)],{type:'application/json'});
@@ -1016,7 +1061,7 @@ function exportData(){
 }
 function deleteEverything(){
   if(!confirm('Sure? Gone in 5 seconds, no recovery.')) return;
-  localStorage.clear(); privThread=[]; threads={verdict:[],product:[],barber:[]};
+  localStorage.clear(); privThread=[]; threads={verdict:[],product:[],barber:[],remind:[]};
   toast('Done. Nothing remains.');
   setTimeout(()=>location.reload(),1200);
 }
@@ -1027,7 +1072,8 @@ function openSheet(which){
   if(which==='privacy-info') b.innerHTML=`<h3>What Sorted stores</h3><p class="small">
     · Your pseudonym and optional city — on this phone only.<br>
     · Style memory (skin tone, sizes, what got a READY) — on this phone only.<br>
-    · Photos: sent for analysis, deleted immediately after. Never stored, never used for training.<br>
+    · Photos for analysis (outfit, product, selfie): sent to read, deleted right after. Never used for training.<br>
+    · Peer-review photos (the ones you post to Brotherhood): face blurred, kept 24 hours so men can vote, then auto-deleted.<br>
     · Style previews ("See it on me"): your photo goes to Google's image engine to paint the preview, then is discarded. We never store it.<br>
     · Reminders you set ARE stored (that's their job) — against your anonymous device ID, never your name. Delete any of them, or everything, anytime.<br>
     · Private Space: nothing. No history exists.<br>
@@ -1046,6 +1092,11 @@ $('inp').addEventListener('input',function(){
 });
 
 /* ============ BOOT ============ */
+// Keyboard access for role="button" elements (home doors, peer bar, avatar) — Enter/Space activate them.
+document.addEventListener('keydown', e=>{
+  const el=document.activeElement;
+  if((e.key==='Enter'||e.key===' ') && el && el.getAttribute && el.getAttribute('role')==='button'){ e.preventDefault(); el.click(); }
+});
 if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
 // Secure the device id (and migrate any legacy reminders) BEFORE first render, so home data loads under the signed id.
 ensureDevice().finally(()=>{
