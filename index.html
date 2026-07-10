@@ -114,6 +114,8 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
 .purple .askbar{background:#FBFAFE; border-color:var(--royal-line);}
 .cam{width:46px; height:46px; border-radius:50%; background:var(--rolex-lt); border:1px solid #CBDDD2; font-size:18px; cursor:pointer; flex-shrink:0;}
 .purple .cam{background:var(--royal-lt); border-color:var(--royal-line);}
+.cam.rec{background:#B04A38; border-color:#B04A38; animation:recpulse 1.1s ease-in-out infinite;}
+@keyframes recpulse{0%,100%{box-shadow:0 0 0 0 rgba(176,74,56,.45);}50%{box-shadow:0 0 0 9px rgba(176,74,56,0);}}
 .askbar textarea{flex:1; background:var(--ivory); border:1px solid var(--line); border-radius:20px; padding:11px 16px; font-size:16px; color:var(--text); outline:none; resize:none; max-height:110px; font-family:inherit;}
 .purple .askbar textarea{background:#F3F0FA; border-color:var(--royal-line);}
 .send{width:46px; height:46px; border-radius:50%; background:var(--rolex); border:none; color:#fff; font-size:16px; cursor:pointer; flex-shrink:0;}
@@ -251,6 +253,7 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
     <input type="file" id="file-gal" accept="image/*" hidden>
     <button class="cam" onclick="openCamSheet()">📷</button>
     <button class="cam" onclick="askBroFromBar()" title="Ask the brotherhood">🫂</button>
+    <button class="cam" id="micbtn" onclick="micTap()" title="Speak instead of typing">🎤</button>
     <textarea id="inp" rows="1" maxlength="2000" placeholder="Message Sorted…"></textarea>
     <button class="send" onclick="send()">➤</button>
   </div>
@@ -377,7 +380,7 @@ You get exact instructions to show your barber, Hindi line included. No more "ku
 · "Call boss tomorrow 3pm"
 · "Mom's birthday 12 March"
 
-Birthdays & anniversaries: I remind you 3 days early, draft the message you can copy-paste, and suggest gifts for your budget. Tip: tap the mic on your keyboard and just speak it.`);
+Birthdays & anniversaries: I remind you 3 days early, draft the message you can copy-paste, and suggest gifts for your budget. Don't type — tap the 🎤 below and just say it.`);
 }
 function enterPrivate(){
   go('private'); privThread=[];
@@ -413,6 +416,36 @@ function thinking(lines){
 
 /* ============ IMAGE HANDLING ============ */
 function isMobile(){ return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints>1 && /Mac/.test(navigator.userAgent)); }
+/* ============ VOICE INPUT (in-app mic) ============ */
+let rec=null, recOn=false;
+function micTap(){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR){ toast('Voice needs Safari or Chrome — or use the mic key on your keyboard'); $('inp').focus(); return; }
+  if(recOn){ try{rec.stop();}catch(e){} return; }
+  rec = new SR();
+  rec.lang = (P && P.lang==='hinglish') ? 'hi-IN' : 'en-IN';
+  rec.interimResults = true;
+  rec.continuous = false;
+  rec.onresult = e => {
+    let t=''; for(const r of e.results) t += r[0].transcript;
+    $('inp').value = t.slice(0,2000);
+  };
+  rec.onerror = e => {
+    recOn=false; $('micbtn').classList.remove('rec');
+    if(e.error==='not-allowed') toast('Allow microphone access — then tap 🎤 again');
+    else if(e.error!=='aborted' && e.error!=='no-speech') toast("Didn't catch that — tap 🎤 and try again");
+    else if(e.error==='no-speech') toast('Heard nothing — tap 🎤 and speak');
+  };
+  rec.onend = () => {
+    recOn=false; $('micbtn').classList.remove('rec');
+    // Speak-and-done: on the reminder screen your words go straight in. Elsewhere, review then send.
+    if(screen==='remind' && ($('inp').value||'').trim()) send();
+  };
+  recOn=true; $('micbtn').classList.add('rec'); $('inp').value='';
+  toast('Listening… speak now, tap 🎤 when done');
+  try{ rec.start(); }catch(e){ recOn=false; $('micbtn').classList.remove('rec'); }
+}
+
 function openCamSheet(){
   const s=$('sheet'); const b=$('sheet-body');
   b.innerHTML=`<h3>Add a photo</h3>
