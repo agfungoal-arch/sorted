@@ -337,6 +337,23 @@ const $ = id => document.getElementById(id);
 const chatEl = () => $('chat-' + (screen==='private'?'private':screen));
 function toast(t){ const el=$('toast'); el.textContent=t; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),2600); }
 function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+// Detect the user's language from his message. Non-Latin scripts are unambiguous; romanized Hinglish via keywords.
+// (Romanized regional languages like Latin-script Tamil are caught by the model's own "lang" field on reply.)
+function detectLang(t){
+  if(/[஀-௿]/.test(t)) return 'tamil';
+  if(/[ఀ-౿]/.test(t)) return 'telugu';
+  if(/[ঀ-৿]/.test(t)) return 'bengali';
+  if(/[઀-૿]/.test(t)) return 'gujarati';
+  if(/[ಀ-೿]/.test(t)) return 'kannada';
+  if(/[ഀ-ൿ]/.test(t)) return 'malayalam';
+  if(/[਀-੿]/.test(t)) return 'punjabi';
+  if(/[؀-ۿ]/.test(t)) return 'arabic';
+  if(/[ऀ-ॿ]/.test(t)) return 'hindi';
+  if(/\b(bhai|bhaiya|yaar|shaadi|kuch|nahi|nahin|karna|accha|theek|kya|matlab|bata|chahiye|naheen|kaise)\b/i.test(t)) return 'hinglish';
+  return null;
+}
+// Map his language to a speech-recognition locale so the mic transcribes correctly.
+function langCode(l){ return {english:'en-IN',hinglish:'hi-IN',hindi:'hi-IN',marathi:'mr-IN',tamil:'ta-IN',telugu:'te-IN',bengali:'bn-IN',gujarati:'gu-IN',kannada:'kn-IN',malayalam:'ml-IN',punjabi:'pa-IN',urdu:'ur-IN',arabic:'ar-SA'}[l]||'en-IN'; }
 function save(){ localStorage.setItem('sorted_profile', JSON.stringify(P)); }
 function scrollBottom(){ const c=chatEl(); if(c) setTimeout(()=>c.scrollTop=c.scrollHeight,60); }
 
@@ -483,7 +500,7 @@ function micTap(){
   if(!SR){ toast('Voice needs Safari or Chrome — or use the mic key on your keyboard'); $('inp').focus(); return; }
   if(recOn){ try{rec.stop();}catch(e){} setTimeout(()=>{ if(recOn){ try{rec.abort();}catch(e){} micReset(); } },1500); return; }
   rec = new SR();
-  rec.lang = (P && P.lang==='hinglish') ? 'hi-IN' : 'en-IN';
+  rec.lang = langCode(P && P.lang);
   rec.interimResults = true;
   rec.continuous = false;
   rec.onresult = e => {
@@ -593,7 +610,7 @@ async function send(auto){
   await ensureDevice();
   if(text){ addMe(text); inp.value=''; inp.style.height='auto';
     const scrEl=document.querySelector('.screen.on'); if(scrEl) scrEl.style.paddingBottom='';
-    if(/[ऀ-ॿ]|\b(bhai|bhaiya|yaar|shaadi|kuch|nahi|nahin|karna|accha|theek|kya)\b/i.test(text) && P.lang!=='hinglish'){ P.lang='hinglish'; save(); }
+    const dl=detectLang(text); if(dl && P.lang!==dl){ P.lang=dl; save(); } // auto-detect & remember his language
   }
   const mode = screen==='private'?'private':screen;
   const hist = mode==='private'?privThread:threads[mode];
@@ -623,6 +640,8 @@ async function send(auto){
     if(res.status===503){ const e=new Error('cap'); e.cap=true; throw e; }
     if(!res.ok) throw new Error('api');
     const data=await res.json();
+    // Trust the model's language ID (best for romanized regional languages the script check can't catch), and remember it.
+    if(data && data.lang){ const L=String(data.lang).toLowerCase().trim(); if(/^[a-z]{4,12}$/.test(L) && L!==P.lang){ P.lang=L; save(); } }
     th.remove();
     render(mode, data, hist);
   }catch(err){
