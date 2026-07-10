@@ -8,6 +8,7 @@ const crypto = require('crypto');
 let webpush = null; try { webpush = require('web-push'); } catch (e) { console.log('web-push not installed — push disabled'); }
 
 const app = express();
+app.set('trust proxy', 1); // Render sits one proxy hop in front — makes req.ip the REAL client IP, not a client-spoofable header
 app.use(cors());
 app.use(express.json({ limit: '1500kb' }));
 app.use(express.static(__dirname));
@@ -51,9 +52,26 @@ function limitOk(key, max, winMs) {
 }
 function gate(req, res) {
   if (PILOT_TOKEN && req.headers['x-pilot-token'] !== PILOT_TOKEN) { res.status(401).json({ error: 'unauthorized' }); return false; }
-  const ip = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.ip || 'x';
+  // Primary limit is on the REAL client IP (req.ip via trust-proxy) — rotating device_id can't dodge it.
+  const ip = req.ip || 'x';
   const dev = (req.body && req.body.device_id) || req.query.device || 'anon';
   if (!limitOk('ip:' + ip, 60, 300000) || !limitOk('dev:' + dev, 40, 300000)) { res.status(429).json({ error: 'slow down' }); return false; }
+  return true;
+}
+
+/* ---------- SPEND CAP (hard daily ceiling on paid AI calls) ----------
+   In-memory, resets at UTC midnight. During an active attack the process stays warm
+   (free tier only spins down when idle), so the ceiling holds; when it does reset the
+   attack has already stopped. Zero extra latency, zero DB calls. Safety (red-flag)
+   checks run BEFORE this and never consume budget. */
+const DAYK = () => new Date().toISOString().slice(0, 10);
+let budget = { day: DAYK(), text: 0, vision: 0, preview: 0 };
+const BUDGET_CAPS = { text: 5000, vision: 800, preview: 150 }; // ~100 text / 16 vision / 3 preview per user/day across 50 users
+function budgetOk(kind) {
+  const d = DAYK();
+  if (budget.day !== d) budget = { day: d, text: 0, vision: 0, preview: 0 };
+  if (budget[kind] >= BUDGET_CAPS[kind]) return false;
+  budget[kind]++;
   return true;
 }
 
@@ -247,6 +265,11 @@ app.post('/ask', async (req, res) => {
         reply: "Stop — this one isn't a wait-and-watch, and I'd be a bad friend if I pretended otherwise.",
         doctor: { action: flag.action, script: flag.script, cost: '' } });
     }
+
+    // Paid call from here — enforce the daily spend ceiling (safety red-flags above are free and already handled).
+    const hasImg = !!(image && image.data);
+    if (hasImg && String(image.data).length > 1500000) return res.status(413).json({ error: 'image too large' });
+    if (!budgetOk(hasImg ? 'vision' : 'text')) return res.status(503).json({ error: "Sorted's hit its safety limit for today — try again tomorrow." });
 
     const extraCtx = mode === 'product' ? await skuContext(lastText)
       : mode === 'remind' && req.body.local_now
@@ -455,7 +478,9 @@ app.post('/preview', async (req, res) => {
     if (!GEMINI_KEY) return res.status(503).json({ error: 'preview not configured' });
     const { device_id, image, style } = req.body || {};
     if (!image || !image.data) return res.status(400).json({ error: 'need photo' });
+    if (String(image.data).length > 1500000) return res.status(413).json({ error: 'image too large' });
     if (!limitOk('preview:' + (device_id || 'x'), 3, 86400000)) return res.status(429).json({ error: 'daily limit' });
+    if (!budgetOk('preview')) return res.status(503).json({ error: "Previews are at capacity for today — try again tomorrow." });
     const prompt = `Edit this photo: change ONLY the hair and beard to: ${String(style || 'a clean modern haircut').slice(0, 300)}. Keep the person's face, identity, skin tone, expression, clothing and background exactly the same. Photorealistic, natural lighting.`;
     const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${GEMINI_KEY}`, {
       method: 'POST', headers: { 'content-type': 'application/json' },

@@ -507,10 +507,10 @@ async function openWebCam(){
 function closeWebCam(){ if(camStream){ camStream.getTracks().forEach(t=>t.stop()); camStream=null; } $('sheet').classList.remove('on'); }
 function snapWebCam(){
   const v=$('wc'); if(!v||!v.videoWidth) return;
-  const M=1280, r=Math.min(1, M/Math.max(v.videoWidth,v.videoHeight));
+  const M=1024, r=Math.min(1, M/Math.max(v.videoWidth,v.videoHeight)); // 1024px is ample for grooming/outfit analysis, ~35% cheaper vision than 1280
   const c=document.createElement('canvas'); c.width=v.videoWidth*r; c.height=v.videoHeight*r;
   c.getContext('2d').drawImage(v,0,0,c.width,c.height);
-  const url=c.toDataURL('image/jpeg',.82);
+  const url=c.toDataURL('image/jpeg',.8);
   closeWebCam();
   pendingImage={ b64:url.split(',')[1], mime:'image/jpeg', url };
   addPic(url); addSys('Photo attached — analyzed, then deleted. Always.');
@@ -534,10 +534,10 @@ function compress(file){
   return new Promise(res=>{
     const img=new Image();
     img.onload=()=>{
-      const M=1280, r=Math.min(1, M/Math.max(img.width,img.height));
+      const M=1024, r=Math.min(1, M/Math.max(img.width,img.height));
       const c=document.createElement('canvas'); c.width=img.width*r; c.height=img.height*r;
       c.getContext('2d').drawImage(img,0,0,c.width,c.height);
-      const url=c.toDataURL('image/jpeg',.82);
+      const url=c.toDataURL('image/jpeg',.8);
       res({ b64:url.split(',')[1], mime:'image/jpeg', url });
     };
     img.src=URL.createObjectURL(file);
@@ -589,6 +589,7 @@ async function send(auto){
         occasion: mode==='verdict'?occasion:null, profile:P, device_id:DEVICE, local_now:new Date().toString().slice(0,24) })
     });
     clearTimeout(to);
+    if(res.status===503){ const e=new Error('cap'); e.cap=true; throw e; }
     if(!res.ok) throw new Error('api');
     const data=await res.json();
     th.remove();
@@ -596,7 +597,8 @@ async function send(auto){
   }catch(err){
     th.remove();
     if(text) $('inp').value=text; // give his words back so one tap resends
-    if(err.offline || !navigator.onLine) addThem(`No internet, boss. I've put your message back in the box — hit send when you're online.`);
+    if(err.cap) addThem(`I've hit my safety limit for today — a guardrail so nobody runs up the bill. Back to normal tomorrow. Your message is in the box.`);
+    else if(err.offline || !navigator.onLine) addThem(`No internet, boss. I've put your message back in the box — hit send when you're online.`);
     else addThem(`Hmm — busy moment on my side. Your message is back in the box — try again in a few seconds. Your photo was not kept.`);
   }
   occasion=null;
@@ -874,6 +876,7 @@ async function seePreview(btn, d){
       addSys('AI preview — approximate. Your barber\'s craft decides the rest.');
       scrollBottom(); btn.remove();
     } else if(r.status===429){ addThem('That\'s your 3 previews for today, boss — the barber card has everything he needs anyway.'); btn.remove(); }
+    else if(r.status===503){ addThem('Previews are maxed out for today — a guardrail on cost. The barber card still has everything he needs. Back tomorrow.'); btn.remove(); }
     else throw 0;
   }catch(e){ btn.disabled=false; btn.textContent='👀 See it on me — AI preview'; toast('Preview didn\'t come through — try once more.'); }
 }
