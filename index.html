@@ -418,10 +418,19 @@ function thinking(lines){
 function isMobile(){ return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || (navigator.maxTouchPoints>1 && /Mac/.test(navigator.userAgent)); }
 /* ============ VOICE INPUT (in-app mic) ============ */
 let rec=null, recOn=false;
+let micDog=null;
+function micReset(){ recOn=false; $('micbtn').classList.remove('rec'); if(micDog){clearTimeout(micDog);micDog=null;} }
 function micTap(){
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  // iOS Home-Screen apps: Apple blocks the in-app speech engine (it stalls after permission).
+  // The keyboard's own dictation mic works fine there — hand over to it.
+  if(/iPhone|iPad|iPod/.test(navigator.userAgent) && navigator.standalone){
+    const inp=$('inp'); inp.focus();
+    toast('Here, use the 🎤 key on your keyboard — speak, then hit send.');
+    return;
+  }
   if(!SR){ toast('Voice needs Safari or Chrome — or use the mic key on your keyboard'); $('inp').focus(); return; }
-  if(recOn){ try{rec.stop();}catch(e){} return; }
+  if(recOn){ try{rec.stop();}catch(e){} setTimeout(()=>{ if(recOn){ try{rec.abort();}catch(e){} micReset(); } },1500); return; }
   rec = new SR();
   rec.lang = (P && P.lang==='hinglish') ? 'hi-IN' : 'en-IN';
   rec.interimResults = true;
@@ -429,21 +438,24 @@ function micTap(){
   rec.onresult = e => {
     let t=''; for(const r of e.results) t += r[0].transcript;
     $('inp').value = t.slice(0,2000);
+    if(micDog){clearTimeout(micDog);micDog=null;} // it's alive — call off the watchdog
   };
   rec.onerror = e => {
-    recOn=false; $('micbtn').classList.remove('rec');
+    micReset();
     if(e.error==='not-allowed') toast('Allow microphone access — then tap 🎤 again');
-    else if(e.error!=='aborted' && e.error!=='no-speech') toast("Didn't catch that — tap 🎤 and try again");
     else if(e.error==='no-speech') toast('Heard nothing — tap 🎤 and speak');
+    else if(e.error!=='aborted') toast("Didn't catch that — tap 🎤 and try again");
   };
   rec.onend = () => {
-    recOn=false; $('micbtn').classList.remove('rec');
+    micReset();
     // Speak-and-done: on the reminder screen your words go straight in. Elsewhere, review then send.
     if(screen==='remind' && ($('inp').value||'').trim()) send();
   };
   recOn=true; $('micbtn').classList.add('rec'); $('inp').value='';
   toast('Listening… speak now, tap 🎤 when done');
-  try{ rec.start(); }catch(e){ recOn=false; $('micbtn').classList.remove('rec'); }
+  try{ rec.start(); }catch(e){ micReset(); toast('Voice engine refused — use the mic key on your keyboard.'); return; }
+  // Watchdog: if the engine stalls silently (no words, no end), free the button and suggest the keyboard mic.
+  micDog=setTimeout(()=>{ if(recOn && !($('inp').value||'').trim()){ try{rec.abort();}catch(e){} micReset(); $('inp').focus(); toast('Voice engine stalled — use the 🎤 key on your keyboard instead.'); } },12000);
 }
 
 function openCamSheet(){
