@@ -632,16 +632,35 @@ function render(mode, d, hist){
     threads.barber.push({role:'assistant', content:d.style+': '+(d.steps||[]).join('; ')});
   }
   else if(d.type==='remind'){
-    const rd={title:d.title,person:d.person,occasion:d.occasion,due_date:d.due_date,due_time:d.due_time,recur:d.recur,lead_days:d.lead_days};
-    addThem(d.confirm||('Got it: '+d.title));
+    const items = d.items || (d.title ? [{title:d.title,person:d.person,occasion:d.occasion,due_date:d.due_date,due_time:d.due_time,recur:d.recur,lead_days:d.lead_days}] : []);
+    addThem(d.confirm||'Got it.');
     const w=document.createElement('div'); w.style.alignSelf='stretch';
-    const sv=document.createElement('button'); sv.className='cta'; sv.textContent='✓ Save reminder';
-    sv.addEventListener('click', async ()=>{ sv.disabled=true;
-      try{ const r=await fetch(BACKEND+'/reminders',{method:'POST',headers:{'Content-Type':'application/json','x-pilot-token':PILOT},body:JSON.stringify({device_id:DEVICE,reminder:rd})});
-        if(!r.ok) throw 0; sv.remove(); toast('Locked in. Consider it remembered. 🤝'); loadReminders();
-      }catch(e){ sv.disabled=false; toast('Could not save — try again.'); } });
-    w.appendChild(sv); chatEl().appendChild(w); scrollBottom();
-    hist.push({role:'assistant', content:d.confirm||d.title});
+    items.forEach(rd=>{
+      const card=document.createElement('div'); card.className='vcard'; card.style.marginBottom='8px';
+      card.innerHTML=`<b style="font-size:14px;">${esc(rd.title)}</b>
+        <div style="font-size:12px;color:var(--dim);margin-top:3px;">📅 ${esc(rd.due_date||'?')}${rd.due_time?' · '+esc(rd.due_time):''}${rd.recur&&rd.recur!=='none'?' · repeats '+esc(rd.recur):''}${rd.person?' · '+esc(rd.person):''}</div>`;
+      w.appendChild(card);
+    });
+    if(items.length){
+      const sv=document.createElement('button'); sv.className='cta';
+      sv.textContent = items.length>1 ? `✓ Save all ${items.length} reminders` : '✓ Save reminder';
+      sv.addEventListener('click', async ()=>{ sv.disabled=true; let ok=0;
+        for(const rd of items){
+          if(rd._saved){ ok++; continue; }
+          try{ const r=await fetch(BACKEND+'/reminders',{method:'POST',headers:{'Content-Type':'application/json','x-pilot-token':PILOT},body:JSON.stringify({device_id:DEVICE,reminder:rd})});
+            if(r.ok){ rd._saved=true; ok++; } }catch(e){}
+        }
+        if(ok===items.length){ sv.remove();
+          toast(ok>1?`All ${ok} locked in. Consider them remembered. 🤝`:'Locked in. Consider it remembered. 🤝');
+          const cal=document.createElement('button'); cal.className='cta ghost'; cal.style.marginTop='8px';
+          cal.textContent='📅 Also add to phone calendar'; cal.addEventListener('click',()=>icsExportItems(items));
+          w.appendChild(cal); loadReminders();
+        } else { sv.disabled=false; toast(ok?`Saved ${ok} of ${items.length} — tap again for the rest.`:'Could not save — try again.'); }
+      });
+      w.appendChild(sv);
+    }
+    chatEl().appendChild(w); scrollBottom();
+    hist.push({role:'assistant', content:d.confirm||items.map(i=>i.title).join('; ')});
   }
   else if(d.type==='wish'){
     (d.variants||[]).forEach((v,i)=>{
@@ -858,6 +877,22 @@ function giftGo(id,budget){
   const r=window._rems[id]; if(!r) return;
   addMe(`Gift ideas (${budget}) for: `+r.title);
   askRemind(`Suggest gifts. Occasion: ${r.occasion} for ${r.person||'someone close'} (${r.title}). Budget: ${budget}.`,'gift');
+}
+function icsExportItems(items){ // one .ics with every event — a single tap into the phone calendar
+  const evs = items.map((r,i)=>{
+    if(!r.due_date) return '';
+    const dt=r.due_date.replace(/-/g,'');
+    return ['BEGIN:VEVENT','UID:sorted-batch-'+Date.now()+'-'+i+'@sorted','DTSTART;VALUE=DATE:'+dt,
+      'SUMMARY:'+String(r.title||'').replace(/[,;]/g,' '),
+      r.recur==='yearly'?'RRULE:FREQ=YEARLY':r.recur==='monthly'?'RRULE:FREQ=MONTHLY':r.recur==='weekly'?'RRULE:FREQ=WEEKLY':'',
+      'BEGIN:VALARM','TRIGGER:-P'+(r.lead_days||0)+'D','ACTION:DISPLAY','DESCRIPTION:'+String(r.title||'').replace(/[,;]/g,' '),'END:VALARM',
+      'END:VEVENT'].filter(Boolean).join('\r\n');
+  }).filter(Boolean).join('\r\n');
+  if(!evs) return;
+  const ics=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//SORTED//EN',evs,'END:VCALENDAR'].join('\r\n');
+  const a=document.createElement('a'); a.download='sorted-reminders.ics';
+  a.href=URL.createObjectURL(new Blob([ics],{type:'text/calendar'})); a.click();
+  toast('Calendar file ready — open it and tap Add All.');
 }
 function icsExport(id){
   const r=window._rems[id]; if(!r) return;

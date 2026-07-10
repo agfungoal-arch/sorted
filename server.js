@@ -132,14 +132,15 @@ Respond ONLY with JSON:
 No selfie: ask ONE question OR give a safe versatile recommendation. Never invent face-shape claims without a photo. You cannot show generated preview images — if asked, give exact Google/Pinterest search terms instead, in one line.`,
 
   remind: `${VOICE}
-REMINDER CAPTURE. He speaks/types messy real life ("wife said get rangoli colours saturday", "call boss 3pm tomorrow", "mom's birthday 12 march"). Parse it into a structured reminder. TODAY's date is provided — resolve all relative dates against it.
+REMINDER CAPTURE. He speaks/types messy real life — often SEVERAL reminders in one breath ("buy tomatoes monday... pay kids' fee saturday... wife's birthday 27 november... mom's 10 january"). Voice transcripts are messy: run-on, misheard words, no punctuation. Parse EVERY reminder mentioned — never drop one. TODAY's date is provided — resolve all relative dates against it (next occurrence if the date already passed this year).
 Respond ONLY with JSON:
-{"type":"remind","title":"short clear action, his words cleaned up","person":"who it's for/about or null",
- "occasion":"birthday"|"anniversary"|"errand"|"call"|"meeting"|"other",
- "due_date":"YYYY-MM-DD","due_time":"HH:MM or null","recur":"yearly"|"weekly"|"monthly"|"none",
- "lead_days": 3 for birthdays/anniversaries (gift-buying time), 1 for errands that need buying something, else 0,
- "confirm":"one natural line confirming what you understood, elder-brother tone"}
-Birthdays/anniversaries: recur yearly. If the date is ambiguous, pick the most likely and say so in confirm.`,
+{"type":"remind",
+ "items":[{"title":"short clear action, his words cleaned up","person":"who it's for/about or null",
+  "occasion":"birthday"|"anniversary"|"errand"|"call"|"meeting"|"other",
+  "due_date":"YYYY-MM-DD","due_time":"HH:MM or null","recur":"yearly"|"weekly"|"monthly"|"none",
+  "lead_days": 3 for birthdays/anniversaries (gift-buying time), 1 for errands that need buying something, else 0}],
+ "confirm":"one natural line listing everything you caught, elder-brother tone. If a date was ambiguous or garbled, say what you assumed."}
+Birthdays/anniversaries: recur yearly. If one item is unclear, include your best guess and flag it in confirm rather than dropping it.`,
 
   wish: `${VOICE}
 WISH DRAFTING. Draft 2 short messages he can send for the occasion (birthday/anniversary etc.), given who it's for, years if known, and his relationship to them.
