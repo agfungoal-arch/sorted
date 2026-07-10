@@ -430,8 +430,9 @@ function addSys(t){ const d=document.createElement('div'); d.className='sys'; d.
 function addHTML(html){ const d=document.createElement('div'); d.style.alignSelf='stretch'; d.innerHTML=html; chatEl().appendChild(d); scrollBottom(); return d; }
 
 function thinking(lines){
+  lines = (Array.isArray(lines) && lines.length) ? lines : ['On it…']; // never let a missing mode crash send()
   const d=document.createElement('div'); d.className='think';
-  d.innerHTML = lines.map((l,i)=>`<div class="ln" style="animation-delay:${i*0.8}s">${l}</div>`).join('');
+  d.innerHTML = lines.map((l,i)=>`<div class="ln" style="animation-delay:${i*0.8}s">${esc(l)}</div>`).join('');
   chatEl().appendChild(d); scrollBottom(); return d;
 }
 
@@ -576,7 +577,8 @@ async function send(auto){
     verdict:['Checking the fit…','· colour vs your undertone','· drape & proportions','· footwear match'],
     private:['Thinking this through properly…'],
     product:['Reading the label…','· checking ingredient flags','· checking the claims'],
-    barber:['Reading your face shape…','· matching styles that suit you']
+    barber:['Reading your face shape…','· matching styles that suit you'],
+    remind:['Noting it all down…','· sorting the dates','· setting your nudges']
   }[mode];
   const th=thinking(thinkLines);
 
