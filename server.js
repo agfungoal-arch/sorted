@@ -59,19 +59,23 @@ function gate(req, res) {
   return true;
 }
 
-/* ---------- SPEND CAP (hard daily ceiling on paid AI calls) ----------
-   In-memory, resets at UTC midnight. During an active attack the process stays warm
-   (free tier only spins down when idle), so the ceiling holds; when it does reset the
-   attack has already stopped. Zero extra latency, zero DB calls. Safety (red-flag)
-   checks run BEFORE this and never consume budget. */
+/* ---------- SPEND CAP (hard daily DOLLAR ceiling — all-in) ----------
+   One running $ total across every paid AI call. When the next call would cross the
+   cap, it's refused (503) so real spend can't exceed the ceiling. In-memory, resets at
+   UTC midnight; the process stays warm during active use so the ceiling holds. Cap is
+   env-tunable (DAILY_USD_CAP) so you can raise it without a code change. Per-call costs
+   are deliberately CONSERVATIVE (rounded up, incl. Sonnet-5 tokenizer cushion) so actual
+   spend lands under the cap, never over. Safety red-flag checks run BEFORE this and are free. */
 const DAYK = () => new Date().toISOString().slice(0, 10);
-let budget = { day: DAYK(), text: 0, vision: 0, preview: 0 };
-const BUDGET_CAPS = { text: 5000, vision: 800, preview: 150 }; // ~100 text / 16 vision / 3 preview per user/day across 50 users
+const DAILY_USD_CAP = Number(process.env.DAILY_USD_CAP || 5);
+const COST_USD = { text: 0.015, vision: 0.02, preview: 0.05 }; // est. $/call: text ask, photo ask, Gemini preview
+let spend = { day: DAYK(), usd: 0, n: 0 };
 function budgetOk(kind) {
   const d = DAYK();
-  if (budget.day !== d) budget = { day: d, text: 0, vision: 0, preview: 0 };
-  if (budget[kind] >= BUDGET_CAPS[kind]) return false;
-  budget[kind]++;
+  if (spend.day !== d) spend = { day: d, usd: 0, n: 0 };
+  const c = COST_USD[kind] || 0.015;
+  if (spend.usd + c > DAILY_USD_CAP) return false;
+  spend.usd += c; spend.n++;
   return true;
 }
 
@@ -497,6 +501,7 @@ app.post('/preview', async (req, res) => {
   } catch (e) { console.error(e.message); res.status(500).json({ error: 'preview failed' }); }
 });
 
-app.get('/health', (_, res) => res.json({ ok: true, db: !!SB_URL, push: !!webpush, preview: !!GEMINI_KEY }));
+app.get('/health', (_, res) => res.json({ ok: true, db: !!SB_URL, push: !!webpush, preview: !!GEMINI_KEY,
+  spend_today_usd: Math.round(spend.usd * 100) / 100, spend_cap_usd: DAILY_USD_CAP, calls_today: spend.n }));
 
 app.listen(PORT, () => console.log(`SORTED backend v2 on :${PORT} · model ${MODEL} · db ${SB_URL ? 'on' : 'off'} · push ${webpush ? 'on' : 'off'} · photos never stored`));
