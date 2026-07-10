@@ -4,6 +4,7 @@
 
 const express = require('express');
 const cors = require('cors');
+const crypto = require('crypto');
 let webpush = null; try { webpush = require('web-push'); } catch (e) { console.log('web-push not installed — push disabled'); }
 
 const app = express();
@@ -22,6 +23,22 @@ if (!KEY) { console.error('Set ANTHROPIC_API_KEY'); process.exit(1); }
 if (webpush && process.env.VAPID_PUBLIC && process.env.VAPID_PRIVATE) {
   webpush.setVapidDetails('mailto:agfun.goal@gmail.com', process.env.VAPID_PUBLIC, process.env.VAPID_PRIVATE);
 } else { webpush = null; }
+
+/* ---------- DEVICE IDENTITY (silent key — no login, anonymity intact) ----------
+   A device_id is only valid if it carries an HMAC signature the server issued.
+   The signing key never leaves the server, so an attacker who knows a victim's
+   device_id string still cannot forge a request as that device. Reuses CRON_SECRET
+   as the signing key so no new env var is needed. */
+const DEVICE_SIG_KEY = process.env.CRON_SECRET || process.env.PILOT_TOKEN || 'sorted-dev-fallback';
+const signDevice = id => crypto.createHmac('sha256', DEVICE_SIG_KEY).update(id).digest('base64url').slice(0, 16);
+const newDeviceId = () => { const id = 'd' + crypto.randomBytes(9).toString('base64url'); return id + '~' + signDevice(id); };
+function deviceOk(dev) {
+  if (typeof dev !== 'string') return false;
+  const i = dev.lastIndexOf('~'); if (i < 1) return false;
+  const id = dev.slice(0, i), sig = dev.slice(i + 1), good = signDevice(id);
+  try { return sig.length === good.length && crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(good)); } catch (e) { return false; }
+}
+const isLegacyId = d => typeof d === 'string' && d.length > 0 && d.indexOf('~') < 0;
 
 /* ---------- RATE LIMIT + AUTH ---------- */
 const hits = new Map();
@@ -66,10 +83,16 @@ const RED_FLAGS = [
   { rx: /fever.*rash|rash.*fever|bukhaar.*rash/i,
     action: 'See a doctor within 24-48 hours. Fever + rash together needs eyes on it.',
     script: 'Fever with a spreading rash since [date].' },
-  { rx: /chest.{0,15}(pain|paining|tight|pressure|heavy)|pain.{0,10}chest|can'?t breathe|breathless|difficulty breathing|saans (nahi|phool)/i,
+  { rx: /chest.{0,15}(pain|paining|tight|pressure|heavy)|pain.{0,10}chest|seene?.{0,10}(dard|pain|bhaari)|chhaati.{0,10}dard|can'?t breath|cannot breath|breathless|difficulty breath|out of breath|saans.{0,14}(nahi|phool|dikkat|ruk|ukhad|band)/i,
     action: 'This could be an emergency. Call 112 or get to a hospital now.',
     script: 'Chest pain / breathing difficulty — emergency.' },
-  { rx: /suicid|kill myself|end (my life|it all)|don'?t want to (live|be here)|no reason to live|(want|thoughts?|thinking).*(end|kill|hurt).*(myself|my life)|marna chahta|khudkushi/i,
+  { rx: /(cough|vomit|throw.?up|ulti|khaas|khaans).{0,12}(blood|khoon)|(blood|khoon).{0,12}(cough|vomit|ulti)/i,
+    action: 'This needs to be seen today — go to a doctor or hospital now, do not wait.',
+    script: 'Coughing up / vomiting blood since [date].' },
+  { rx: /face.{0,12}(droop|numb|weak)|(slurred|slurring).{0,10}speech|speech.{0,10}slurr|one side.{0,12}(weak|numb|paralys)|sudden.{0,12}(numb|weak).{0,12}(arm|leg|face)|worst headache of my life|sudden.{0,10}(severe|worst).{0,10}headache|thunderclap/i,
+    action: 'These can be stroke signs — this is an emergency. Call 112 or get to a hospital right now.',
+    script: 'Sudden facial droop / slurred speech / one-sided weakness — emergency.' },
+  { rx: /suicid|kill myself|end (my life|it all)|ending it all|don'?t want to (live|be here|be alive|exist)|not want to be alive|no reason to live|jeena? nahi|jeene? ka mann nahi|marne? ka mann|marna chahta|zindagi khatam|khudkushi|khud ?kushi|(want|thoughts?|thinking|planning).{0,20}(end|kill|hurt).{0,15}(myself|my life|it all)/i,
     action: 'Talk to a human right now: Tele-MANAS 14416 (free, 24x7, confidential). You matter, and this is exactly what they are there for.',
     script: 'Tele-MANAS: 14416' },
   { rx: /mole.*(chang|grow|bleed)|(chang|grow|bleed).*mole/i,
@@ -79,7 +102,9 @@ const RED_FLAGS = [
     action: 'GP within the week for basic tests. Usually explainable — but check.',
     script: 'Unexplained weight loss of [x] kg over [period].' },
 ];
-const checkRedFlags = t => RED_FLAGS.find(f => f.rx.test(t)) || null;
+// Normalize before matching: collapse letter-spacing ("c h e s t") and repeated whitespace so tricks/typos can't dodge the net.
+const normFlag = t => String(t || '').replace(/(\b\w) (?=\w\b)/g, '$1').replace(/\s+/g, ' ');
+const checkRedFlags = t => { const n = normFlag(t); return RED_FLAGS.find(f => f.rx.test(t) || f.rx.test(n)) || null; };
 
 /* ---------- VOICE ---------- */
 const VOICE = `You are Sorted — the sorted elder brother for men 18-45. Warm, direct, zero judgment, slightly wry. Replies 2-6 lines max. Never flatter falsely. Never shame. No numeric scores ever. One question at a time, only if needed.
@@ -301,8 +326,9 @@ app.get('/polls/mine', async (req, res) => {
 
 app.post('/polls/vote', async (req, res) => {
   if (!gate(req, res)) return;
-  const { poll_id, device_id, vote } = req.body || {};
-  if (!poll_id || !device_id || !['yes', 'no'].includes(vote)) return res.status(400).json({ error: 'bad vote' });
+  const { device_id, vote } = req.body || {};
+  const poll_id = parseInt(req.body && req.body.poll_id, 10); // numeric only — blocks PostgREST filter injection
+  if (!Number.isInteger(poll_id) || !device_id || !['yes', 'no'].includes(vote)) return res.status(400).json({ error: 'bad vote' });
   const existing = await sb('poll_votes', 'GET', null, `?poll_id=eq.${poll_id}&device_id=eq.${encodeURIComponent(device_id)}&select=poll_id`);
   if (existing && existing.length) return res.json({ ok: true, dup: true });
   await sb('poll_votes', 'POST', { poll_id, device_id, vote });
@@ -362,20 +388,41 @@ app.post('/cron/run', async (req, res) => {
   res.json({ ok: true, due: due.length, pushed, remPushed });
 });
 
+/* ---------- DEVICE IDENTITY endpoints ---------- */
+// Mint a fresh signed device id (client calls this once, invisibly, on first run).
+app.post('/device/new', (req, res) => { if (!gate(req, res)) return; res.json({ device: newDeviceId() }); });
+// One-time upgrade: move an old unsigned (legacy) device's reminders onto a new signed id.
+app.post('/device/migrate', async (req, res) => {
+  if (!gate(req, res)) return;
+  const { old_id, new_id } = req.body || {};
+  if (!deviceOk(new_id)) return res.status(403).json({ error: 'bad device' });
+  if (!isLegacyId(old_id)) return res.status(400).json({ error: 'legacy only' }); // can't migrate an already-secured id
+  const rows = await sb('reminders', 'GET', null, `?device_id=eq.${encodeURIComponent(old_id)}&status=eq.active&select=title,person,occasion,due_date,due_time,recur,lead_days`);
+  if (rows && rows.length) {
+    await sb('reminders', 'POST', rows.map(r => ({ ...r, device_id: new_id })));
+    await sb(`reminders?device_id=eq.${encodeURIComponent(old_id)}`, 'PATCH', { status: 'migrated' });
+  }
+  res.json({ ok: true, moved: (rows || []).length });
+});
+
 /* ---------- REMINDERS (Never Forget) ---------- */
+const RECURS = ['none', 'yearly', 'monthly', 'weekly'];
+const isDate = s => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s) && !isNaN(Date.parse(s));
 app.post('/reminders', async (req, res) => {
   if (!gate(req, res)) return;
   const { device_id, reminder, reminders } = req.body || {};
-  // accepts one reminder OR a batch — one call saves a whole voice dump
-  const batch = (Array.isArray(reminders) ? reminders : [reminder]).filter(r => r && r.title && r.due_date).slice(0, 20);
-  if (!device_id || !batch.length) return res.status(400).json({ error: 'bad reminder' });
+  if (!deviceOk(device_id)) return res.status(403).json({ error: 'device not recognized' });
+  // accepts one reminder OR a batch — one call saves a whole voice dump. Drop rows with bad dates rather than storing junk.
+  const batch = (Array.isArray(reminders) ? reminders : [reminder]).filter(r => r && r.title && isDate(r.due_date)).slice(0, 20);
+  if (!batch.length) return res.status(400).json({ error: 'bad reminder' });
   const count = await sb('reminders', 'GET', null, `?device_id=eq.${encodeURIComponent(device_id)}&status=eq.active&select=id`);
   const room = 50 - ((count && count.length) || 0);
   if (room <= 0) return res.status(429).json({ error: 'max 50 active reminders — tick some off first' });
   const rows = batch.slice(0, room).map(r => ({
     device_id, title: String(r.title).slice(0, 200), person: r.person ? String(r.person).slice(0, 60) : null,
-    occasion: String(r.occasion || 'other').slice(0, 20), due_date: r.due_date, due_time: r.due_time || null,
-    recur: String(r.recur || 'none').slice(0, 10), lead_days: Math.min(14, Math.max(0, parseInt(r.lead_days) || 0)),
+    occasion: String(r.occasion || 'other').slice(0, 20), due_date: r.due_date,
+    due_time: (typeof r.due_time === 'string' && /^\d{2}:\d{2}/.test(r.due_time)) ? r.due_time.slice(0, 5) : null,
+    recur: RECURS.includes(r.recur) ? r.recur : 'none', lead_days: Math.min(14, Math.max(0, parseInt(r.lead_days) || 0)),
   }));
   const out = await sb('reminders', 'POST', rows);
   logEvent(device_id, 'reminder_set', 'remind');
@@ -385,7 +432,7 @@ app.post('/reminders', async (req, res) => {
 app.get('/reminders', async (req, res) => {
   if (!gate(req, res)) return;
   const d = req.query.device;
-  if (!d) return res.json([]);
+  if (!deviceOk(d)) return res.json([]);
   const rows = await sb('reminders', 'GET', null, `?device_id=eq.${encodeURIComponent(d)}&status=eq.active&order=due_date.asc&limit=30&select=id,title,person,occasion,due_date,due_time,recur,lead_days`);
   res.json(rows || []);
 });
@@ -393,7 +440,8 @@ app.get('/reminders', async (req, res) => {
 app.post('/reminders/update', async (req, res) => {
   if (!gate(req, res)) return;
   const { id, device_id, status } = req.body || {};
-  if (id && device_id && ['done', 'deleted'].includes(status)) {
+  if (!deviceOk(device_id)) return res.status(403).json({ error: 'device not recognized' });
+  if (id && ['done', 'deleted'].includes(status)) {
     await sb(`reminders?id=eq.${encodeURIComponent(id)}&device_id=eq.${encodeURIComponent(device_id)}`, 'PATCH', { status });
   }
   res.json({ ok: true });

@@ -271,12 +271,33 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
 const BACKEND_PROD = 'https://sorted-grew.onrender.com';
 const BACKEND = localStorage.getItem('sorted_backend') ||
   (BACKEND_PROD.startsWith('http') ? BACKEND_PROD : 'http://localhost:8787');
-let DEVICE = localStorage.getItem('sorted_device') ||
-  (localStorage.setItem('sorted_device', 'd' + Math.random().toString(36).slice(2) + Date.now().toString(36)), localStorage.getItem('sorted_device'));
+let DEVICE = localStorage.getItem('sorted_device') || '';
 const PILOT = 'sp26-k7x9m-pilot'; // shared beta token (speed bump vs drive-by abuse)
+// Silent device key: the server issues a signed device id on first run. No login, no name —
+// it just proves "this request is really from this device" so no one can touch your reminders.
+let deviceReady = null;
+async function ensureDevice(){
+  if(DEVICE && DEVICE.indexOf('~')>=0) return DEVICE;      // already secured
+  if(deviceReady) return deviceReady;                      // provisioning in flight
+  deviceReady = (async ()=>{
+    const legacy = DEVICE;                                 // maybe an old unsigned id with existing reminders
+    try{
+      const r=await fetch(BACKEND+'/device/new',{method:'POST',headers:{'Content-Type':'application/json','x-pilot-token':PILOT}});
+      const j=await r.json(); if(!j.device) throw 0;
+      if(legacy && legacy.indexOf('~')<0){
+        try{ await fetch(BACKEND+'/device/migrate',{method:'POST',headers:{'Content-Type':'application/json','x-pilot-token':PILOT},body:JSON.stringify({old_id:legacy,new_id:j.device})}); }catch(e){}
+      }
+      DEVICE=j.device; localStorage.setItem('sorted_device',DEVICE);
+    }catch(e){ deviceReady=null; }                          // offline — retry on next call
+    return DEVICE;
+  })();
+  return deviceReady;
+}
 function sendEvent(event, mode){ // fire-and-forget, anonymous
-  try{ fetch(BACKEND+'/event',{method:'POST',headers:{'Content-Type':'application/json','x-pilot-token':PILOT},
-    body:JSON.stringify({device_id:DEVICE,event,mode:mode||null})}).catch(()=>{}); }catch(e){}
+  ensureDevice().then(()=>{ if(!DEVICE) return;
+    try{ fetch(BACKEND+'/event',{method:'POST',headers:{'Content-Type':'application/json','x-pilot-token':PILOT},
+      body:JSON.stringify({device_id:DEVICE,event,mode:mode||null})}).catch(()=>{}); }catch(e){}
+  });
 }
 
 /* ============ STATE ============ */
@@ -325,9 +346,9 @@ function renderHome(){
   $('greet').textContent=g;
   ['av','av2','av3','av4'].forEach(i=>{ if($(i)) $(i).textContent=P.name[0].toUpperCase(); });
   checkFollowups();
-  fetch(BACKEND+'/polls/feed?device='+DEVICE,{headers:{'x-pilot-token':PILOT}}).then(r=>r.json())
+  fetch(BACKEND+'/polls/feed?device='+encodeURIComponent(DEVICE),{headers:{'x-pilot-token':PILOT}}).then(r=>r.json())
     .then(f=>{ if(f.length && $('peercount')) $('peercount').textContent=' · 1 look waiting for YOUR vote →'; }).catch(()=>{});
-  fetch(BACKEND+'/reminders?device='+DEVICE,{headers:{'x-pilot-token':PILOT}}).then(r=>r.json()).then(rows=>{
+  fetch(BACKEND+'/reminders?device='+encodeURIComponent(DEVICE),{headers:{'x-pilot-token':PILOT}}).then(r=>r.json()).then(rows=>{
     const today=new Date().toISOString().slice(0,10);
     const due=rows.filter(r=>r.due_date<=today);
     if(due.length && !$('rem-banner')){
@@ -539,6 +560,7 @@ function pickOcc(btn,o){
 async function send(auto){
   const inp=$('inp'); const text=inp.value.trim();
   if(!text && !pendingImage) return;
+  await ensureDevice();
   if(text){ addMe(text); inp.value=''; inp.style.height='auto';
     const scrEl=document.querySelector('.screen.on'); if(scrEl) scrEl.style.paddingBottom='';
     if(/[ऀ-ॿ]|\b(bhai|bhaiya|yaar|shaadi|kuch|nahi|nahin|karna|accha|theek|kya)\b/i.test(text) && P.lang!=='hinglish'){ P.lang='hinglish'; save(); }
@@ -858,8 +880,9 @@ async function seePreview(btn, d){
 /* ============ NEVER FORGET ============ */
 async function loadReminders(){
   const box=$('remlist'); if(!box) return;
+  await ensureDevice();
   try{
-    const rows=await fetch(BACKEND+'/reminders?device='+DEVICE,{headers:{'x-pilot-token':PILOT}}).then(r=>r.json());
+    const rows=await fetch(BACKEND+'/reminders?device='+encodeURIComponent(DEVICE),{headers:{'x-pilot-token':PILOT}}).then(r=>r.json());
     if(!rows.length){ box.innerHTML=''; return; }
     box.innerHTML=rows.map(r=>{
       const d=new Date(r.due_date+'T00:00:00'); const ds=d.toLocaleDateString('en-IN',{day:'numeric',month:'short'});
@@ -907,6 +930,8 @@ function giftGo(id,budget){
   addMe(`Gift ideas (${budget}) for: `+r.title);
   askRemind(`Suggest gifts. Occasion: ${r.occasion} for ${r.person||'someone close'} (${r.title}). Budget: ${budget}.`,'gift');
 }
+// RFC 5545 text escaping — stops newlines/commas in a title from injecting extra calendar lines
+function icsEsc(s){ return String(s||'').replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\r?\n/g,'\\n'); }
 function icsExportItems(items){ // one .ics with every event — a single tap into the phone calendar
   const evs = items.map((r,i)=>{
     if(!r.due_date) return '';
@@ -916,9 +941,9 @@ function icsExportItems(items){ // one .ics with every event — a single tap in
     const dtstart = timed ? 'DTSTART:'+dt+'T'+r.due_time.replace(':','').slice(0,4)+'00' : 'DTSTART;VALUE=DATE:'+dt;
     const trigger = timed ? 'TRIGGER:-PT15M' : 'TRIGGER:-P'+(r.lead_days||0)+'D';
     return ['BEGIN:VEVENT','UID:sorted-batch-'+Date.now()+'-'+i+'@sorted',dtstart,
-      'SUMMARY:'+String(r.title||'').replace(/[,;]/g,' '),
+      'SUMMARY:'+icsEsc(r.title),
       r.recur==='yearly'?'RRULE:FREQ=YEARLY':r.recur==='monthly'?'RRULE:FREQ=MONTHLY':r.recur==='weekly'?'RRULE:FREQ=WEEKLY':'',
-      'BEGIN:VALARM',trigger,'ACTION:DISPLAY','DESCRIPTION:'+String(r.title||'').replace(/[,;]/g,' '),'END:VALARM',
+      'BEGIN:VALARM',trigger,'ACTION:DISPLAY','DESCRIPTION:'+icsEsc(r.title),'END:VALARM',
       'END:VEVENT'].filter(Boolean).join('\r\n');
   }).filter(Boolean).join('\r\n');
   if(!evs) return;
@@ -933,9 +958,9 @@ function icsExport(id){
   const timed = r.due_time && /^\d\d:\d\d/.test(r.due_time);
   const ics=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//SORTED//EN','BEGIN:VEVENT',
     'UID:sorted-'+id+'@sorted', timed?'DTSTART:'+dt+'T'+r.due_time.replace(':','').slice(0,4)+'00':'DTSTART;VALUE=DATE:'+dt,
-    'SUMMARY:'+r.title.replace(/[,;]/g,' '),
+    'SUMMARY:'+icsEsc(r.title),
     r.recur==='yearly'?'RRULE:FREQ=YEARLY':r.recur==='monthly'?'RRULE:FREQ=MONTHLY':r.recur==='weekly'?'RRULE:FREQ=WEEKLY':'',
-    'BEGIN:VALARM', timed?'TRIGGER:-PT15M':'TRIGGER:-P'+(r.lead_days||0)+'D','ACTION:DISPLAY','DESCRIPTION:'+r.title.replace(/[,;]/g,' '),'END:VALARM',
+    'BEGIN:VALARM', timed?'TRIGGER:-PT15M':'TRIGGER:-P'+(r.lead_days||0)+'D','ACTION:DISPLAY','DESCRIPTION:'+icsEsc(r.title),'END:VALARM',
     'END:VEVENT','END:VCALENDAR'].filter(Boolean).join('\r\n');
   const a=document.createElement('a'); a.download='sorted-reminder.ics';
   a.href=URL.createObjectURL(new Blob([ics],{type:'text/calendar'})); a.click();
@@ -1017,7 +1042,10 @@ $('inp').addEventListener('input',function(){
 
 /* ============ BOOT ============ */
 if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
-if(P){ go('home'); } else { $('scr-onboard').classList.add('on'); $('askbar').style.display='none'; }
+// Secure the device id (and migrate any legacy reminders) BEFORE first render, so home data loads under the signed id.
+ensureDevice().finally(()=>{
+  if(P){ go('home'); } else { $('scr-onboard').classList.add('on'); $('askbar').style.display='none'; }
+});
 </script>
 </body>
 </html>
