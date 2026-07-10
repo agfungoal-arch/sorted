@@ -64,6 +64,23 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
 .door.purple-door h4{color:var(--royal-dk);}
 .chip{display:inline-block; font-size:10.5px; letter-spacing:.08em; padding:3px 9px; border-radius:20px; background:var(--gold-lt); border:1px solid #E4D5AE; color:var(--gold-dk); margin-top:8px; font-weight:700;}
 .chip.p{background:var(--royal-lt); border-color:var(--royal-line); color:var(--royal);}
+/* home widget grid */
+.hgrid{display:grid; grid-template-columns:1fr 1fr; gap:11px; margin-top:2px;}
+.tile{background:var(--paper); border:1px solid var(--line); border-radius:16px; padding:15px 14px; cursor:pointer; box-shadow:0 1px 3px rgba(31,43,38,.05); transition:border-color .15s, transform .1s; min-height:120px; display:flex; flex-direction:column;}
+.tile:active{transform:scale(.98); border-color:var(--rolex);}
+.tile .ic{font-size:23px; line-height:1;}
+.tile h4{font-size:14.5px; margin:9px 0 3px; color:var(--rolex-dk); line-height:1.2;}
+.tile p{font-size:11.5px; color:var(--dim); line-height:1.45;}
+.tile .chip{margin-top:auto;}
+.tile.purple-door{border-color:var(--royal-line); background:linear-gradient(180deg,#fff,#F7F5FC);}
+.tile.purple-door h4{color:var(--royal-dk);}
+.tile.wide{grid-column:1 / -1; min-height:0; flex-direction:row; align-items:center; gap:13px;}
+.tile.wide .ic{font-size:26px;}
+.tile.wide h4{margin:0 0 2px;}
+.tile.moat{grid-column:1 / -1; min-height:0; flex-direction:row; align-items:center; gap:13px; background:linear-gradient(115deg,var(--rolex-lt),#fff); border:1.5px solid #A9CFBB;}
+.tile.moat .ic{font-size:28px;}
+.tile.moat h4{margin:0 0 2px; letter-spacing:.02em;}
+.tile.moat .tag{display:inline-block; font-size:9.5px; letter-spacing:.12em; font-weight:800; color:var(--rolex); background:#fff; border:1px solid #BED8C9; border-radius:20px; padding:2px 8px; margin-bottom:5px;}
 /* chat */
 .chat{flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:10px; padding-bottom:8px;}
 .msg{max-width:84%; padding:12px 14px; border-radius:16px; font-size:14.5px; line-height:1.55; white-space:pre-wrap; word-break:break-word;}
@@ -177,13 +194,15 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
     <div class="hdr"><div class="brand">S<em>O</em>RTED</div><div class="avatar" id="av" role="button" tabindex="0" aria-label="Your profile and memory" onclick="go('memory')">?</div></div>
     <div class="greet" id="greet">What's the plan?</div>
     <div id="citychip" role="button" tabindex="0" aria-label="Change your city" onclick="editMem(1)" style="display:inline-flex;align-items:center;gap:5px;font-size:12.5px;color:var(--dim);background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:7px 13px;min-height:36px;margin-bottom:12px;cursor:pointer;"></div>
-    <div class="peerbar" role="button" tabindex="0" onclick="go('crowd')">🫂 <b>PEER REVIEW</b> — the honest second opinion. Vote on other men's looks, and they vote on yours. Faces always blurred, names never exist.<span id="peercount" style="font-weight:700;"></span></div>
-    <div class="door" role="button" tabindex="0" onclick="go('verdict')"><div class="ic">📸</div><h4>What do I wear?</h4><p>Wedding, office party, a date. Send one outfit, or a photo of the whole wardrobe — you get ONE answer: wear this.</p><span class="chip">MOST USED</span></div>
-    <div class="door purple-door" role="button" tabindex="0" onclick="go('gate')"><div class="ic">🔒</div><h4>Private Space</h4><p>Rashes, sweat, hair fall, bedroom worries — the stuff you google at 2am. Ask properly. Never saved.</p><span class="chip p">PRIVATE MODE</span></div>
-    <div class="door" role="button" tabindex="0" onclick="go('product')"><div class="ic">🧴</div><h4>Check a product</h4><p>That "48-hour protection" deo. The ₹499 charcoal facewash. Real or marketing? Snap the label.</p></div>
-    <div class="door" role="button" tabindex="0" onclick="go('barber')"><div class="ic">💈</div><h4>Barber card</h4><p>Walk in with exact instructions instead of "just do something".</p></div>
-    <div class="door" role="button" tabindex="0" onclick="go('crowd')"><div class="ic">🫂</div><h4>Peer review</h4><p>Post your outfit or new look — get honest votes from other men. Your face blurred, your name never shown.</p></div>
-    <div class="door" role="button" tabindex="0" onclick="go('remind')"><div class="ic">⏰</div><h4>Never Forget</h4><p>Wife said. Boss said. Birthday coming. Say it once — I remind you in time, draft the wish, suggest the gift.</p></div>
+    <div id="home-alerts"></div>
+    <div class="hgrid">
+      <div class="tile" role="button" tabindex="0" onclick="go('verdict')"><div class="ic">📸</div><h4>What do I wear?</h4><p>One clear verdict on your look.</p><span class="chip">MOST USED</span></div>
+      <div class="tile purple-door" role="button" tabindex="0" onclick="go('gate')"><div class="ic">🔒</div><h4>Private Space</h4><p>The 2am questions. Never saved.</p><span class="chip p">PRIVATE</span></div>
+      <div class="tile" role="button" tabindex="0" onclick="go('product')"><div class="ic">🧴</div><h4>Check a product</h4><p>Real, or just marketing?</p></div>
+      <div class="tile" role="button" tabindex="0" onclick="go('barber')"><div class="ic">💈</div><h4>Barber card</h4><p>Exact words for your barber.</p></div>
+      <div class="tile wide" role="button" tabindex="0" onclick="go('remind')"><div class="ic">⏰</div><div><h4>Never Forget</h4><p>Wife said, boss said, birthday coming. Say it once — I remind you, draft the wish, suggest the gift.</p></div></div>
+      <div class="tile moat" role="button" tabindex="0" onclick="go('crowd')"><div class="ic">🫂</div><div><span class="tag">THE MOAT</span><h4>Peer Review</h4><p>Post your look, get honest votes from other men — faces blurred, names never shown.<span id="peercount" style="font-weight:700;color:var(--rolex);"></span></p></div></div>
+    </div>
   </div>
 
   <!-- VERDICT -->
@@ -363,7 +382,7 @@ function renderHome(){
       el.style.borderColor='#E4D5AE'; el.style.background='linear-gradient(180deg,#fff,var(--gold-lt))';
       el.innerHTML=`<div class="ic">⏰</div><h4>Today: ${esc(due[0].title)}${due.length>1?' +'+(due.length-1)+' more':''}</h4><p>Tap to see everything on your plate — wishes and gift ideas included.</p>`;
       el.onclick=()=>go('remind');
-      $('greet').after(el);
+      $('home-alerts').appendChild(el);
     }
   }).catch(()=>{});
 }
@@ -379,7 +398,7 @@ async function checkFollowups(){
     el.innerHTML=`<div class="ic">🔒</div><h4>Checking in, as promised</h4><p>You asked me something a few days back. Better now, or time for that doctor visit? Tap to talk — private as always.</p>`;
     el.onclick=()=>{ fetch(BACKEND+'/followups/done',{method:'POST',headers:{'Content-Type':'application/json','x-pilot-token':PILOT},body:JSON.stringify({id:f.id,device_id:DEVICE})}).catch(()=>{}); el.remove(); enterPrivate();
       setTimeout(()=>addThem('Friday, as promised — any better? Honest answer. If it\'s not clearly improving, this week is derm week and I can help you prep for it.'),400); };
-    $('greet').after(el);
+    ($('home-alerts')||$('greet')).appendChild(el);
   }catch(e){}
 }
 
