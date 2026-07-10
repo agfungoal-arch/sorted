@@ -552,7 +552,7 @@ async function send(auto){
     const res=await fetch(BACKEND+'/ask',{
       method:'POST', headers:{'Content-Type':'application/json','x-pilot-token':PILOT}, signal:ctrl.signal,
       body:JSON.stringify({ mode, messages:hist.slice(-12), image:img?{data:img.b64,media_type:img.mime}:null,
-        occasion: mode==='verdict'?occasion:null, profile:P, device_id:DEVICE })
+        occasion: mode==='verdict'?occasion:null, profile:P, device_id:DEVICE, local_now:new Date().toString().slice(0,24) })
     });
     clearTimeout(to);
     if(!res.ok) throw new Error('api');
@@ -655,11 +655,28 @@ function render(mode, d, hist){
           const cal=document.createElement('button'); cal.className='cta ghost'; cal.style.marginTop='8px';
           cal.textContent='📅 Also add to phone calendar'; cal.addEventListener('click',()=>icsExportItems(items));
           w.appendChild(cal); loadReminders();
+          const timed = items.some(i=>i.due_time);
+          if(timed) addThem(`For the exact-time ones — tap 📅 above. Your phone's calendar rings at the minute; my own nudges come as a morning/evening check-in, not an alarm clock.`);
+          if(!P.push){
+            if(/iPhone|iPad|iPod/.test(navigator.userAgent) && !navigator.standalone){
+              addHTML(`<div class="disc">🔔 Want my nudges on your lock screen? iPhone rule: Sorted must live on your Home Screen first. Tap Share <b>⎋</b> → <b>Add to Home Screen</b>, open Sorted from that icon, and I'll ask once for permission.</div>`);
+            } else {
+              addHTML(`<button class="cta ghost" style="margin-top:8px;" onclick="enablePush(this)">🔔 Nudge me when these come due</button>`);
+            }
+          }
         }catch(e){ sv.disabled=false; toast(typeof e==='string'?e:'Could not save — try again.'); }
       });
       w.appendChild(sv);
     }
     chatEl().appendChild(w); scrollBottom();
+    (d.wishes||[]).forEach(v=>{
+      const wc=document.createElement('div'); wc.className='vcard'; wc.style.cssText='align-self:stretch;margin-bottom:10px;';
+      const p=document.createElement('div'); p.style.cssText='font-size:14px;line-height:1.6;white-space:pre-wrap;'; p.textContent=v; wc.appendChild(p);
+      const c=document.createElement('button'); c.className='cta ghost'; c.style.marginTop='10px'; c.textContent='📋 Copy message';
+      c.addEventListener('click',()=>{ navigator.clipboard.writeText(v).then(()=>toast('Copied — paste it in WhatsApp. 🤝')).catch(()=>toast('Long-press the text to copy.')); });
+      wc.appendChild(c); chatEl().appendChild(wc);
+    });
+    if(d.wishes && d.wishes.length) scrollBottom();
     hist.push({role:'assistant', content:d.confirm||items.map(i=>i.title).join('; ')});
   }
   else if(d.type==='wish'){
@@ -882,10 +899,14 @@ function icsExportItems(items){ // one .ics with every event — a single tap in
   const evs = items.map((r,i)=>{
     if(!r.due_date) return '';
     const dt=r.due_date.replace(/-/g,'');
-    return ['BEGIN:VEVENT','UID:sorted-batch-'+Date.now()+'-'+i+'@sorted','DTSTART;VALUE=DATE:'+dt,
+    // timed events (calls, meetings) ring at the exact time; date-only ones stay all-day
+    const timed = r.due_time && /^\d\d:\d\d/.test(r.due_time);
+    const dtstart = timed ? 'DTSTART:'+dt+'T'+r.due_time.replace(':','').slice(0,4)+'00' : 'DTSTART;VALUE=DATE:'+dt;
+    const trigger = timed ? 'TRIGGER:-PT15M' : 'TRIGGER:-P'+(r.lead_days||0)+'D';
+    return ['BEGIN:VEVENT','UID:sorted-batch-'+Date.now()+'-'+i+'@sorted',dtstart,
       'SUMMARY:'+String(r.title||'').replace(/[,;]/g,' '),
       r.recur==='yearly'?'RRULE:FREQ=YEARLY':r.recur==='monthly'?'RRULE:FREQ=MONTHLY':r.recur==='weekly'?'RRULE:FREQ=WEEKLY':'',
-      'BEGIN:VALARM','TRIGGER:-P'+(r.lead_days||0)+'D','ACTION:DISPLAY','DESCRIPTION:'+String(r.title||'').replace(/[,;]/g,' '),'END:VALARM',
+      'BEGIN:VALARM',trigger,'ACTION:DISPLAY','DESCRIPTION:'+String(r.title||'').replace(/[,;]/g,' '),'END:VALARM',
       'END:VEVENT'].filter(Boolean).join('\r\n');
   }).filter(Boolean).join('\r\n');
   if(!evs) return;
@@ -897,9 +918,12 @@ function icsExportItems(items){ // one .ics with every event — a single tap in
 function icsExport(id){
   const r=window._rems[id]; if(!r) return;
   const dt=r.due_date.replace(/-/g,'');
+  const timed = r.due_time && /^\d\d:\d\d/.test(r.due_time);
   const ics=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//SORTED//EN','BEGIN:VEVENT',
-    'UID:sorted-'+id+'@sorted','DTSTART;VALUE=DATE:'+dt,'SUMMARY:'+r.title.replace(/[,;]/g,' '),
-    r.recur==='yearly'?'RRULE:FREQ=YEARLY':'', 'BEGIN:VALARM','TRIGGER:-P'+(r.lead_days||0)+'D','ACTION:DISPLAY','DESCRIPTION:'+r.title.replace(/[,;]/g,' '),'END:VALARM',
+    'UID:sorted-'+id+'@sorted', timed?'DTSTART:'+dt+'T'+r.due_time.replace(':','').slice(0,4)+'00':'DTSTART;VALUE=DATE:'+dt,
+    'SUMMARY:'+r.title.replace(/[,;]/g,' '),
+    r.recur==='yearly'?'RRULE:FREQ=YEARLY':r.recur==='monthly'?'RRULE:FREQ=MONTHLY':r.recur==='weekly'?'RRULE:FREQ=WEEKLY':'',
+    'BEGIN:VALARM', timed?'TRIGGER:-PT15M':'TRIGGER:-P'+(r.lead_days||0)+'D','ACTION:DISPLAY','DESCRIPTION:'+r.title.replace(/[,;]/g,' '),'END:VALARM',
     'END:VEVENT','END:VCALENDAR'].filter(Boolean).join('\r\n');
   const a=document.createElement('a'); a.download='sorted-reminder.ics';
   a.href=URL.createObjectURL(new Blob([ics],{type:'text/calendar'})); a.click();

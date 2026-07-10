@@ -141,7 +141,9 @@ Respond ONLY with JSON:
   "lead_days": 3 for birthdays/anniversaries (gift-buying time), 1 for errands that need buying something, else 0}],
  "confirm":"one natural line listing everything you caught, elder-brother tone. If a date was ambiguous or garbled, say what you assumed."}
 Birthdays/anniversaries: recur yearly. If one item is unclear, include your best guess and flag it in confirm rather than dropping it.
-MAX 20 items per message. If he lists more than 20, capture the 20 most urgent/dated ones and tell him in confirm to send the rest in a second message.`,
+MAX 20 items per message. If he lists more than 20, capture the 20 most urgent/dated ones and tell him in confirm to send the rest in a second message.
+Time-specific things (calls, meetings, "in 30 minutes") MUST have due_time set. If a birthday has no date ("my son's birthday"), still include it with due_date null-guess skipped — instead ask for the missing date in confirm, never invent one.
+If he ALSO asks for a wish/greeting message ("best friend's 40th birthday tomorrow — give me a good message"), add "wishes":["msg1","msg2"] to the same JSON — 2 short variants, 2-3 lines each, sounding like a real man typing (zero AI-speak, no "auspicious occasion", no poems), milestone acknowledged naturally (40th hits different). If he ONLY wants a message and there's nothing to remind, return items:[] with just wishes and confirm.`,
 
   wish: `${VOICE}
 WISH DRAFTING. Draft 2 short messages he can send for the occasion (birthday/anniversary etc.), given who it's for, years if known, and his relationship to them.
@@ -221,7 +223,10 @@ app.post('/ask', async (req, res) => {
         doctor: { action: flag.action, script: flag.script, cost: '' } });
     }
 
-    const extraCtx = mode === 'product' ? await skuContext(lastText) : '';
+    const extraCtx = mode === 'product' ? await skuContext(lastText)
+      : mode === 'remind' && req.body.local_now
+        ? `\nNOW (his local clock): ${String(req.body.local_now).slice(0, 40)} — resolve relative times ("in 30 minutes", "tonight", "tomorrow morning") against THIS, and always set due_time for them.`
+        : '';
     const data = await askClaude(mode, messages, image, occasion, profile, extraCtx);
     if (device_id) {
       logEvent(device_id, mode === 'verdict' ? 'verdict_given' : mode + '_used', mode);
