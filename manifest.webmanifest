@@ -1,12 +1,14 @@
 {
-  "name": "Sorted",
+  "name": "Sorted-Men",
   "short_name": "Sorted",
   "description": "Your no-judgment guy for looks, style and the stuff you won't ask anyone.",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#F8F6F1",
-  "theme_color": "#F8F6F1",
+  "theme_color": "#006039",
   "icons": [
-    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }

@@ -1,4 +1,4 @@
-const CACHE = 'sorted-v3';
+const CACHE = 'sorted-v4';
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', e => {
   e.waitUntil(
@@ -23,8 +23,8 @@ self.addEventListener('fetch', e => {
 self.addEventListener('push', e => {
   e.waitUntil(self.registration.showNotification('Sorted', {
     body: 'Sorted has a thought.',
-    icon: 'icon.svg',
-    badge: 'icon.svg',
+    icon: 'icon-192.png',
+    badge: 'icon-192.png',
     tag: 'sorted-checkin'
   }));
 });
