@@ -32,6 +32,8 @@ if (webpush && process.env.VAPID_PUBLIC && process.env.VAPID_PRIVATE) {
    as the signing key so no new env var is needed. */
 const DEVICE_SIG_KEY = process.env.CRON_SECRET || process.env.PILOT_TOKEN || 'sorted-dev-fallback';
 const signDevice = id => crypto.createHmac('sha256', DEVICE_SIG_KEY).update(id).digest('base64url').slice(0, 16);
+// A stable, non-identifying handle for a poster — lets a user block someone without ever exposing their device id.
+const posterHash = id => crypto.createHmac('sha256', DEVICE_SIG_KEY).update('poster:' + id).digest('base64url').slice(0, 10);
 const newDeviceId = () => { const id = 'd' + crypto.randomBytes(9).toString('base64url'); return id + '~' + signDevice(id); };
 function deviceOk(dev) {
   if (typeof dev !== 'string') return false;
@@ -356,13 +358,35 @@ app.post('/polls', async (req, res) => {
   res.json({ ok: true, id: row && row[0] && row[0].id });
 });
 
+const catOf = q => (String(q || '').split(/[—-]/)[0] || '').trim().replace(/\s*\/.*$/, '') || 'A look';
 app.get('/polls/feed', async (req, res) => {
   if (!gate(req, res)) return;
   const d = req.query.device || '';
-  const polls = await sb('polls', 'GET', null, `?status=eq.open&device_id=neq.${encodeURIComponent(d)}&order=created_at.desc&limit=20&select=id,question,img,created_at`);
+  const blocked = String(req.query.blocked || '').split(',').filter(Boolean);
+  const cat = String(req.query.cat || '').toLowerCase();
+  const polls = await sb('polls', 'GET', null, `?status=eq.open&device_id=neq.${encodeURIComponent(d)}&order=created_at.desc&limit=40&select=id,question,img,device_id,votes_yes,votes_no,created_at`);
   const votes = await sb('poll_votes', 'GET', null, `?device_id=eq.${encodeURIComponent(d)}&select=poll_id`);
   const voted = new Set((votes || []).map(v => v.poll_id));
-  res.json((polls || []).filter(p => !voted.has(p.id)).slice(0, 1));
+  let looks = (polls || []).filter(p => !voted.has(p.id))
+    .map(p => ({ id: p.id, category: catOf(p.question), img: p.img, poster: posterHash(p.device_id), yes: p.votes_yes || 0, no: p.votes_no || 0 }))
+    .filter(p => !blocked.includes(p.poster));
+  const categories = [...new Set((polls || []).map(p => catOf(p.question)))].slice(0, 8);
+  if (cat && cat !== 'all') looks = looks.filter(p => p.category.toLowerCase() === cat);
+  // live activity from today's events
+  const today = new Date().toISOString().slice(0, 10);
+  const ev = await sb('events', 'GET', null, `?ts=gte.${today}T00:00:00&event=in.("poll_voted","poll_created","crowd_used")&select=device_id,event&limit=3000`) || [];
+  const stats = { active: new Set(ev.map(e => e.device_id)).size, reviewed: ev.filter(e => e.event === 'poll_voted').length, posted: ev.filter(e => e.event === 'poll_created').length };
+  res.json({ looks: looks.slice(0, 10), categories, stats });
+});
+
+app.post('/polls/report', async (req, res) => {
+  if (!gate(req, res)) return;
+  const { device_id } = req.body || {};
+  const poll_id = parseInt(req.body && req.body.poll_id, 10);
+  if (!Number.isInteger(poll_id) || !deviceOk(device_id)) return res.status(400).json({ error: 'bad report' });
+  logEvent(device_id, 'poll_report', String(poll_id));
+  await sb(`polls?id=eq.${poll_id}`, 'PATCH', { status: 'removed' }); // reported content is pulled immediately, then reviewed
+  res.json({ ok: true });
 });
 
 app.get('/polls/mine', async (req, res) => {

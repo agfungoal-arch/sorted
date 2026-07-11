@@ -140,6 +140,11 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
 .chips button.sel, .chipbtn.sel{background:var(--rolex); color:#fff; border-color:var(--rolex);}
 .chipbtn{margin:0 6px 6px 0;}
 .chip-ic{display:inline-flex; flex-shrink:0;}
+.minirep{background:none; border:none; color:var(--faint); font-size:12px; text-decoration:underline; cursor:pointer; padding:8px 4px;}
+.statcard{display:flex; gap:16px; align-items:center;}
+.statcard .num{font-size:24px; font-weight:800; color:var(--rolex-dk); line-height:1;}
+.statcard .lbl{font-size:11px; color:var(--dim); margin-top:2px;}
+.statcard .sep{width:1px; height:34px; background:var(--line);}
 .menu-item{display:flex; align-items:center; gap:10px; justify-content:flex-start;}
 .menu-item .ic svg{width:22px; height:22px;}
 .chip-ic svg, .chips button svg, .chipbtn svg{width:16px; height:16px;}
@@ -473,7 +478,7 @@ function renderHome(){
   ['av','av2','av3','av4'].forEach(i=>{ if($(i)) $(i).textContent=P.name[0].toUpperCase(); });
   checkFollowups();
   fetch(BACKEND+'/polls/feed?device='+encodeURIComponent(DEVICE),{headers:{'x-pilot-token':PILOT}}).then(r=>r.json())
-    .then(f=>{ if(f.length && $('peercount')) $('peercount').textContent=' · 1 look waiting for YOUR vote →'; }).catch(()=>{});
+    .then(f=>{ const n=(f&&f.looks&&f.looks.length)||0; if(n && $('peercount')) $('peercount').textContent=' · '+n+' look'+(n>1?'s':'')+' waiting for you →'; }).catch(()=>{});
   fetch(BACKEND+'/reminders?device='+encodeURIComponent(DEVICE),{headers:{'x-pilot-token':PILOT}}).then(r=>r.json()).then(rows=>{
     const today=new Date().toISOString().slice(0,10);
     const due=rows.filter(r=>r.due_date<=today);
@@ -1089,7 +1094,8 @@ function crowdAsk(){
     <canvas id="blurcv" style="margin-top:10px;"></canvas>
     <p class="small" id="blurhint" style="text-align:center;">Tap the face to blur it — or use the button below to blur the whole top safely.</p>
     <button class="cta ghost" id="fullblur" style="margin-top:8px;" onclick="blurWholeFace()">Blur the face area for me</button>
-    <button class="cta" id="postbtn" style="margin-top:8px;opacity:.5;" onclick="postPoll()">Post for votes</button>
+    <label style="display:flex;gap:10px;align-items:flex-start;margin:12px 0 4px;font-size:12px;color:var(--dim);line-height:1.5;"><input type="checkbox" id="crowdagree" style="margin-top:2px;"><span>This is my own photo. No nudity, explicit content, or other people without their consent — and I accept the community rules.</span></label>
+    <button class="cta" id="postbtn" style="margin-top:6px;opacity:.5;" onclick="postPoll()">Post for votes</button>
     <button class="cta ghost" style="margin-top:8px;" onclick="$('sheet').classList.remove('on')">Cancel</button>`;
   $('sheet').classList.add('on');
   const cv=$('blurcv'), img=new Image();
@@ -1129,6 +1135,7 @@ function pixelate(cv,x,y,rad){
 }
 async function postPoll(){
   if(!blurApplied){ toast('Blur the face first — tap it on the photo. Votes should judge the look, not the man.'); return; }
+  if(!$('crowdagree')||!$('crowdagree').checked){ toast('Please tick the box to confirm the community rules.'); return; }
   const blurred=$('blurcv').toDataURL('image/jpeg',.8);
   $('sheet').classList.remove('on');
   try{
@@ -1138,33 +1145,74 @@ async function postPoll(){
     toast('Posted. Unbiased votes incoming — check 🫂 Peer review later.');
   }catch(e){ toast('Could not post right now — try again in a minute.'); }
 }
-async function loadCrowd(){
-  const box=$('crowdbox'); box.innerHTML='<p class="small">Loading…</p>';
+let _feed=[], _feedIdx=0, _feedCat='all', _reviewed=0;
+async function loadCrowd(cat){
+  _feedCat = cat || _feedCat || 'all';
+  const box=$('crowdbox'); box.innerHTML='<p class="small">Loading the brotherhood…</p>';
+  sendEvent('crowd_used','crowd');
   try{
-    const h={'x-pilot-token':PILOT};
+    const h={'x-pilot-token':PILOT}, blocked=(P.blocked||[]).join(',');
     const [mine,feed]=await Promise.all([
-      fetch(BACKEND+'/polls/mine?device='+DEVICE,{headers:h}).then(r=>r.json()),
-      fetch(BACKEND+'/polls/feed?device='+DEVICE,{headers:h}).then(r=>r.json())
+      fetch(BACKEND+'/polls/mine?device='+encodeURIComponent(DEVICE),{headers:h}).then(r=>r.json()),
+      fetch(BACKEND+`/polls/feed?device=${encodeURIComponent(DEVICE)}&blocked=${encodeURIComponent(blocked)}&cat=${encodeURIComponent(_feedCat)}`,{headers:h}).then(r=>r.json())
     ]);
-    let html=`<button class="cta has-ic" style="margin-bottom:14px;" onclick="crowdCapture=true;openCamSheet()">${ic('camera')}Post your look — face blurred, honest votes</button>`;
-    if(mine.length){ const m=mine[0];
-      html+=`<div class="vcard" style="margin-bottom:14px;"><div class="vtag">YOUR LOOK · ${m.status==='open'?'votes coming in':'closed'}</div>
-      <div style="font-size:15px;margin:6px 0;">${esc(m.question||'')}</div>
-      <div style="font-size:20px;font-weight:800;color:var(--rolex-dk);">${m.votes_yes} yes &nbsp;·&nbsp; ${m.votes_no} no</div></div>`; }
-    if(feed.length){ const p=feed[0];
-      html+=`<div class="vcard"><div class="vtag">A BROTHER ASKS · anonymous</div>
-      <div style="font-size:15px;margin:6px 0;">${esc(p.question||'')}</div>
-      <img src="${p.img}" alt="Another member's look, face blurred" style="width:100%;border-radius:10px;border:1px solid var(--line);">
-      <div class="fbrow"><button onclick="voteCrowd(${p.id},'yes')">${ic('check')}Wear it</button><button onclick="voteCrowd(${p.id},'no')">Rethink</button></div></div>`; }
-    else html+=`<div class="msg them" style="max-width:100%;">No looks waiting for your vote right now — check back later. Meanwhile, post YOURS with the button above: face blurred, fully anonymous, votes in by tonight.</div>
-    <button class="cta ghost" style="margin-top:10px;" onclick="loadCrowd()">↻ Check for new looks</button>`;
-    box.innerHTML=html;
+    _feed = (feed && feed.looks) || []; _feedIdx=0;
+    renderCrowd(mine||[], feed||{});
   }catch(e){ box.innerHTML='<p class="small">Could not load — check your connection and reopen.</p>'; }
+}
+function renderCrowd(mine, feed){
+  const s=feed.stats||{active:0,reviewed:0,posted:0};
+  const cats=['all',...((feed.categories)||[])];
+  let html=`<div class="vcard" style="margin-bottom:14px;background:linear-gradient(115deg,var(--rolex-lt),#fff);border-color:#BED8C9;">
+    <div class="statcard">
+      <div><div class="num">${s.active}</div><div class="lbl">brothers active today</div></div>
+      <div class="sep"></div>
+      <div><div class="num">${s.reviewed}</div><div class="lbl">looks reviewed today</div></div>
+      ${_reviewed?`<div class="sep"></div><div><div class="num" style="color:var(--gold-dk);">${_reviewed}</div><div class="lbl">you helped today</div></div>`:''}
+    </div></div>`;
+  html+=`<button class="cta has-ic" style="margin-bottom:14px;" onclick="crowdCapture=true;openCamSheet()">${ic('camera')}Post your look for honest votes</button>`;
+  if(mine.length){ const m=mine[0], total=(m.votes_yes||0)+(m.votes_no||0);
+    html+=`<div class="vcard" style="margin-bottom:14px;"><div class="vtag">YOUR LOOK · ${m.status==='open'?'live':'closed'}</div>
+      <div style="font-size:15px;margin:6px 0;">${esc(m.question||'')}</div>
+      <div style="font-size:20px;font-weight:800;color:var(--rolex-dk);">${m.votes_yes} wear it · ${m.votes_no} rethink</div>
+      <div style="font-size:12px;color:var(--dim);">${total} ${total===1?'brother has':'brothers have'} weighed in</div></div>`; }
+  if(cats.length>1) html+=`<div class="chips" style="margin:0 0 10px;">${cats.map(c=>`<button class="${c.toLowerCase()===String(_feedCat).toLowerCase()?'sel':''}" onclick="loadCrowd('${String(c).replace(/['"\\]/g,'')}')">${c==='all'?'All looks':esc(c)}</button>`).join('')}</div>`;
+  html+=`<div id="reviewcard"></div>`;
+  $('crowdbox').innerHTML=html;
+  renderReviewCard();
+}
+function renderReviewCard(){
+  const el=$('reviewcard'); if(!el) return;
+  const p=_feed[_feedIdx];
+  if(!p){ el.innerHTML=`<div class="msg them" style="max-width:100%;">Queue cleared${_reviewed?` — you reviewed ${_reviewed} today. The brotherhood owes you one. 🤝`:''}. Post yours, or check back as more men drop their looks.</div>
+    <button class="cta ghost" style="margin-top:10px;" onclick="loadCrowd()">Refresh</button>`; return; }
+  const total=p.yes+p.no;
+  el.innerHTML=`<div class="vcard"><div class="vtag">A BROTHER ASKS · ${esc(p.category)}</div>
+    <img src="${p.img}" alt="Another member's look, face blurred" style="width:100%;border-radius:10px;border:1px solid var(--line);margin:6px 0;">
+    ${total?`<div style="font-size:12px;color:var(--dim);margin-bottom:4px;">${p.yes} wear it · ${p.no} rethink so far</div>`:''}
+    <div class="fbrow"><button onclick="voteCrowd(${p.id},'yes')">${ic('check')}Wear it</button><button onclick="voteCrowd(${p.id},'no')">Rethink</button></div>
+    <div style="text-align:center;margin-top:6px;"><button class="minirep" onclick="reportPoll(${p.id})">Report</button> · <button class="minirep" onclick="blockPoster('${esc(p.poster)}')">Block poster</button></div>
+  </div>`;
 }
 async function voteCrowd(id,vote){
   try{ await fetch(BACKEND+'/polls/vote',{method:'POST',headers:{'Content-Type':'application/json','x-pilot-token':PILOT},body:JSON.stringify({poll_id:id,device_id:DEVICE,vote})}); }catch(e){}
-  toast(vote==='yes'?'🔥 passed on. Brother sorted.':'Honest vote passed on.');
-  loadCrowd();
+  _reviewed++; _feedIdx++;
+  toast(vote==='yes'?'Passed on — brother sorted. 🤝':'Honest vote in. 🤝');
+  const sc=document.querySelector('.statcard'); if(sc && !sc.querySelector('.you-helped')){ /* refresh happens on next load */ }
+  renderReviewCard();
+}
+async function reportPoll(id){
+  if(!confirm('Report this photo? It is hidden immediately and sent for review.')) return;
+  try{ await fetch(BACKEND+'/polls/report',{method:'POST',headers:{'Content-Type':'application/json','x-pilot-token':PILOT},body:JSON.stringify({poll_id:id,device_id:DEVICE})}); }catch(e){}
+  _feedIdx++; toast('Reported and hidden. Thanks for keeping it clean.'); renderReviewCard();
+}
+function blockPoster(hash){
+  P.blocked=[...new Set([...(P.blocked||[]),hash])]; save();
+  const cur=_feed[_feedIdx]; _feed=_feed.filter(x=>x.poster!==hash);
+  if(cur && cur.poster!==hash) { /* keep idx */ } // if current wasn't the blocked one, index stays valid
+  if(_feedIdx>=_feed.length) _feedIdx=Math.max(0,_feed.length? _feedIdx : 0);
+  toast("Blocked — you won't see their posts again.");
+  renderReviewCard();
 }
 async function seePreview(btn, d){
   btn.disabled=true; btn.textContent='Painting your new look… ~15 sec';
