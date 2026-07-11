@@ -484,7 +484,7 @@ const GROOM_LINES=[
   {t:"You're not a passenger in that chair.", hero:true,                           h:"Us kursi pe aap passenger nahi ho."},
   {t:"Walk in knowing. Three sentences. Walk out right.", hero:true,               h:"Jaante hue jao. Teen line bolo. Sahi lekar niklo."},
 ];
-let _tickI=0, _tickT=null;
+let _tickI=0, _tickT=null, _groomEngaged=false;
 function paintTick(){
   const el=$('tickline'), dots=$('tickdots');
   if(!el) return;
@@ -496,10 +496,10 @@ function paintTick(){
 }
 function startTicker(){
   stopTicker();
-  const box=$('groomticker'), chat=$('chat-barber');
+  const box=$('groomticker');
   if(!box) return;
-  // once he's actually in a conversation, the ticker steps aside
-  if(chat && chat.children.length){ box.style.display='none'; return; }
+  // once HE has actually asked something, the ticker steps aside (the seeded intro doesn't count)
+  if(_groomEngaged){ box.style.display='none'; return; }
   box.style.display='flex';
   _tickI=0; paintTick();
   _tickT=setInterval(()=>{
@@ -752,7 +752,7 @@ function pickOcc(btn,o){
 async function send(auto){
   const inp=$('inp'); const text=inp.value.trim();
   if(!text && !pendingImage) return;
-  if(screen==='barber') hideTicker(); // he's engaged now — the ticker gets out of the way
+  if(screen==='barber'){ _groomEngaged=true; hideTicker(); } // he's engaged now — the ticker gets out of the way
   await ensureDevice();
   if(text){ addMe(text); inp.value=''; inp.style.height='auto';
     const scrEl=document.querySelector('.screen.on'); if(scrEl) scrEl.style.paddingBottom='';
