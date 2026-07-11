@@ -698,7 +698,13 @@ function render(mode, d, hist){
     let h='<div class="vcard">';
     if(d.name) h+=`<b style="font-size:15px;">${esc(d.name)}</b>`;
     if(d.category) h+=` <span class="chip">${esc(d.category)}</span>`;
-    if(d.verdict) h+=`<div class="vword ${vCls}" style="font-size:19px;margin:6px 0;">${esc(d.verdict)}${vGl}</div>`;
+    if(typeof d.score==='number'){ const sc=Math.max(0,Math.min(100,Math.round(d.score))); const col=sc>=70?'#006039':sc>=40?'#B07C1F':'#B04A38';
+      h+=`<div style="display:flex;align-items:center;gap:10px;margin:8px 0;">
+        <div style="width:52px;height:52px;border-radius:50%;border:3px solid ${col};display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;"><b style="font-size:16px;color:${col};line-height:1;">${sc}</b><span style="font-size:8px;color:var(--dim);">/100</span></div>
+        <div><div style="font-size:11px;letter-spacing:.1em;color:var(--dim);">MAN-METER</div><div class="vword ${vCls}" style="font-size:17px;">${esc(d.verdict||'')}${vGl}</div></div>
+      </div>`;
+    } else if(d.verdict) h+=`<div class="vword ${vCls}" style="font-size:19px;margin:6px 0;">${esc(d.verdict)}${vGl}</div>`;
+    if((d.tags||[]).length) h+=`<div style="margin:2px 0 6px;">${d.tags.map(t=>{ const clean=/clean/i.test(t); return `<span class="flag ${clean?'ok':'bad'}">${clean?'✓':'⚠'} ${esc(t)}</span>`; }).join('')}</div>`;
     if(d.claim_truth) h+=`<div style="font-size:13px;color:var(--dim);margin-bottom:6px;">🎯 ${esc(d.claim_truth)}</div>`;
     (d.hazards||[]).forEach(hz=>{ const ev={established:'#B04A38',emerging:'#B07C1F',weak:'#66716B',debunked:'#006039'}[hz.evidence]||'#66716B';
       h+=`<div style="border-left:3px solid ${ev};padding:5px 0 5px 10px;margin:8px 0;">
