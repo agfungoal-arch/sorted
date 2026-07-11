@@ -202,7 +202,7 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
     <div class="tagline">Honest verdicts on your look · answers to what you won't ask anyone · unbiased votes from real men, faces blurred. Zero judgment. <b>No real name. Ever.</b></div>
     <div class="field"><input type="text" id="ob-name" placeholder='Pick any name — "Rocky" works' maxlength="20"></div>
     <div class="field"><input type="text" id="ob-city" placeholder="City — for weather &amp; local prices (optional)" maxlength="30"></div>
-    <div class="field"><label for="ob-age" style="font-size:13px;line-height:1.4;">I'm 18+ and I agree to the <a href="#" onclick="openSheet('terms');return false;" style="color:var(--rolex);text-decoration:underline;font-weight:600;">Terms &amp; Disclaimer</a></label><input type="checkbox" id="ob-age"></div>
+    <div class="field"><label for="ob-age" style="font-size:13px;line-height:1.4;">I'm 18+ and I've read &amp; accept the <a href="#" onclick="openSheet('terms');return false;" style="color:var(--rolex);text-decoration:underline;font-weight:600;">Terms &amp; Disclaimer</a></label><input type="checkbox" id="ob-age"></div>
     <button class="cta" onclick="finishOnboard()">Enter →</button>
     <button class="cta ghost" style="margin-top:8px;display:inline-flex;align-items:center;justify-content:center;gap:8px;" onclick="openSheet('terms')"><span class="chip-ic" data-ic="file"></span>Read the disclaimer</button>
     <button class="mini-link" onclick="openSheet('privacy-info')">Exactly what's stored, and what isn't →</button>
@@ -630,7 +630,8 @@ function snapWebCam(){
   closeWebCam();
   pendingImage={ b64:url.split(',')[1], mime:'image/jpeg', url };
   addPic(url); addSys('Photo attached — analyzed, then deleted. Always.');
-  if(screen==='verdict' && !occasion) askOccasion();
+  if(screen==='verdict' && !occasion){ askOccasion(); return; }
+  if(screen==='product'){ if(!prodCat){ addThem('Pick a category above first, then it analyses automatically.'); return; } $('inp').value=''; send(); }
 }
 $('file-gal').addEventListener('change', e=>handleFile(e));
 $('file').addEventListener('change', e=>handleFile(e));
@@ -644,8 +645,9 @@ async function handleFile(e){
   pendingImage = b64;
   addPic(b64.url);
   addSys('Photo attached — analyzed, then deleted. Always.');
-  if(screen==='verdict' && !occasion) askOccasion();
   e.target.value='';
+  if(screen==='verdict' && !occasion){ askOccasion(); return; }
+  if(screen==='product'){ if(!prodCat){ addThem('Pick a category above first (so I read the right things), then it analyses automatically.'); return; } $('inp').value=''; send(); }
 }
 function compress(file){
   return new Promise(res=>{
@@ -880,7 +882,9 @@ function render(mode, d, hist){
     hist.push({role:'assistant', content:(d.ideas||[]).map(g=>g.name).join(', ')});
   }
   else { // chat fallback
-    addThem(d.reply||'Say that again?');
+    let reply=d.reply||'Say that again?';
+    if(/^\s*[\[{]/.test(reply) && /"type"|"ingredients"|"verdict"/.test(reply)) reply="That one ran long on my end — tap send again and I'll re-read it."; // never leak raw JSON
+    addThem(reply);
     if(d.doctor || d.red_flag) medDisc(); // health answer arriving outside private mode still gets the disclaimer
     hist.push({role:'assistant', content:d.reply||''});
   }

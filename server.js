@@ -166,6 +166,8 @@ LEGAL POSITIONING — this is non-negotiable: you are a SEARCH ENGINE over publi
 CALIBRATED: mark genuinely benign or beneficial ingredients as level "fine"/tag "Clean" and reassure honestly. Debunk marketing fear (parabens & sulfates at legal levels are low-risk).
 PREFERENCE ENGINE: his profile has "avoid" (health priorities: hormone, acne, gut, sensitive, stimulants, clean-muscle) AND "avoidCustom" (specific things he is allergic to or simply won't have — e.g. peanuts, tree nuts, green chilli, a particular fish, gluten, alcohol, pork/gelatine). For EVERY item, check the product's ingredients/contents against BOTH lists and flag matches in match_count and each ingredient's "matches" — even when it's NOT a health hazard (e.g. "contains peanut — on your avoid list", "contains gelatine — you avoid pork"). You are matching HIS list, not judging.
 CATEGORY LENSES: DEODORANT — deodorant masks odour, antiperspirant (aluminium) blocks sweat; aluminium cancer fear is unsupported, say so. CLOTHING — natural fibres (cotton/linen/TENCEL/merino) breathe & suit sensitive skin; polyester/nylon trap odour; some finishes use PFAS/formaldehyde; factor skinType & climate. FRAGRANCE — alcohol EDT/EDP vs oil attar/oud (oil gentler, often halal); flag IFRA-restricted allergens (Lilial, Coumarin, Linalool); fakes common, never verify authenticity from a photo. AYURVEDA/HERBAL — some bhasma/herbal carry heavy-metal risk & thin evidence; note plainly. PHARMACY/SUPPLEMENTS — not medical advice; flag interactions, proprietary-blend underdosing, contamination; tell him to confirm with a pharmacist/doctor.
+INCOMPLETE LABEL / PHOTO: if the ingredients panel isn't visible (only the front of pack), DO NOT refuse or just say "no panel". Read the BRAND + PRODUCT NAME you can see and use what you know about that specific product (or its class) to say what it's typically formulated with and its real risks — clearly flagging the panel wasn't visible and that a photo of the back gives exact per-ingredient analysis. Always leave him more informed.
+WEIGHT-LOSS / FAT-BURNER / "SLIMMING" SUPPLEMENTS: treat with real scepticism — flag undisclosed "proprietary blends", stimulants (bitter-orange/synephrine, high caffeine, illegally-added ones like DMAA/sibutramine that recur in these per FDA/regulator warnings), and that "100% natural" slimming pills are among the most adulterated categories. Point to diet/training/sleep as what works, and a doctor before any fat-burner.
 SWAPS are SUGGESTIVE — popular alternatives in his city/currency, "what people commonly reach for", never an endorsement.
 Respond ONLY with JSON:
 {"type":"product","name":"product name or null","category":"or null","summary":"one neutral line — what this product is",
@@ -257,14 +259,14 @@ async function askClaude(mode, messages, image, occasion, profile, extraCtx) {
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: { 'x-api-key': KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-    body: JSON.stringify({ model: MODEL, max_tokens: mode === 'remind' ? 2400 : 900, system: sys, messages: apiMessages }),
+    body: JSON.stringify({ model: MODEL, max_tokens: mode === 'product' ? 3200 : mode === 'remind' ? 2400 : 900, system: sys, messages: apiMessages }),
   });
   if (!res.ok) throw new Error('anthropic ' + res.status + ' ' + (await res.text()).slice(0, 200));
   const out = await res.json();
   const text = out.content.map(c => c.text || '').join('');
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   try { return JSON.parse(jsonMatch ? jsonMatch[0] : text); }
-  catch { return { type: 'chat', reply: text.slice(0, 800) }; }
+  catch { const looksJson = /^\s*[\[{]/.test(text.trim()); return { type: 'chat', reply: looksJson ? "That one ran long and got jumbled on my end — tap send again and I'll re-read it." : text.slice(0, 800) }; }
 }
 
 /* ---------- ROUTES ---------- */
