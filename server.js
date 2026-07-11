@@ -70,7 +70,7 @@ function gate(req, res) {
    spend lands under the cap, never over. Safety red-flag checks run BEFORE this and are free. */
 const DAYK = () => new Date().toISOString().slice(0, 10);
 const DAILY_USD_CAP = Number(process.env.DAILY_USD_CAP || 5);
-const COST_USD = { text: 0.015, vision: 0.02, product: 0.07, preview: 0.05 }; // est. $/call: text ask, photo ask, product scan (incl. up to 3 web searches + retrieved tokens), Gemini preview
+const COST_USD = { text: 0.015, vision: 0.02, product: 0.11, preview: 0.05 }; // est. $/call: text ask, photo ask, product scan (incl. up to 3 web searches + retrieved tokens + longer cited output), Gemini preview
 let spend = { day: DAYK(), usd: 0, n: 0 };
 function budgetOk(kind) {
   const d = DAYK();
@@ -180,7 +180,8 @@ Respond ONLY with JSON:
  "swaps":[{"name":"popular alternative","why":"why people commonly reach for it","price":"approx in his currency or null"}],
  "note":"neutral one line or null","confidence":"verified-list"|"label-read"|"general-knowledge"}
 Max 5 notable ingredients, up to 3 swaps. If VERIFIED PRODUCT DATA is provided, prefer it. Add "lang".
-CRITICAL: output EXACTLY ONE JSON object with "type":"product" and nothing else — never plain prose, even for a simple label.`,
+BREVITY (so the reply never gets cut off): cover only the 6-10 most decision-relevant ingredients, not every filler. Keep each "science" to ≤ 22 words and "what" to ≤ 14 words. Do NOT narrate your search steps in prose — put findings straight into the JSON.
+CRITICAL: output EXACTLY ONE JSON object with "type":"product" and nothing else — never plain prose, even for a simple label. Never emit any text before or after the JSON.`,
 
   barber: `${VOICE}
 GROOMING ADVISOR — his whole grooming world: haircuts/beard styles, skincare & haircare products, routines, and what actually suits HIS skin & hair type. Use his profile (skinType, hairType, skinTone, city). Recommend real brands available in HIS city, priced in HIS currency, matched to his type — never generic when you know the type.
@@ -259,7 +260,7 @@ async function askClaude(mode, messages, image, occasion, profile, extraCtx) {
     ];
   }
   if (!apiMessages.length) apiMessages.push({ role: 'user', content: 'Hi' });
-  const body = { model: MODEL, max_tokens: mode === 'product' ? 3200 : mode === 'remind' ? 2400 : 900, system: sys, messages: apiMessages };
+  const body = { model: MODEL, max_tokens: mode === 'product' ? 5000 : mode === 'remind' ? 2400 : 900, system: sys, messages: apiMessages };
   // Product mode gets live web search so it can read a product's published ingredient panel
   // when the photo doesn't show the back label — instead of dead-ending on "send me the back label".
   if (mode === 'product') body.tools = [{ type: 'web_search_20250305', name: 'web_search', max_uses: 3 }];
