@@ -245,6 +245,7 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
       <button onclick="pickProdCat(this,'ayurveda','Ayurvedic / herbal — snap it')">🌿 Ayurveda</button>
       <button onclick="pickProdCat(this,'household','Cleaner, air freshener — snap it')">🧽 Household</button>
     </div>
+    <div style="margin:0 0 8px;"><button class="chipbtn" onclick="openPriorities()">🎯 What I'm avoiding</button></div>
     <div class="chat" id="chat-product"></div>
   </div>
 
@@ -445,7 +446,7 @@ async function checkFollowups(){
 /* ============ SEED MESSAGES ============ */
 function seed(s){
   if(s==='verdict') addThem(`Outfit or wardrobe → one verdict. 📸 Shoot.`);
-  if(s==='product') addThem(`Pick a category ↑ then snap the label. 🔍 Real vs marketing, the actual risk, what to do.`);
+  if(s==='product') addThem(`Pick a category ↑ then snap the label. 🔍 What's inside, what the science says, matched to what you avoid.`);
   if(s==='barber') addThem(`Your grooming corner. 💈 Tap above — or just ask.`);
   if(s==='remind') addThem(`Say it once → I never forget. ⏰ Tap 🎤 and speak it.`);
 }
@@ -693,34 +694,27 @@ function render(mode, d, hist){
     hist.push({role:'assistant', content:d.reply}); // correct thread, whatever mode triggered it
   }
   else if(d.type==='product'){
-    const vCls={'USE IT':'ready','USE WITH CARE':'almost','CONSIDER A SWAP':'notyet'}[d.verdict]||'';
-    const vGl={'USE IT':' ✓','USE WITH CARE':' ~','CONSIDER A SWAP':' ⇄'}[d.verdict]||'';
+    const lvl={fine:'#006039',watch:'#B07C1F',caution:'#C06A1F',avoid:'#B04A38'};
     let h='<div class="vcard">';
     if(d.name) h+=`<b style="font-size:15px;">${esc(d.name)}</b>`;
     if(d.category) h+=` <span class="chip">${esc(d.category)}</span>`;
-    if(typeof d.score==='number'){ const sc=Math.max(0,Math.min(100,Math.round(d.score))); const col=sc>=70?'#006039':sc>=40?'#B07C1F':'#B04A38';
-      h+=`<div style="display:flex;align-items:center;gap:10px;margin:8px 0;">
-        <div style="width:52px;height:52px;border-radius:50%;border:3px solid ${col};display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;"><b style="font-size:16px;color:${col};line-height:1;">${sc}</b><span style="font-size:8px;color:var(--dim);">/100</span></div>
-        <div><div style="font-size:11px;letter-spacing:.1em;color:var(--dim);">MAN-METER</div><div class="vword ${vCls}" style="font-size:17px;">${esc(d.verdict||'')}${vGl}</div></div>
-      </div>`;
-    } else if(d.verdict) h+=`<div class="vword ${vCls}" style="font-size:19px;margin:6px 0;">${esc(d.verdict)}${vGl}</div>`;
-    if((d.tags||[]).length) h+=`<div style="margin:2px 0 6px;">${d.tags.map(t=>{ const clean=/clean/i.test(t); return `<span class="flag ${clean?'ok':'bad'}">${clean?'✓':'⚠'} ${esc(t)}</span>`; }).join('')}</div>`;
-    if(d.claim_truth) h+=`<div style="font-size:13px;color:var(--dim);margin-bottom:6px;">🎯 ${esc(d.claim_truth)}</div>`;
-    (d.hazards||[]).forEach(hz=>{ const ev={established:'#B04A38',emerging:'#B07C1F',weak:'#66716B',debunked:'#006039'}[hz.evidence]||'#66716B';
-      h+=`<div style="border-left:3px solid ${ev};padding:5px 0 5px 10px;margin:8px 0;">
-        <b style="font-size:13.5px;">⚠️ ${esc(hz.concern)}</b>${hz.evidence?` <span style="font-size:10px;color:${ev};font-weight:700;letter-spacing:.04em;">${esc(hz.evidence).toUpperCase()}</span>`:''}
-        ${hz.root?`<div style="font-size:12.5px;color:var(--dim);margin-top:2px;"><b>Root:</b> ${esc(hz.root)}</div>`:''}
-        ${hz.risk?`<div style="font-size:12.5px;color:var(--dim);"><b>Real risk:</b> ${esc(hz.risk)}</div>`:''}
-        ${hz.do?`<div style="font-size:12.5px;color:var(--text);margin-top:2px;">→ ${esc(hz.do)}</div>`:''}
+    if(d.summary) h+=`<div style="font-size:12.5px;color:var(--dim);margin:4px 0 2px;">${esc(d.summary)}</div>`;
+    if(d.match_count>0) h+=`<div style="font-size:13px;color:var(--notyet);font-weight:700;margin:6px 0;">🔍 ${d.match_count} match${d.match_count>1?'es':''} for your avoid-list</div>`;
+    (d.ingredients||d.hazards||[]).forEach(ing=>{ const c=lvl[ing.level]||'#66716B';
+      h+=`<div style="border-left:3px solid ${c};padding:5px 0 5px 10px;margin:8px 0;">
+        <b style="font-size:13.5px;">${esc(ing.name||ing.concern||'')}</b>${ing.level?` <span style="font-size:10px;color:${c};font-weight:700;letter-spacing:.04em;">${esc(ing.level).toUpperCase()}</span>`:''}${ing.tag?` <span class="flag ${/clean/i.test(ing.tag)?'ok':'bad'}" style="margin:0;">${esc(ing.tag)}</span>`:''}
+        ${ing.what?`<div style="font-size:12px;color:var(--dim);margin-top:2px;">${esc(ing.what)}</div>`:''}
+        ${ing.science?`<div style="font-size:12.5px;color:var(--text);margin-top:2px;">${esc(ing.science)}</div>`:''}
+        ${(ing.matches&&ing.matches.length)?`<div style="font-size:11.5px;color:var(--notyet);margin-top:2px;">↳ on your avoid-list: ${esc(ing.matches.join(', '))}</div>`:''}
+        ${ing.source?`<div style="font-size:11px;color:var(--dim);margin-top:2px;">📚 ${ing.source_url?`<a href="${esc(ing.source_url)}" target="_blank" rel="noopener" style="color:var(--rolex);">${esc(ing.source)} ↗</a>`:esc(ing.source)}${ing.evidence?' · '+esc(ing.evidence)+' evidence':''}</div>`:''}
       </div>`; });
-    (d.good||[]).forEach(g=> h+=`<div style="font-size:12.5px;color:var(--rolex);margin:3px 0;">✓ ${esc(g)}</div>`);
-    if(!d.hazards && d.flags) h+=`<div>${(d.flags||[]).map(f=>`<span class="flag ${f.ok?'ok':'bad'}">${f.ok?'✓':'✕'} ${esc(f.label)}</span>`).join('')}</div>`;
+    (d.clean||d.good||[]).forEach(g=> h+=`<div style="font-size:12.5px;color:var(--rolex);margin:3px 0;">✓ ${esc(g)}</div>`);
     if(d.note) h+=`<p style="font-size:13px;color:var(--dim);margin-top:8px;line-height:1.5;">${esc(d.note)}</p>`;
     (d.swaps||d.alternatives||[]).forEach(a=> h+=`<div class="alt"><b>↔ ${esc(a.name)}</b>${a.price?' · '+esc(a.price):''}${a.why?`<div style="font-size:12px;color:var(--dim);">${esc(a.why)}</div>`:''}</div>`);
-    h+=`<div class="fresh">${(d.swaps&&d.swaps.length)?'Swaps = popular picks, suggestive not endorsed · ':''}Label-read by AI · formulations change · never sponsored</div></div>`;
+    h+=`<div class="fresh">Published data on ingredients — educational, not medical advice. Dose matters. Formulations change; check the pack. ${(d.swaps&&d.swaps.length)?'Swaps are popular picks, not endorsements. ':''}Never sponsored.</div></div>`;
     addHTML(h);
     if(['pharmacy','supplements','ayurveda'].includes(d.category)) medDisc();
-    threads.product.push({role:'assistant', content:(d.name||'')+' '+(d.verdict||'')+' '+(d.note||'')});
+    threads.product.push({role:'assistant', content:(d.name||'')+' '+(d.summary||'')+' '+(d.note||'')});
   }
   else if(d.type==='barber'){
     addHTML(`<div class="bcard" id="bc">
@@ -854,6 +848,17 @@ function wrapText(x,t,cx,y,maxW,lh){
     if(x.measureText(test).width>maxW && line){ x.fillText(line.trim(),cx,y); line=w+' '; y+=lh; } else line=test; }
   x.fillText(line.trim(),cx,y); return y;
 }
+
+/* ============ PRODUCT: PREFERENCE ENGINE ============ */
+function openPriorities(){
+  const opts=[['hormone','Hormone / testosterone'],['acne','Acne / breakouts'],['gut','Gut health'],['sensitive','Sensitive skin'],['stimulants','Stimulants / caffeine'],['clean-muscle','Clean muscle building']];
+  const cur=P.avoid||[];
+  $('sheet-body').innerHTML=`<h3>What you're avoiding</h3><p class="small">Pick your priorities. When you scan, I flag ingredients that match YOUR list — you decide, not me.</p>
+    <div class="chips" id="pri-chips" style="margin:10px 0;">${opts.map(([k,l])=>`<button data-k="${k}" class="${cur.includes(k)?'sel':''}" onclick="this.classList.toggle('sel')">${l}</button>`).join('')}</div>
+    <button class="cta" onclick="savePriorities()">Save</button>`;
+  $('sheet').classList.add('on');
+}
+function savePriorities(){ P.avoid=[...document.querySelectorAll('#pri-chips button.sel')].map(b=>b.getAttribute('data-k')); save(); $('sheet').classList.remove('on'); toast(P.avoid.length?'Saved — scans now match your list.':'Cleared.'); }
 
 /* ============ PRODUCT CATEGORIES ============ */
 let prodCat=null;
