@@ -30,8 +30,9 @@ body{background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMac
 svg{stroke-linecap:round; stroke-linejoin:round;}
 /* header */
 .hdr{display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;}
-.brand{letter-spacing:.1em; font-weight:800; font-size:17px; color:var(--rolex);}
+.brand{letter-spacing:.1em; font-weight:800; font-size:17px; color:var(--rolex); display:inline-flex; align-items:center;}
 .brand em{color:var(--gold); font-style:normal;}
+.logomark{width:1.35em; height:1.35em; margin-right:.42em; flex:none; vertical-align:-0.28em;}
 .back{background:none; border:none; color:var(--rolex-dk); font-size:15px; font-weight:700; cursor:pointer; padding:12px 12px 12px 0; min-height:44px; display:inline-flex; align-items:center; gap:5px;}
 .back::first-letter{font-size:20px; font-weight:400;}
 .purple .back{color:var(--royal-dk);}
@@ -39,7 +40,7 @@ svg{stroke-linecap:round; stroke-linejoin:round;}
 .avatar svg{width:20px; height:20px;}
 /* onboarding */
 .ob{justify-content:center; text-align:center; padding-bottom:40px; background:linear-gradient(180deg,var(--ivory) 60%,#EDF3EE);}
-.logo{font-size:30px; letter-spacing:.12em; font-weight:800; color:var(--rolex);}
+.logo{font-size:30px; letter-spacing:.12em; font-weight:800; color:var(--rolex); display:inline-flex; align-items:center;}
 .logo em{color:var(--gold); font-style:normal;}
 .tagline{color:var(--dim); font-size:15px; line-height:1.65; margin:14px 0 34px;}
 .bigline{font-size:20px; font-weight:800; color:var(--rolex-dk); margin-top:16px; letter-spacing:.01em;}
@@ -202,7 +203,7 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
 
   <!-- ONBOARD -->
   <div class="screen ob" id="scr-onboard">
-    <div class="logo">S<em>O</em>RTED-MEN</div>
+    <div class="logo"><svg class="logomark" viewBox="0 0 620 620" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M150 0 C60 0 0 60 0 150 L0 470 C0 560 60 620 150 620 L470 620 C560 620 620 560 620 470 L620 150 C620 60 560 0 470 0 Z" fill="#006039"/><circle cx="262" cy="392" r="150" fill="none" stroke="#F8F6F1" stroke-width="40"/><path d="M368 286 L470 184 M470 184 L470 262 M470 184 L392 184" fill="none" stroke="#C9A24B" stroke-width="40" stroke-linecap="round" stroke-linejoin="round"/><path d="M196 398 L246 452 L340 342" fill="none" stroke="#F8F6F1" stroke-width="40" stroke-linecap="round" stroke-linejoin="round"/></svg>S<em>O</em>RTED-MEN</div>
     <div class="bigline">Welcome to the men's world.</div>
     <div class="tagline">Honest verdicts on your look · answers to what you won't ask anyone · unbiased votes from real men, faces blurred. Zero judgment. <b>No real name. Ever.</b></div>
     <div class="field"><input type="text" id="ob-name" placeholder='Pick any name — "Rocky" works' maxlength="20"></div>
@@ -216,7 +217,7 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
 
   <!-- HOME -->
   <div class="screen" id="scr-home">
-    <div class="hdr"><div class="brand">S<em>O</em>RTED-MEN</div><div class="avatar" id="av" role="button" tabindex="0" aria-label="Your profile and memory" onclick="go('memory')">?</div></div>
+    <div class="hdr"><div class="brand"><svg class="logomark" viewBox="0 0 620 620" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M150 0 C60 0 0 60 0 150 L0 470 C0 560 60 620 150 620 L470 620 C560 620 620 560 620 470 L620 150 C620 60 560 0 470 0 Z" fill="#006039"/><circle cx="262" cy="392" r="150" fill="none" stroke="#F8F6F1" stroke-width="40"/><path d="M368 286 L470 184 M470 184 L470 262 M470 184 L392 184" fill="none" stroke="#C9A24B" stroke-width="40" stroke-linecap="round" stroke-linejoin="round"/><path d="M196 398 L246 452 L340 342" fill="none" stroke="#F8F6F1" stroke-width="40" stroke-linecap="round" stroke-linejoin="round"/></svg>S<em>O</em>RTED-MEN</div><div class="avatar" id="av" role="button" tabindex="0" aria-label="Your profile and memory" onclick="go('memory')">?</div></div>
     <div class="greet" id="greet">What's the plan?</div>
     <div id="citychip" role="button" tabindex="0" aria-label="Change your city" onclick="editMem(1)" style="display:inline-flex;align-items:center;gap:5px;font-size:13px;color:var(--dim);background:var(--paper);border:1px solid var(--line);border-radius:22px;padding:7px 13px;min-height:36px;margin-bottom:12px;cursor:pointer;"></div>
     <div id="home-alerts"></div>
