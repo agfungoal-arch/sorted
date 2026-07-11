@@ -171,13 +171,21 @@ Respond ONLY with JSON:
 If VERIFIED PRODUCT DATA is provided, prefer it and set confidence "verified-list". Text questions: max 2 recommendations + 1 pattern to avoid.`,
 
   barber: `${VOICE}
-BARBER CARD. From a selfie and/or description recommend ONE haircut (+beard treatment) that suits him. Practical barbershop language.
-Respond ONLY with JSON:
-{"type":"barber","style":"e.g. 'Mid Fade · Scissor Top'",
- "steps":["3-4 exact instructions with clipper numbers"],
- "hinglish":"one line to say aloud at the shop — in ENGLISH by default; Hindi only if his language is hinglish",
- "note":"one short encouraging line or maintenance tip"}
-No selfie: ask ONE question OR give a safe versatile recommendation. Never invent face-shape claims without a photo. You cannot show generated preview images — if asked, give exact Google/Pinterest search terms instead, in one line.`,
+GROOMING ADVISOR — his whole grooming world: haircuts/beard styles, skincare & haircare products, routines, and what actually suits HIS skin & hair type. Use his profile (skinType, hairType, skinTone, city). Recommend real brands available in HIS city, priced in HIS currency, matched to his type — never generic when you know the type.
+
+Pick the response TYPE:
+1) HAIRCUT or BEARD STYLE request → JSON:
+{"type":"barber","style":"e.g. 'Mid Fade · Scissor Top'","steps":["3-4 exact instructions with clipper numbers"],"hinglish":"one line to say at the shop — ENGLISH by default; Hindi only if his language is hinglish","note":"one short tip"}
+No selfie: ask ONE question OR give a safe versatile pick. Never invent face-shape claims without a photo. You cannot generate preview images here — if asked, say the app's "See it on me" button does that.
+
+2) PRODUCT / SKIN / HAIR / ROUTINE question, OR he tells you what his barber recommended or used → JSON:
+{"type":"groom","reply":"2-5 lines in your voice, answering him",
+ "recommendations":[{"name":"real brand + product","why":"one line — why it fits HIS type","price":"approx in his currency","for":"e.g. oily scalp"}],
+ "profile_update":{"skinType":"oily|dry|combination|sensitive|normal (omit if unknown)","hairType":"straight|wavy|curly|coily (omit if unknown)","hairConcern":"e.g. thinning, dandruff (omit if none)"},
+ "note":"one optional tip or null"}
+INFER his type: if he names or photographs a barber-recommended product, work out which skin/hair type that SKU targets and set profile_update — but treat it as a best GUESS and CONFIRM inside reply ("that matte clay is usually for oily hair — sound right?"), never assert it as fact. Max 3 recommendations. Add "lang" as always.`,
+
+  starbarber: `You analyze Google review snippets for a barbershop to find a standout individual barber. Respond ONLY with JSON: {"star":"first name or null","vibe":"a 5-8 word phrase summing up the shop's reputation, or null"}. Only give a name if 2 or more reviews clearly praise the SAME person by name (e.g. "ask for Rahul", "Sam is the best"). Never invent a name; if none recurs, star=null.`,
 
   remind: `${VOICE}
 REMINDER CAPTURE. He speaks/types messy real life — often SEVERAL reminders in one breath ("buy tomatoes monday... pay kids' fee saturday... wife's birthday 27 november... mom's 10 january"). Voice transcripts are messy: run-on, misheard words, no punctuation. Parse EVERY reminder mentioned — never drop one. TODAY's date is provided — resolve all relative dates against it (next occurrence if the date already passed this year).
@@ -226,7 +234,7 @@ async function skuContext(text) {
 
 /* ---------- CLAUDE ---------- */
 async function askClaude(mode, messages, image, occasion, profile, extraCtx) {
-  const profileCtx = profile ? `\nHIS PROFILE (use it, mention it when relevant): name:${profile.name}, language:${profile.lang || 'english'}, city:${profile.city || 'unknown'}, skinTone:${profile.skinTone || 'unknown'}, faceShape:${profile.faceShape || 'unknown'}, sizes:${profile.sizes || 'unknown'}, styleWins:${(profile.notes || []).slice(-5).join('; ') || 'none yet'}` : '';
+  const profileCtx = profile ? `\nHIS PROFILE (use it, mention it when relevant): name:${profile.name}, language:${profile.lang || 'english'}, city:${profile.city || 'unknown'}, skinTone:${profile.skinTone || 'unknown'}, skinType:${profile.skinType || 'unknown'}, hairType:${profile.hairType || 'unknown'}, hairConcern:${profile.hairConcern || 'none noted'}, faceShape:${profile.faceShape || 'unknown'}, sizes:${profile.sizes || 'unknown'}, styleWins:${(profile.notes || []).slice(-5).join('; ') || 'none yet'}` : '';
   const sys = PROMPTS[mode] + profileCtx + `\nTODAY: ${new Date().toISOString().slice(0, 10)}` + (occasion ? `\nOCCASION: ${occasion}` : '') + (extraCtx || '');
   const apiMessages = messages.filter(m => m.content).map(m => ({ role: m.role, content: m.content }));
   if (image && apiMessages.length) {
@@ -502,7 +510,58 @@ app.post('/preview', async (req, res) => {
   } catch (e) { console.error(e.message); res.status(500).json({ error: 'preview failed' }); }
 });
 
-app.get('/health', (_, res) => res.json({ ok: true, db: !!SB_URL, push: !!webpush, preview: !!GEMINI_KEY,
+/* ---------- BARBER / GROOMING FINDER (Google Places API New) ---------- */
+const PLACES_KEY = process.env.GOOGLE_PLACES_KEY;
+const PRICE_LEVELS = { budget: ['PRICE_LEVEL_FREE', 'PRICE_LEVEL_INEXPENSIVE'], mid: ['PRICE_LEVEL_MODERATE'], premium: ['PRICE_LEVEL_EXPENSIVE', 'PRICE_LEVEL_VERY_EXPENSIVE'] };
+app.post('/barbers', async (req, res) => {
+  try {
+    if (!gate(req, res)) return;
+    const { lat, lng, query, city, minRating, priceBand, device_id } = req.body || {};
+    const text = String(query || 'barber shop for men').slice(0, 80) + (city && !(typeof lat === 'number') ? ' ' + String(city).slice(0, 40) : '');
+    if (!PLACES_KEY) return res.json({ fallback: true, mapsUrl: `https://www.google.com/maps/search/${encodeURIComponent(text)}` });
+    const body = { textQuery: text, maxResultCount: 12, languageCode: 'en' };
+    if (typeof lat === 'number' && typeof lng === 'number') body.locationBias = { circle: { center: { latitude: lat, longitude: lng }, radius: 6000 } };
+    const r = await fetch('https://places.googleapis.com/v1/places:searchText', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': PLACES_KEY,
+        'X-Goog-FieldMask': 'places.id,places.displayName,places.rating,places.userRatingCount,places.priceLevel,places.formattedAddress,places.nationalPhoneNumber,places.internationalPhoneNumber,places.location,places.googleMapsUri,places.currentOpeningHours.openNow' },
+      body: JSON.stringify(body),
+    });
+    if (!r.ok) { console.error('places ' + r.status + ' ' + (await r.text()).slice(0, 200)); return res.json({ fallback: true, mapsUrl: `https://www.google.com/maps/search/${encodeURIComponent(text)}` }); }
+    const out = await r.json();
+    let places = (out.places || []).map(p => ({
+      id: p.id, name: p.displayName && p.displayName.text, rating: p.rating || null, reviews: p.userRatingCount || 0,
+      price: p.priceLevel || null, address: p.formattedAddress || '', phone: p.nationalPhoneNumber || p.internationalPhoneNumber || null,
+      maps: p.googleMapsUri || null, openNow: p.currentOpeningHours ? p.currentOpeningHours.openNow : null,
+    }));
+    if (minRating) places = places.filter(p => (p.rating || 0) >= Number(minRating));
+    if (priceBand && PRICE_LEVELS[priceBand]) places = places.filter(p => !p.price || PRICE_LEVELS[priceBand].includes(p.price));
+    places.sort((a, b) => (b.rating || 0) * Math.log10((b.reviews || 0) + 10) - (a.rating || 0) * Math.log10((a.reviews || 0) + 10));
+    if (device_id) logEvent(device_id, 'barber_search', 'barber');
+    res.json({ places: places.slice(0, 6) });
+  } catch (e) { console.error(e.message); res.status(500).json({ error: 'search failed' }); }
+});
+app.post('/barber/detail', async (req, res) => {
+  try {
+    if (!gate(req, res)) return;
+    if (!PLACES_KEY) return res.status(503).json({ error: 'not configured' });
+    const { place_id } = req.body || {};
+    if (!place_id) return res.status(400).json({ error: 'need place_id' });
+    const r = await fetch(`https://places.googleapis.com/v1/places/${encodeURIComponent(place_id)}`, {
+      headers: { 'X-Goog-Api-Key': PLACES_KEY, 'X-Goog-FieldMask': 'displayName,rating,userRatingCount,nationalPhoneNumber,internationalPhoneNumber,formattedAddress,googleMapsUri,reviews' },
+    });
+    if (!r.ok) { console.error('details ' + r.status); return res.status(502).json({ error: 'details failed' }); }
+    const p = await r.json();
+    const reviews = (p.reviews || []).map(rv => (rv.text && rv.text.text) || (rv.originalText && rv.originalText.text) || '').filter(Boolean);
+    let star = null, vibe = null;
+    if (reviews.length && budgetOk('text')) {
+      try { const d = await askClaude('starbarber', [{ role: 'user', content: reviews.join('\n---\n').slice(0, 3500) }], null, null, null, ''); star = d.star || null; vibe = d.vibe || null; } catch (e) {}
+    }
+    res.json({ name: p.displayName && p.displayName.text, phone: p.nationalPhoneNumber || p.internationalPhoneNumber || null, address: p.formattedAddress || '', maps: p.googleMapsUri || null, rating: p.rating || null, reviews_count: p.userRatingCount || 0, star, vibe });
+  } catch (e) { console.error(e.message); res.status(500).json({ error: 'detail failed' }); }
+});
+
+app.get('/health', (_, res) => res.json({ ok: true, db: !!SB_URL, push: !!webpush, preview: !!GEMINI_KEY, barbers: !!PLACES_KEY,
   spend_today_usd: Math.round(spend.usd * 100) / 100, spend_cap_usd: DAILY_USD_CAP, calls_today: spend.n }));
 
 app.listen(PORT, () => console.log(`SORTED backend v2 on :${PORT} · model ${MODEL} · db ${SB_URL ? 'on' : 'off'} · push ${webpush ? 'on' : 'off'} · photos never stored`));

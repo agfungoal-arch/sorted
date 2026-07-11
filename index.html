@@ -127,6 +127,7 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
 .chips{display:flex; flex-wrap:wrap; gap:8px; margin:10px 0;}
 .chips button{background:var(--rolex-lt); border:1px solid #BED8C9; color:var(--rolex); font-size:13px; padding:11px 15px; min-height:44px; border-radius:22px; cursor:pointer; font-weight:600;}
 .chips button.sel{background:var(--rolex); color:#fff;}
+.chipbtn{display:inline-flex; align-items:center; background:var(--rolex-lt); border:1px solid #BED8C9; color:var(--rolex); font-size:12.5px; padding:9px 13px; min-height:40px; border-radius:20px; cursor:pointer; font-weight:600; margin:0 6px 6px 0;}
 /* input bar */
 .askbar{position:fixed; bottom:0; left:0; right:0; margin:0 auto; max-width:520px; background:var(--paper); border-top:1px solid var(--line); padding:12px 12px calc(14px + env(safe-area-inset-bottom)); display:flex; gap:7px; align-items:flex-end; z-index:20;}
 .purple .askbar{background:#FBFAFE; border-color:var(--royal-line);}
@@ -199,7 +200,7 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
       <div class="tile" role="button" tabindex="0" onclick="go('verdict')"><div class="ic">📸</div><h4>What do I wear?</h4><p>One clear verdict on your look.</p><span class="chip">MOST USED</span></div>
       <div class="tile purple-door" role="button" tabindex="0" onclick="go('gate')"><div class="ic">🔒</div><h4>Private Space</h4><p>The 2am questions. Never saved.</p><span class="chip p">PRIVATE</span></div>
       <div class="tile" role="button" tabindex="0" onclick="go('product')"><div class="ic">🧴</div><h4>Check a product</h4><p>Real, or just marketing?</p></div>
-      <div class="tile" role="button" tabindex="0" onclick="go('barber')"><div class="ic">💈</div><h4>Barber card</h4><p>Peek at your exact look after the cut.</p></div>
+      <div class="tile" role="button" tabindex="0" onclick="go('barber')"><div class="ic">💈</div><h4>Grooming</h4><p>Find a barber, peek your look, get products for your type.</p></div>
       <div class="tile wide" role="button" tabindex="0" onclick="go('remind')"><div class="ic">⏰</div><div><h4>Never Forget</h4><p>Wife said, boss said, birthday coming. Say it once — I remind you, draft the wish, suggest the gift.</p></div></div>
       <div class="tile moat" role="button" tabindex="0" onclick="go('crowd')"><div class="ic">🫂</div><div><span class="tag">THE MOAT</span><h4>Peer Review</h4><p>Post your look, get honest votes from other men — faces blurred, names never shown.<span id="peercount" style="font-weight:700;color:var(--rolex);"></span></p></div></div>
     </div>
@@ -234,11 +235,13 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
     <div class="chat" id="chat-product"></div>
   </div>
 
-  <!-- BARBER -->
+  <!-- BARBER / GROOMING -->
   <div class="screen" id="scr-barber">
-    <div class="hdr"><button class="back" onclick="go('home')">← Barber card</button><div class="avatar" onclick="go('memory')" id="av4">?</div></div>
+    <div class="hdr"><button class="back" onclick="go('home')">← Grooming</button><div class="avatar" onclick="go('memory')" id="av4">?</div></div>
+    <div class="chips" style="margin:0 0 8px;"><button onclick="openBarberFinder()">🔍 Find a barber</button><button onclick="openJournal()">📔 My journal</button></div>
     <div class="chat" id="chat-barber"></div>
   </div>
+  <input type="file" id="gr-file" accept="image/*" hidden>
 
   <!-- REMIND -->
   <div class="screen" id="scr-remind">
@@ -435,9 +438,13 @@ Tell me the occasion and shoot.`);
 · "Rosemary water — real or a scam?"
 
 No brand pays me. You get it straight.`);
-  if(s==='barber') addThem(`Selfie + your scene — "office-safe but fresh", "wedding next week", "zero maintenance".
+  if(s==='barber') addThem(`Your grooming corner. 💈
+· "What haircut suits me?" — send a selfie → barber card + a preview on your own face
+· "My barber said use a matte clay — right for me?" — I'll read it and learn your hair type
+· "Best face wash for oily skin${P.city?' in '+P.city:''}?" — real brands, your budget
+Up top: 🔍 find a barber near you (ratings, price, who to ask for), 📔 keep a grooming journal of every visit.
 
-You get exact instructions to show your barber, Hindi line included. No more "kuch bhi kar do". 💈`);
+What's up?`);
   if(s==='remind') addThem(`Say it once, then forget it — that's my job now. ⏰
 
 · "Wife said get rangoli colours, Saturday"
@@ -565,6 +572,7 @@ function snapWebCam(){
 }
 $('file-gal').addEventListener('change', e=>handleFile(e));
 $('file').addEventListener('change', e=>handleFile(e));
+$('gr-file').addEventListener('change', async e=>{ const f=e.target.files[0]; if(!f||!_grPending)return; _grPending[_grWhich]=await grJpg(f); if($('gr-picnote')) $('gr-picnote').textContent=(_grPending.pre?'✓ before ':'')+(_grPending.post?'✓ after':''); e.target.value=''; });
 let crowdCapture=false;
 async function handleFile(e){
   const f=e.target.files[0]; if(!f) return;
@@ -720,6 +728,15 @@ function render(mode, d, hist){
     if(d.note) addThem(d.note);
     threads.barber.push({role:'assistant', content:d.style+': '+(d.steps||[]).join('; ')});
   }
+  else if(d.type==='groom'){
+    if(d.reply) addThem(d.reply);
+    (d.recommendations||[]).forEach(g=>{
+      addHTML(`<div class="vcard" style="margin-bottom:8px;"><b style="font-size:14px;">🧴 ${esc(g.name)}</b>${g.price?`<div style="font-size:12px;color:var(--gold-dk);font-weight:700;margin:2px 0;">${esc(g.price)}</div>`:''}<p style="font-size:12.5px;color:var(--dim);line-height:1.5;">${esc(g.why||'')}${g.for?` <span style="color:var(--faint);">· for ${esc(g.for)}</span>`:''}</p></div>`);
+    });
+    if(d.profile_update){ let ch=[]; ['skinType','hairType','hairConcern'].forEach(k=>{ if(d.profile_update[k] && P[k]!==d.profile_update[k]){ P[k]=d.profile_update[k]; ch.push(d.profile_update[k]); } }); if(ch.length){ save(); addSys('Saved to your grooming profile: '+ch.join(', ')+' (edit in your profile)'); } }
+    if(d.note) addThem(d.note);
+    threads.barber.push({role:'assistant', content:(d.reply||'')+' '+(d.recommendations||[]).map(g=>g.name).join(', ')});
+  }
   else if(d.type==='remind'){
     const items = d.items || (d.title ? [{title:d.title,person:d.person,occasion:d.occasion,due_date:d.due_date,due_time:d.due_time,recur:d.recur,lead_days:d.lead_days}] : []);
     addThem(d.confirm||'Got it.');
@@ -822,6 +839,116 @@ function wrapText(x,t,cx,y,maxW,lh){
     if(x.measureText(test).width>maxW && line){ x.fillText(line.trim(),cx,y); line=w+' '; y+=lh; } else line=test; }
   x.fillText(line.trim(),cx,y); return y;
 }
+
+/* ============ GROOMING: FIND A BARBER ============ */
+function openBarberFinder(){
+  const b=$('sheet-body');
+  b.innerHTML=`<h3>Find a barber near you</h3>
+    <input type="text" id="bq" placeholder="e.g. men's haircut, fade specialist" maxlength="80" style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:12px;font-size:16px;background:var(--ivory);margin-bottom:10px;">
+    <div style="font-size:12px;color:var(--dim);margin-bottom:4px;">Min rating</div>
+    <div class="chips" id="bf-rating" style="margin:0 0 8px;">${[['Any',''],['4.0★','4'],['4.5★','4.5']].map(([l,v],i)=>`<button data-v="${v}" onclick="bfPick('bf-rating',this)" class="${i===1?'sel':''}">${l}</button>`).join('')}</div>
+    <div style="font-size:12px;color:var(--dim);margin-bottom:4px;">Price</div>
+    <div class="chips" id="bf-price" style="margin:0 0 12px;">${[['Any',''],['Budget','budget'],['Mid','mid'],['Premium','premium']].map(([l,v],i)=>`<button data-v="${v}" onclick="bfPick('bf-price',this)" class="${i===0?'sel':''}">${l}</button>`).join('')}</div>
+    <button class="cta" onclick="findBarbers()">📍 Search near me</button>
+    <p class="small" style="margin-top:8px;">Uses your location for "near me". If you skip that, it searches around your city.</p>
+    <div id="bf-results" style="margin-top:12px;"></div>`;
+  $('sheet').classList.add('on');
+}
+function bfPick(group,btn){ document.querySelectorAll('#'+group+' button').forEach(x=>x.classList.remove('sel')); btn.classList.add('sel'); }
+function bfVal(group){ const el=document.querySelector('#'+group+' button.sel'); return el?el.getAttribute('data-v'):''; }
+async function findBarbers(){
+  const out=$('bf-results'); out.innerHTML='<p class="small">Finding good barbers near you…</p>';
+  const query=$('bq')?$('bq').value.trim():'', minRating=bfVal('bf-rating'), priceBand=bfVal('bf-price');
+  let lat,lng;
+  try{ const pos=await new Promise((res,rej)=>navigator.geolocation.getCurrentPosition(res,rej,{timeout:8000,maximumAge:600000})); lat=pos.coords.latitude; lng=pos.coords.longitude; }catch(e){}
+  try{
+    const r=await fetch(BACKEND+'/barbers',{method:'POST',headers:{'Content-Type':'application/json','x-pilot-token':PILOT},
+      body:JSON.stringify({lat,lng,query,city:P.city,minRating,priceBand,device_id:DEVICE})});
+    const d=await r.json();
+    if(d.fallback){ out.innerHTML='<p class="small">Opening Google Maps…</p>'; window.open(d.mapsUrl,'_blank'); return; }
+    if(!d.places||!d.places.length){ out.innerHTML='<p class="small">No barbers matched. Loosen the filters and try again.</p>'; return; }
+    window._barbers={}; d.places.forEach(p=>window._barbers[p.id]=p);
+    out.innerHTML=d.places.map(renderBarberCard).join('');
+  }catch(e){ out.innerHTML='<p class="small">Could not search right now — check your connection.</p>'; }
+}
+function priceStr(pl){ return {PRICE_LEVEL_INEXPENSIVE:'$',PRICE_LEVEL_MODERATE:'$$',PRICE_LEVEL_EXPENSIVE:'$$$',PRICE_LEVEL_VERY_EXPENSIVE:'$$$$'}[pl]||''; }
+function renderBarberCard(p){
+  const dial=p.phone?p.phone.replace(/[^0-9+]/g,''):'';
+  return `<div class="vcard" style="margin-bottom:10px;">
+    <b style="font-size:14.5px;">${esc(p.name||'Barber')}</b>
+    <div style="font-size:12px;color:var(--dim);margin:3px 0;">${p.rating?'⭐ '+p.rating+' ('+p.reviews+')':'no rating yet'}${p.price?' · '+priceStr(p.price):''}${p.openNow===true?' · <span style="color:var(--rolex);font-weight:700;">Open now</span>':p.openNow===false?' · Closed':''}</div>
+    ${p.address?`<div style="font-size:12px;color:var(--dim);margin-bottom:8px;">${esc(p.address)}</div>`:''}
+    <div>
+      ${dial?`<a href="tel:${dial}" class="chipbtn" style="text-decoration:none;">📞 Call</a>`:''}
+      ${p.maps?`<a href="${p.maps}" target="_blank" rel="noopener" class="chipbtn" style="text-decoration:none;">📍 Map</a>`:''}
+      <button class="chipbtn" onclick="barberDetail('${p.id}')">⭐ Who to ask for</button>
+      <button class="chipbtn" onclick="logVisitFrom('${p.id}')">📔 Log visit</button>
+    </div>
+    <div id="bd-${p.id}"></div>
+  </div>`;
+}
+async function barberDetail(id){
+  const box=$('bd-'+id); if(!box) return; box.innerHTML='<p class="small">Reading the reviews for a standout barber…</p>';
+  try{
+    const r=await fetch(BACKEND+'/barber/detail',{method:'POST',headers:{'Content-Type':'application/json','x-pilot-token':PILOT},body:JSON.stringify({place_id:id})});
+    const d=await r.json();
+    let h='';
+    if(d.star) h+=`<div style="font-size:13px;margin-top:8px;">🌟 The crowd says: <b>ask for ${esc(d.star)}</b></div>`;
+    if(d.vibe) h+=`<div style="font-size:12px;color:var(--dim);margin-top:2px;">${esc(d.vibe)}</div>`;
+    if(!d.star&&!d.vibe) h='<div class="small" style="margin-top:8px;">No single name stands out in the reviews — any chair should be fine.</div>';
+    box.innerHTML=h;
+  }catch(e){ box.innerHTML='<p class="small">Could not read the reviews.</p>'; }
+}
+
+/* ============ GROOMING JOURNAL (on this phone only) ============ */
+function grLoad(){ try{ return JSON.parse(localStorage.getItem('sorted_groom_journal')||'[]'); }catch(e){ return []; } }
+function grStore(a){ try{ localStorage.setItem('sorted_groom_journal', JSON.stringify(a.slice(0,100))); }catch(e){ toast('Storage full — remove an old visit or photo.'); } }
+function openJournal(){
+  const items=grLoad();
+  $('sheet-body').innerHTML=`<h3>My grooming journal</h3>
+    <button class="cta" onclick="logVisit()">＋ Log a visit</button>
+    <div style="margin-top:12px;">${items.length?items.map(grCard).join(''):'<p class="small">No visits yet. After a haircut, log it — shop, barber, price, products, and a before/after pic. Over the months this becomes your grooming history and progress.</p>'}</div>`;
+  $('sheet').classList.add('on');
+}
+function grCard(v){
+  return `<div class="vcard" style="margin-bottom:10px;">
+    <div style="display:flex;justify-content:space-between;gap:8px;"><b style="font-size:14px;">${esc(v.shop||'Visit')}</b><span style="font-size:12px;color:var(--dim);white-space:nowrap;">${esc(v.date||'')}</span></div>
+    <div style="font-size:12px;color:var(--dim);margin:2px 0;">${v.barber?'✂️ '+esc(v.barber):''}${v.price?' · '+esc(v.price):''}${v.style?' · '+esc(v.style):''}</div>
+    ${v.products?`<div style="font-size:12px;color:var(--dim);">🧴 ${esc(v.products)}</div>`:''}
+    ${v.notes?`<div style="font-size:12.5px;margin-top:4px;">${esc(v.notes)}</div>`:''}
+    ${(v.pre||v.post)?`<div style="display:flex;gap:6px;margin-top:6px;">${v.pre?`<img src="${v.pre}" alt="Before" style="width:72px;height:72px;object-fit:cover;border-radius:8px;">`:''}${v.post?`<img src="${v.post}" alt="After" style="width:72px;height:72px;object-fit:cover;border-radius:8px;">`:''}</div>`:''}
+    <button class="chipbtn" style="margin-top:8px;" onclick="grDel('${v.id}')">🗑 Remove</button>
+  </div>`;
+}
+function grDel(id){ grStore(grLoad().filter(v=>v.id!==id)); openJournal(); toast('Removed.'); }
+let _grPending=null,_grWhich=null;
+function fld(label,id,val){ return `<div style="margin-bottom:8px;"><div style="font-size:12px;color:var(--dim);margin-bottom:3px;">${label}</div><input type="text" id="${id}" value="${esc(val||'')}" maxlength="120" style="width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:10px;font-size:16px;background:var(--ivory);"></div>`; }
+function logVisit(prefill){
+  const v=prefill||{};
+  _grPending={pre:v.pre||null,post:v.post||null};
+  $('sheet-body').innerHTML=`<h3>Log a visit</h3>
+    ${fld('Shop','gr-shop',v.shop)}
+    ${fld('Barber name','gr-barber',v.barber)}
+    ${fld('Price paid','gr-price',v.price)}
+    ${fld('Style / what was done','gr-style',v.style)}
+    ${fld('Products used','gr-products',v.products)}
+    ${fld('Notes','gr-notes',v.notes)}
+    <div style="margin:6px 0 12px;"><button class="chipbtn" onclick="grPhoto('pre')">📷 Before pic</button><button class="chipbtn" onclick="grPhoto('post')">📷 After pic</button><span id="gr-picnote" class="small"></span></div>
+    <button class="cta" onclick="grSaveVisit()">Save to journal</button>
+    <button class="cta ghost" style="margin-top:8px;" onclick="openJournal()">Cancel</button>`;
+  $('sheet').classList.add('on');
+}
+function grPhoto(which){ _grWhich=which; $('gr-file').click(); }
+function grJpg(file){ return new Promise(res=>{ const img=new Image(); img.onload=()=>{ const M=520,r=Math.min(1,M/Math.max(img.width,img.height)); const c=document.createElement('canvas'); c.width=img.width*r; c.height=img.height*r; c.getContext('2d').drawImage(img,0,0,c.width,c.height); res(c.toDataURL('image/jpeg',.72)); }; img.src=URL.createObjectURL(file); }); }
+function grSaveVisit(){
+  const g=id=>($(id)?$(id).value.trim():'');
+  const v={ id:'v'+Date.now().toString(36), date:new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}),
+    shop:g('gr-shop'),barber:g('gr-barber'),price:g('gr-price'),style:g('gr-style'),products:g('gr-products'),notes:g('gr-notes'),
+    pre:_grPending&&_grPending.pre, post:_grPending&&_grPending.post };
+  if(!v.shop&&!v.barber&&!v.style){ toast('Add at least the shop or barber.'); return; }
+  const a=grLoad(); a.unshift(v); grStore(a); _grPending=null; openJournal(); toast('Logged. Your grooming history is building. 🤝'); sendEvent('groom_logged','barber');
+}
+function logVisitFrom(id){ const p=window._barbers&&window._barbers[id]; $('sheet').classList.remove('on'); setTimeout(()=>logVisit({shop:p&&p.name}),60); }
 
 /* ============ PUSH / CROWD / PROFILE-SELFIE ============ */
 const VAPID='BKA8XykLTY_iSeYUvRR3AaA0ZcJl-2k9kbv1pM1LD2mXDV8qx1xCnwC14tTCS53aAx-KTISFDeLHlgqeB4kyQBM';
@@ -1067,6 +1194,7 @@ function renderMemory(){
   $('memlist').innerHTML = `<button class="cta" style="margin-bottom:14px;" onclick="profileSelfie()">📸 One selfie fills all this in</button>` + intro + rows.map(([k,v],i)=>`
     <div class="prow"><div><b>${k}</b><span>${esc(String(v))}</span></div>
     <button style="background:none;border:none;font-size:13px;color:var(--rolex);font-weight:600;cursor:pointer;padding:10px 8px;min-height:44px;" onclick="editMem(${i})">edit</button></div>`).join('')
+    + ((P.skinType||P.hairType||P.hairConcern)?`<div class="prow"><div><b>Grooming type</b><span>${esc([P.skinType&&P.skinType+' skin',P.hairType&&P.hairType+' hair',P.hairConcern].filter(Boolean).join(' · '))}</span></div><span aria-hidden="true">🧴</span></div>`:'')
     + `<div class="prow" style="border-color:var(--royal-line);"><div><b style="color:var(--royal-dk);">Private Space</b><span>Messages never stored. Only anonymous usage counts exist.</span></div><span aria-hidden="true">🔒</span></div>
     <p class="small" style="text-align:center;margin-top:8px;">Everything here lives on this phone · never sold · never trains AI</p>`;
 }
