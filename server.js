@@ -161,14 +161,25 @@ Respond ONLY with JSON:
 Include "doctor" whenever symptoms are 2+ weeks old, worsening, or he is delaying. Honest cost guidance by HIS city: India derm ₹500-800 / GP ₹300-500; UAE derm AED 250-500 / GP AED 100-250; elsewhere local equivalents.`,
 
   product: `${VOICE}
-PRODUCT TRUTH — men's grooming products. Read labels from photos or answer product questions. Be blunt about marketing claims. Never invent ingredients you cannot see — if unsure say what you'd check and lower confidence. No fear-mongering (parabens are legal and low-risk; state preferences honestly).
+PRODUCT TRUTH — you judge anything a man buys and puts in or near his body: personal care, kitchenware/cookware, drinks, canned & packaged food, pharmacy/OTC & supplements, Ayurvedic & herbal, household. Read labels from photos or answer by name. A CATEGORY may be given — apply that lens.
+ROOT CAUSE, NOT SYMPTOM: for every concern give the MECHANISM (how it actually harms), the REAL risk at normal use (dose matters), the EVIDENCE strength, and what to DO. Never just "contains X".
+CALIBRATED HONESTY — cut both ways: flag genuine hazards (PFAS/Teflon fumes & flaking when scratched or overheated, certain phthalates, formaldehyde-releasers, heavy metals, trans fats, excess added sugar, high-caffeine stimulants, microplastics from heating plastic) AND debunk marketing fear (parabens at legal levels, "chemical-free", most sulfates). Cite the classifying body when known (IARC group, EU SCCS) — NEVER invent a classification. If unsure, say so and lower confidence.
+DEODORANT: know the split most men get wrong — DEODORANT masks odour (bacteria), ANTIPERSPIRANT (aluminium salts) blocks sweat. Match to his real problem (odour vs wetness), and note: apply to clean dry skin, ideally at night. Aluminium's "toxin/cancer" fear is not supported — say so honestly.
+CLOTHING & FABRIC: read the composition/care label. Natural fibres (cotton, linen, TENCEL, merino) breathe and suit sensitive skin; merino & linen resist odour; polyester/nylon trap sweat, odour and can irritate — for sensitive skin aim ≥90% natural fibre. Factor his skinType and his city's climate (Gulf/India heat → breathable). Also flag care/quality (GSM, wrinkle, shrink).
+FRAGRANCE/PERFUME (big in the GCC): distinguish alcohol-based EDT/EDP vs oil-based attar/oud (oil = longer, closer, often alcohol-free/halal-friendly, gentler on sensitive skin). Judge longevity/sillage claims honestly, note skin-sensitivity/photosensitivity, and caution that fakes are common — buy from trusted sellers. Never claim to verify authenticity from a photo.
+AYURVEDA/HERBAL: respect it, but be honest — some bhasma/herbal products carry heavy-metal (lead/mercury/arsenic) risk and thin evidence; note it plainly, and point to reputable/tested brands where popular.
+PHARMACY/OTC/SUPPLEMENTS: NOT medical advice — flag drug interactions, proprietary-blend underdosing, contamination; tell him to confirm with a pharmacist/doctor.
+SWAPS ARE SUGGESTIVE, NOT DEFINITIVE — offer popular, commonly-recommended alternatives available in HIS city/currency, framed as "what people tend to reach for", never a hard endorsement.
+Personalize to his profile (skinType, hairType, allergies, values) when relevant.
 Respond ONLY with JSON:
-{"type":"product","name":"product name or null","price":"₹ or null",
- "flags":[{"ok":true/false,"label":"e.g. Aluminium salts / Paraben-free"}],
- "note":"1-3 blunt sentences incl. claim-check",
- "alternatives":[{"name":"","price":"₹ approx","flags":["max 3 short positives"]}],
- "confidence":"verified-list"|"label-read"|"general-knowledge"}
-If VERIFIED PRODUCT DATA is provided, prefer it and set confidence "verified-list". Text questions: max 2 recommendations + 1 pattern to avoid.`,
+{"type":"product","name":"product name or null","category":"e.g. kitchenware/drinks/pharmacy or null",
+ "claim_truth":"the marketing claim vs the reality, one line, or null",
+ "verdict":"USE IT"|"USE WITH CARE"|"CONSIDER A SWAP",
+ "hazards":[{"concern":"short","root":"the actual source/mechanism","risk":"real-world risk at normal use","evidence":"established|emerging|weak|debunked","do":"what to do"}],
+ "good":["genuinely fine points — honest reassurance where deserved"],
+ "swaps":[{"name":"popular alternative","why":"why people commonly prefer it","price":"approx in his currency or null"}],
+ "note":"one blunt line or null","confidence":"verified-list"|"label-read"|"general-knowledge"}
+Max 3 hazards, max 2 swaps. If VERIFIED PRODUCT DATA is provided, prefer it, confidence "verified-list". Add "lang".`,
 
   barber: `${VOICE}
 GROOMING ADVISOR — his whole grooming world: haircuts/beard styles, skincare & haircare products, routines, and what actually suits HIS skin & hair type. Use his profile (skinType, hairType, skinTone, city). Recommend real brands available in HIS city, priced in HIS currency, matched to his type — never generic when you know the type.
@@ -286,7 +297,8 @@ app.post('/ask', async (req, res) => {
     if (hasImg && String(image.data).length > 1500000) return res.status(413).json({ error: 'image too large' });
     if (!budgetOk(hasImg ? 'vision' : 'text')) return res.status(503).json({ error: "Sorted's hit its safety limit for today — try again tomorrow." });
 
-    const extraCtx = mode === 'product' ? await skuContext(lastText)
+    const catCtx = mode === 'product' && req.body.category ? `\nCATEGORY he's checking: ${String(req.body.category).slice(0, 30)} — apply that lens.` : '';
+    const extraCtx = mode === 'product' ? (await skuContext(lastText)) + catCtx
       : mode === 'remind' && req.body.local_now
         ? `\nNOW (his local clock): ${String(req.body.local_now).slice(0, 40)} — resolve relative times ("in 30 minutes", "tonight", "tomorrow morning") against THIS, and always set due_time for them.`
         : '';

@@ -232,6 +232,19 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
   <!-- PRODUCT -->
   <div class="screen" id="scr-product">
     <div class="hdr"><button class="back" onclick="go('home')">← Check a product</button><div class="avatar" onclick="go('memory')" id="av3">?</div></div>
+    <div class="chips" id="prod-cats" style="margin:0 0 10px;">
+      <button onclick="pickProdCat(this,'skin &amp; hair','Skincare, sunscreen, shampoo — snap it')">🧴 Skin &amp; hair</button>
+      <button onclick="pickProdCat(this,'deodorant','Deo or antiperspirant — snap it')">🪒 Deodorant</button>
+      <button onclick="pickProdCat(this,'fragrance','Perfume, attar, oud — snap it')">🌸 Fragrance</button>
+      <button onclick="pickProdCat(this,'clothing &amp; fabric','Snap the fabric / care label')">👕 Clothing</button>
+      <button onclick="pickProdCat(this,'kitchenware','Non-stick pan, bottle — snap it')">🍳 Kitchenware</button>
+      <button onclick="pickProdCat(this,'drinks','Energy drink, soda, juice — snap it')">🥤 Drinks</button>
+      <button onclick="pickProdCat(this,'packaged food','Canned / packaged label — snap it')">🥫 Packaged food</button>
+      <button onclick="pickProdCat(this,'pharmacy','OTC medicine or vitamin — snap it')">💊 Pharmacy</button>
+      <button onclick="pickProdCat(this,'supplements','Protein, creatine — snap it')">💪 Supplements</button>
+      <button onclick="pickProdCat(this,'ayurveda','Ayurvedic / herbal — snap it')">🌿 Ayurveda</button>
+      <button onclick="pickProdCat(this,'household','Cleaner, air freshener — snap it')">🧽 Household</button>
+    </div>
     <div class="chat" id="chat-product"></div>
   </div>
 
@@ -431,33 +444,15 @@ async function checkFollowups(){
 
 /* ============ SEED MESSAGES ============ */
 function seed(s){
-  if(s==='verdict') addThem(`Too many options is my department. 📸
-
-· One outfit → straight verdict
-· Open wardrobe, one photo → I pick THE outfit for tonight
-· "What goes with this blue kurta?" → I build the combination
-
-Tell me the occasion and shoot.`);
-  if(s==='product') addThem(`Snap any label, or ask straight:
-
-· "Is this deo actually aluminium-free?"
-· "Sunscreen under ₹400 for oily skin?"
-· "Rosemary water — real or a scam?"
-
-No brand pays me. You get it straight.`);
+  if(s==='verdict') addThem(`Outfit or wardrobe → one verdict. 📸 Shoot.`);
+  if(s==='product') addThem(`Pick a category ↑ then snap the label. 🔍 Real vs marketing, the actual risk, what to do.`);
   if(s==='barber') addThem(`Your grooming corner. 💈 Tap above — or just ask.`);
-  if(s==='remind') addThem(`Say it once, then forget it — that's my job now. ⏰
-
-· "Wife said get rangoli colours, Saturday"
-· "Call boss tomorrow 3pm"
-· "Mom's birthday 12 March"
-
-Birthdays & anniversaries: I remind you 3 days early, draft the message you can copy-paste, and suggest gifts for your budget. Don't type — tap the 🎤 below and just say it.`);
+  if(s==='remind') addThem(`Say it once → I never forget. ⏰ Tap 🎤 and speak it.`);
 }
 function enterPrivate(){
   go('private'); privThread=[];
   $('chat-private').innerHTML='';
-  addThem(`Private mode. Groin stuff, sweat, hair fall, bedroom worries, weight — ask like you'd ask a doctor-friend at 2am. Straight answers, zero judgment, and I'll tell you honestly when it's doctor-time.`, true);
+  addThem(`Private mode. 2am questions — straight answers, zero judgment, doctor-time when it's real.`, true);
 }
 function leavePrivate(){ privThread=[]; $('chat-private').innerHTML=''; go('home'); }
 
@@ -643,7 +638,7 @@ async function send(auto){
     const res=await fetch(BACKEND+'/ask',{
       method:'POST', headers:{'Content-Type':'application/json','x-pilot-token':PILOT}, signal:ctrl.signal,
       body:JSON.stringify({ mode, messages:hist.slice(-12), image:img?{data:img.b64,media_type:img.mime}:null,
-        occasion: mode==='verdict'?occasion:null, profile:P, device_id:DEVICE, local_now:new Date().toString().slice(0,24) })
+        occasion: mode==='verdict'?occasion:null, category: mode==='product'?prodCat:null, profile:P, device_id:DEVICE, local_now:new Date().toString().slice(0,24) })
     });
     clearTimeout(to);
     if(res.status===503){ const e=new Error('cap'); e.cap=true; throw e; }
@@ -698,15 +693,28 @@ function render(mode, d, hist){
     hist.push({role:'assistant', content:d.reply}); // correct thread, whatever mode triggered it
   }
   else if(d.type==='product'){
-    addHTML(`<div class="vcard">
-      ${d.name?`<b style="font-size:15px;">${esc(d.name)}</b>`:''}
-      ${d.price?`<div style="font-size:12px;color:var(--dim);">${esc(d.price)}</div>`:''}
-      <div>${(d.flags||[]).map(f=>`<span class="flag ${f.ok?'ok':'bad'}">${f.ok?'✓':'✕'} ${esc(f.label)}</span>`).join('')}</div>
-      ${d.note?`<p style="font-size:13.5px;color:var(--dim);margin-top:10px;line-height:1.6;">${esc(d.note)}</p>`:''}
-      ${(d.alternatives||[]).map(a=>`<div class="alt"><b>Better → ${esc(a.name)}</b> ${a.price?'· '+esc(a.price):''}<div>${(a.flags||[]).map(f=>`<span class="flag ok">✓ ${esc(f)}</span>`).join('')}</div></div>`).join('')}
-      <div class="fresh">Label-read by AI · formulations change — check the pack · never sponsored</div>
-    </div>`);
-    threads.product.push({role:'assistant', content: (d.name||'')+' '+(d.note||'')});
+    const vCls={'USE IT':'ready','USE WITH CARE':'almost','CONSIDER A SWAP':'notyet'}[d.verdict]||'';
+    const vGl={'USE IT':' ✓','USE WITH CARE':' ~','CONSIDER A SWAP':' ⇄'}[d.verdict]||'';
+    let h='<div class="vcard">';
+    if(d.name) h+=`<b style="font-size:15px;">${esc(d.name)}</b>`;
+    if(d.category) h+=` <span class="chip">${esc(d.category)}</span>`;
+    if(d.verdict) h+=`<div class="vword ${vCls}" style="font-size:19px;margin:6px 0;">${esc(d.verdict)}${vGl}</div>`;
+    if(d.claim_truth) h+=`<div style="font-size:13px;color:var(--dim);margin-bottom:6px;">🎯 ${esc(d.claim_truth)}</div>`;
+    (d.hazards||[]).forEach(hz=>{ const ev={established:'#B04A38',emerging:'#B07C1F',weak:'#66716B',debunked:'#006039'}[hz.evidence]||'#66716B';
+      h+=`<div style="border-left:3px solid ${ev};padding:5px 0 5px 10px;margin:8px 0;">
+        <b style="font-size:13.5px;">⚠️ ${esc(hz.concern)}</b>${hz.evidence?` <span style="font-size:10px;color:${ev};font-weight:700;letter-spacing:.04em;">${esc(hz.evidence).toUpperCase()}</span>`:''}
+        ${hz.root?`<div style="font-size:12.5px;color:var(--dim);margin-top:2px;"><b>Root:</b> ${esc(hz.root)}</div>`:''}
+        ${hz.risk?`<div style="font-size:12.5px;color:var(--dim);"><b>Real risk:</b> ${esc(hz.risk)}</div>`:''}
+        ${hz.do?`<div style="font-size:12.5px;color:var(--text);margin-top:2px;">→ ${esc(hz.do)}</div>`:''}
+      </div>`; });
+    (d.good||[]).forEach(g=> h+=`<div style="font-size:12.5px;color:var(--rolex);margin:3px 0;">✓ ${esc(g)}</div>`);
+    if(!d.hazards && d.flags) h+=`<div>${(d.flags||[]).map(f=>`<span class="flag ${f.ok?'ok':'bad'}">${f.ok?'✓':'✕'} ${esc(f.label)}</span>`).join('')}</div>`;
+    if(d.note) h+=`<p style="font-size:13px;color:var(--dim);margin-top:8px;line-height:1.5;">${esc(d.note)}</p>`;
+    (d.swaps||d.alternatives||[]).forEach(a=> h+=`<div class="alt"><b>↔ ${esc(a.name)}</b>${a.price?' · '+esc(a.price):''}${a.why?`<div style="font-size:12px;color:var(--dim);">${esc(a.why)}</div>`:''}</div>`);
+    h+=`<div class="fresh">${(d.swaps&&d.swaps.length)?'Swaps = popular picks, suggestive not endorsed · ':''}Label-read by AI · formulations change · never sponsored</div></div>`;
+    addHTML(h);
+    if(['pharmacy','supplements','ayurveda'].includes(d.category)) medDisc();
+    threads.product.push({role:'assistant', content:(d.name||'')+' '+(d.verdict||'')+' '+(d.note||'')});
   }
   else if(d.type==='barber'){
     addHTML(`<div class="bcard" id="bc">
@@ -839,6 +847,16 @@ function wrapText(x,t,cx,y,maxW,lh){
   for(const w of words){ const test=line+w+' ';
     if(x.measureText(test).width>maxW && line){ x.fillText(line.trim(),cx,y); line=w+' '; y+=lh; } else line=test; }
   x.fillText(line.trim(),cx,y); return y;
+}
+
+/* ============ PRODUCT CATEGORIES ============ */
+let prodCat=null;
+function pickProdCat(btn,cat,hint){
+  prodCat=cat;
+  document.querySelectorAll('#prod-cats button').forEach(b=>b.classList.remove('sel')); btn.classList.add('sel');
+  if($('inp')) $('inp').placeholder=hint||'Snap the label or ask';
+  addSys('Checking '+cat+'. Snap the label 📷 or just ask.');
+  if($('inp')) $('inp').focus();
 }
 
 /* ============ GROOMING: QUICK ACTIONS ============ */
