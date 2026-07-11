@@ -183,8 +183,8 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
     <div class="bigline">Welcome to the men's world.</div>
     <div class="tagline">Honest verdicts on your look · answers to what you won't ask anyone · unbiased votes from real men, faces blurred. Zero judgment. <b>No real name. Ever.</b></div>
     <div class="field"><input type="text" id="ob-name" placeholder='Pick any name — "Rocky" works' maxlength="20"></div>
-    <div class="field"><label for="ob-age">I'm 18 or older</label><input type="checkbox" id="ob-age"></div>
     <div class="field"><input type="text" id="ob-city" placeholder="City — for weather &amp; local prices (optional)" maxlength="30"></div>
+    <div class="field"><label for="ob-age" style="font-size:13px;line-height:1.4;">I'm 18+ and I agree to the <a href="#" onclick="openSheet('terms');return false;" style="color:var(--rolex);text-decoration:underline;font-weight:600;">Terms &amp; Disclaimer</a></label><input type="checkbox" id="ob-age"></div>
     <button class="cta" onclick="finishOnboard()">Enter →</button>
     <button class="mini-link" onclick="openSheet('privacy-info')">Exactly what's stored, and what isn't →</button>
     <div class="footnote">Photos for analysis are deleted right after. Private Space chats are never saved. Reminders you set are stored under an anonymous ID — never your name. Delete everything anytime.</div>
@@ -401,7 +401,7 @@ function go(s){
 function finishOnboard(){
   const name=$('ob-name').value.trim();
   if(!name) return toast('Pick any name — even "Boss" works.');
-  if(!$('ob-age').checked) return toast('Sorted is for 18+ only.');
+  if(!$('ob-age').checked) return toast('Please confirm 18+ and agree to the Terms & Disclaimer.');
   P = { name, city:$('ob-city').value.trim()||null, lang:'english', skinTone:null, faceShape:null, sizes:null, styleWins:[], notes:[] };
   save(); sendEvent('activated'); go('home');
 }
@@ -853,12 +853,19 @@ function wrapText(x,t,cx,y,maxW,lh){
 function openPriorities(){
   const opts=[['hormone','Hormone / testosterone'],['acne','Acne / breakouts'],['gut','Gut health'],['sensitive','Sensitive skin'],['stimulants','Stimulants / caffeine'],['clean-muscle','Clean muscle building']];
   const cur=P.avoid||[];
-  $('sheet-body').innerHTML=`<h3>What you're avoiding</h3><p class="small">Pick your priorities. When you scan, I flag ingredients that match YOUR list — you decide, not me.</p>
+  $('sheet-body').innerHTML=`<h3>What you're avoiding</h3><p class="small">Pick your priorities and list anything you're allergic to or never want. When you scan, I flag matches to YOUR list — you decide, not me.</p>
     <div class="chips" id="pri-chips" style="margin:10px 0;">${opts.map(([k,l])=>`<button data-k="${k}" class="${cur.includes(k)?'sel':''}" onclick="this.classList.toggle('sel')">${l}</button>`).join('')}</div>
+    <div style="font-size:12px;color:var(--dim);margin:4px 0;">Allergic to / never want (comma-separated)</div>
+    <input type="text" id="pri-custom" value="${esc((P.avoidCustom||[]).join(', '))}" placeholder="e.g. peanuts, green chilli, tilapia, gelatine" maxlength="200" style="width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:10px;font-size:16px;background:var(--ivory);margin-bottom:12px;">
     <button class="cta" onclick="savePriorities()">Save</button>`;
   $('sheet').classList.add('on');
 }
-function savePriorities(){ P.avoid=[...document.querySelectorAll('#pri-chips button.sel')].map(b=>b.getAttribute('data-k')); save(); $('sheet').classList.remove('on'); toast(P.avoid.length?'Saved — scans now match your list.':'Cleared.'); }
+function savePriorities(){
+  P.avoid=[...document.querySelectorAll('#pri-chips button.sel')].map(b=>b.getAttribute('data-k'));
+  P.avoidCustom=($('pri-custom')?$('pri-custom').value:'').split(',').map(s=>s.trim()).filter(Boolean).slice(0,30);
+  save(); $('sheet').classList.remove('on');
+  toast((P.avoid.length||P.avoidCustom.length)?'Saved — scans now match your list.':'Cleared.');
+}
 
 /* ============ PRODUCT CATEGORIES ============ */
 let prodCat=null;
@@ -1281,6 +1288,21 @@ function openSheet(which){
     · Private Space: nothing. No history exists.<br>
     · You can export or delete everything, instantly, from the Privacy Center.<br><br>
     Health answers are education, not medical advice. For anything serious, Sorted will always push you to a real doctor.</p>`;
+  if(which==='terms') b.innerHTML=`<h3>Terms of Use &amp; Disclaimer</h3><p class="small">Last updated: [DATE]. Please read before using SORTED ("the App", operated by [COMPANY / ENTITY NAME], "we"). By tapping "Enter" you confirm you are 18+ and agree to these Terms.</p>
+    <div class="small" style="margin-top:10px;">
+    <b>1. Information only — not professional advice.</b> The App is provided for general information, education and entertainment. Nothing in it is medical, dermatological, nutritional, pharmaceutical, legal, financial or professional advice, and using it creates no professional or doctor–patient relationship. Always seek a qualified professional for any decision about your health, medication, diet or wellbeing. In an emergency call your local emergency number (e.g. 999/112 GCC &amp; UK, 112/108 India, 995/999 Singapore, 999 Malaysia, 911 Philippines) or go to the nearest hospital.<br><br>
+    <b>2. Product &amp; ingredient information.</b> Where the App comments on products, cookware, food, supplements, cosmetics, fragrance, apparel or similar, it presents <b>general information about individual ingredients or materials drawn from publicly available scientific and regulatory sources</b> (e.g. EU SCCS, IARC, WHO, US FDA, PubChem, PubMed) and matches them against preferences <b>you yourself set</b>. This is <b>not</b> an opinion on, rating of, ranking of, endorsement of, or statement about the safety or quality of any product, brand or manufacturer, and is <b>not</b> intended to disparage any product or business. Toxicology depends on dose, concentration and use ("the dose makes the poison"). Formulations change without notice — always read the actual packaging and manufacturer information, which prevails over anything in the App.<br><br>
+    <b>3. AI-generated content.</b> Much of the App's output is generated by artificial intelligence and may be inaccurate, incomplete or out of date. Verify anything important independently before relying on it. We do not guarantee accuracy, completeness or fitness for any purpose.<br><br>
+    <b>4. Community &amp; peer content.</b> "Peer Review / Brotherhood" shows content submitted by other users. It is not reviewed or endorsed by us. Face-blurring is a best-effort tool and may not fully anonymise an image — you are responsible for what you upload. Do not post intimate, explicit, unlawful, defamatory or infringing content, or images of anyone without consent.<br><br>
+    <b>5. No warranties; limitation of liability.</b> The App is provided "as is" and "as available" without warranties of any kind, to the fullest extent permitted by law. To the maximum extent permitted by applicable law, we and our suppliers are not liable for any indirect, incidental, special, consequential or punitive damages, or for any loss arising from your use of or reliance on the App, including product choices, health outcomes, missed reminders, third-party listings or community content. You agree to indemnify us against claims arising from your misuse of the App or breach of these Terms.<br><br>
+    <b>6. Privacy &amp; data.</b> The App is pseudonymous by design: your name and profile live on your device, and only anonymous, device-linked events and reminders are stored. Personal data is handled in line with applicable laws including the EU/UK GDPR, India's Digital Personal Data Protection Act 2023, the UAE Federal Decree-Law No. 45 of 2021 (PDPL) and comparable GCC laws, Singapore's PDPA, Malaysia's PDPA and the Philippines' Data Privacy Act 2012. You may export or delete your data at any time from the Privacy Center.<br><br>
+    <b>7. Eligibility.</b> The App is for men aged 18 and over. By using it you confirm you meet this requirement and that your use is lawful where you live.<br><br>
+    <b>8. Third-party services.</b> Maps, business listings, image generation and AI features rely on third parties (e.g. Google, AI model providers) governed by their own terms and privacy policies. We are not responsible for third-party content, listings, ratings or availability.<br><br>
+    <b>9. Regional notices.</b> <b>GCC:</b> use the App consistent with local laws and cultural norms; do not submit content that is unlawful or offensive in your jurisdiction. <b>India:</b> nothing here is a medicinal or therapeutic claim within the meaning of the Drugs and Magic Remedies (Objectionable Advertisements) Act or a substitute for registered medical advice. <b>Singapore / Malaysia / Philippines &amp; other markets:</b> health and product information is general and not a substitute for advice from a licensed professional.<br><br>
+    <b>10. Governing law &amp; disputes.</b> These Terms are governed by the laws of [JURISDICTION], and disputes are subject to the exclusive jurisdiction of its courts or to binding arbitration seated in [SEAT], as we may elect. If any provision is unenforceable, the rest remains in effect.<br><br>
+    <b>11. Changes &amp; contact.</b> We may update these Terms; continued use means acceptance. Questions: [CONTACT EMAIL].<br><br>
+    <i style="color:var(--faint);">This is a plain-language summary template and not legal advice. It should be reviewed and finalised by a lawyer qualified in each market before public launch.</i>
+    </div>`;
   s.classList.add('on');
 }
 
