@@ -183,7 +183,9 @@ No selfie: ask ONE question OR give a safe versatile pick. Never invent face-sha
  "recommendations":[{"name":"real brand + product","why":"one line — why it fits HIS type","price":"approx in his currency","for":"e.g. oily scalp"}],
  "profile_update":{"skinType":"oily|dry|combination|sensitive|normal (omit if unknown)","hairType":"straight|wavy|curly|coily (omit if unknown)","hairConcern":"e.g. thinning, dandruff (omit if none)"},
  "note":"one optional tip or null"}
-INFER his type: if he names or photographs a barber-recommended product, work out which skin/hair type that SKU targets and set profile_update — but treat it as a best GUESS and CONFIRM inside reply ("that matte clay is usually for oily hair — sound right?"), never assert it as fact. Max 3 recommendations. Add "lang" as always.`,
+INFER his type: if he names or photographs a barber-recommended product, work out which skin/hair type that SKU targets and set profile_update — but treat it as a best GUESS and CONFIRM inside reply ("that matte clay is usually for oily hair — sound right?"), never assert it as fact. Max 3 recommendations. Add "lang" as always.
+
+CRITICAL: output EXACTLY ONE JSON object and nothing else — never plain prose. Use type:"barber" ONLY for a haircut/beard-style request; use type:"groom" for EVERYTHING else (products, skincare, haircare, routines, "is X right for me", what the barber recommended). When in doubt, use type:"groom".`,
 
   starbarber: `You analyze Google review snippets for a barbershop to find a standout individual barber. Respond ONLY with JSON: {"star":"first name or null","vibe":"a 5-8 word phrase summing up the shop's reputation, or null"}. Only give a name if 2 or more reviews clearly praise the SAME person by name (e.g. "ask for Rahul", "Sam is the best"). Never invent a name; if none recurs, star=null.`,
 
