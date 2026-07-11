@@ -70,7 +70,7 @@ function gate(req, res) {
    spend lands under the cap, never over. Safety red-flag checks run BEFORE this and are free. */
 const DAYK = () => new Date().toISOString().slice(0, 10);
 const DAILY_USD_CAP = Number(process.env.DAILY_USD_CAP || 5);
-const COST_USD = { text: 0.015, vision: 0.02, preview: 0.05 }; // est. $/call: text ask, photo ask, Gemini preview
+const COST_USD = { text: 0.015, vision: 0.02, product: 0.07, preview: 0.05 }; // est. $/call: text ask, photo ask, product scan (incl. up to 3 web searches + retrieved tokens), Gemini preview
 let spend = { day: DAYK(), usd: 0, n: 0 };
 function budgetOk(kind) {
   const d = DAYK();
@@ -168,7 +168,8 @@ LEGAL POSITIONING — this is non-negotiable: you are a SEARCH ENGINE over publi
 CALIBRATED: mark genuinely benign or beneficial ingredients as level "fine"/tag "Clean" and reassure honestly. Debunk marketing fear (parabens & sulfates at legal levels are low-risk).
 PREFERENCE ENGINE: his profile has "avoid" (health priorities: hormone, acne, gut, sensitive, stimulants, clean-muscle) AND "avoidCustom" (specific things he is allergic to or simply won't have — e.g. peanuts, tree nuts, green chilli, a particular fish, gluten, alcohol, pork/gelatine). For EVERY item, check the product's ingredients/contents against BOTH lists and flag matches in match_count and each ingredient's "matches" — even when it's NOT a health hazard (e.g. "contains peanut — on your avoid list", "contains gelatine — you avoid pork"). You are matching HIS list, not judging.
 CATEGORY LENSES: DEODORANT — deodorant masks odour, antiperspirant (aluminium) blocks sweat; aluminium cancer fear is unsupported, say so. CLOTHING — natural fibres (cotton/linen/TENCEL/merino) breathe & suit sensitive skin; polyester/nylon trap odour; some finishes use PFAS/formaldehyde; factor skinType & climate. FRAGRANCE — alcohol EDT/EDP vs oil attar/oud (oil gentler, often halal); flag IFRA-restricted allergens (Lilial, Coumarin, Linalool); fakes common, never verify authenticity from a photo. AYURVEDA/HERBAL — some bhasma/herbal carry heavy-metal risk & thin evidence; note plainly. PHARMACY/SUPPLEMENTS — not medical advice; flag interactions, proprietary-blend underdosing, contamination; tell him to confirm with a pharmacist/doctor.
-INCOMPLETE LABEL / PHOTO: if the ingredients panel isn't visible (only the front of pack), DO NOT refuse or just say "no panel". Read the BRAND + PRODUCT NAME you can see and use what you know about that specific product (or its class) to say what it's typically formulated with and its real risks — clearly flagging the panel wasn't visible and that a photo of the back gives exact per-ingredient analysis. Always leave him more informed.
+INCOMPLETE LABEL / PHOTO: if the ingredients panel isn't visible (only the front of pack), you have a web_search tool — USE IT. Read the BRAND + PRODUCT NAME you can see, then search the web for that exact product's published ingredient list / supplement-facts panel and analyse the REAL ingredients you find. Do NOT default to "send me the back label" — only fall back to asking for the back photo if the web genuinely has no ingredient data for that product. When you did find the panel online, say so in "note" (e.g. "Read from the maker's published label online") and still fill the ingredients[] array with the real ingredients. Cite the pages you used in ingredient source_url. Always leave him more informed than a blank refusal.
+WEB SEARCH USE: for any named product, you may search to confirm the current formula, verify a claim, or check for recalls/regulator warnings — prefer official/maker/regulator/database pages over blogs. Keep it to what's needed (searches cost money).
 WEIGHT-LOSS / FAT-BURNER / "SLIMMING" SUPPLEMENTS: treat with real scepticism — flag undisclosed "proprietary blends", stimulants (bitter-orange/synephrine, high caffeine, illegally-added ones like DMAA/sibutramine that recur in these per FDA/regulator warnings), and that "100% natural" slimming pills are among the most adulterated categories. Point to diet/training/sleep as what works, and a doctor before any fat-burner.
 SWAPS are SUGGESTIVE — popular alternatives in his city/currency, "what people commonly reach for", never an endorsement.
 Respond ONLY with JSON:
@@ -258,13 +259,24 @@ async function askClaude(mode, messages, image, occasion, profile, extraCtx) {
     ];
   }
   if (!apiMessages.length) apiMessages.push({ role: 'user', content: 'Hi' });
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: { 'x-api-key': KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-    body: JSON.stringify({ model: MODEL, max_tokens: mode === 'product' ? 3200 : mode === 'remind' ? 2400 : 900, system: sys, messages: apiMessages }),
-  });
-  if (!res.ok) throw new Error('anthropic ' + res.status + ' ' + (await res.text()).slice(0, 200));
-  const out = await res.json();
+  const body = { model: MODEL, max_tokens: mode === 'product' ? 3200 : mode === 'remind' ? 2400 : 900, system: sys, messages: apiMessages };
+  // Product mode gets live web search so it can read a product's published ingredient panel
+  // when the photo doesn't show the back label — instead of dead-ending on "send me the back label".
+  if (mode === 'product') body.tools = [{ type: 'web_search_20250305', name: 'web_search', max_uses: 3 }];
+  let out;
+  // Web search can return stop_reason "pause_turn" for a long agentic turn — feed the
+  // partial assistant turn back and let it finish (bounded so a runaway can't loop forever).
+  for (let hop = 0; hop < 4; hop++) {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'x-api-key': KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error('anthropic ' + res.status + ' ' + (await res.text()).slice(0, 200));
+    out = await res.json();
+    if (out.stop_reason !== 'pause_turn') break;
+    body.messages = [...body.messages, { role: 'assistant', content: out.content }];
+  }
   const text = out.content.map(c => c.text || '').join('');
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   try { return JSON.parse(jsonMatch ? jsonMatch[0] : text); }
@@ -295,7 +307,8 @@ app.post('/ask', async (req, res) => {
     // Paid call from here — enforce the daily spend ceiling (safety red-flags above are free and already handled).
     const hasImg = !!(image && image.data);
     if (hasImg && String(image.data).length > 1500000) return res.status(413).json({ error: 'image too large' });
-    if (!budgetOk(hasImg ? 'vision' : 'text')) return res.status(503).json({ error: "Sorted's hit its safety limit for today — try again tomorrow." });
+    const costKind = mode === 'product' ? 'product' : hasImg ? 'vision' : 'text';
+    if (!budgetOk(costKind)) return res.status(503).json({ error: "Sorted's hit its safety limit for today — try again tomorrow." });
 
     const catCtx = mode === 'product' && req.body.category ? `\nCATEGORY he's checking: ${String(req.body.category).slice(0, 30)} — apply that lens.` : '';
     const extraCtx = mode === 'product' ? (await skuContext(lastText)) + catCtx
