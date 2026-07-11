@@ -109,7 +109,11 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
 .shimmer::after{content:''; position:absolute; top:0; left:-80%; width:60%; height:100%; background:linear-gradient(100deg,transparent,rgba(163,126,44,.16),transparent); animation:sweep .7s ease .3s 1;}
 @keyframes sweep{to{left:120%;}}
 .fbrow{display:flex; gap:8px; margin-top:12px;}
-.fbrow button{flex:1; background:var(--ivory); border:1px solid var(--line); color:var(--dim); border-radius:10px; padding:9px; min-height:44px; font-size:13px; cursor:pointer;}
+.fbrow button{flex:1; background:var(--ivory); border:1px solid var(--line); color:var(--dim); border-radius:10px; padding:9px; min-height:44px; font-size:13px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:6px;}
+.fbrow button svg{width:16px; height:16px;}
+.cta.has-ic{display:flex; align-items:center; justify-content:center; gap:8px;}
+.cta.has-ic svg{width:18px; height:18px;}
+.citypin svg{width:15px; height:15px; vertical-align:-2px;}
 .fbrow button.hit{border-color:var(--rolex); color:var(--rolex); font-weight:700;}
 /* flags & product */
 .flag{display:inline-block; font-size:11px; padding:3px 10px; border-radius:22px; margin:6px 6px 0 0; font-weight:700;}
@@ -464,7 +468,7 @@ function renderHome(){
   const g = h>=23||h<5 ? `Late night thought, ${P.name}? The Private Space is open.` :
             h<12 ? `Morning, ${P.name}.` : (hi?`Scene kya hai, ${P.name}?`:`What's the plan, ${P.name}?`);
   $('greet').textContent=g;
-  if($('citychip')) $('citychip').innerHTML = P.city ? `📍 ${esc(P.city)} <span style="color:var(--rolex);font-weight:600;">· change</span>` : `📍 <span style="color:var(--rolex);font-weight:600;">Set your city (for local prices)</span>`;
+  if($('citychip')) $('citychip').innerHTML = P.city ? `<span class="citypin" style="color:var(--rolex);">${svgEl('pin')}</span> ${esc(P.city)} <span style="color:var(--rolex);font-weight:600;">· change</span>` : `<span class="citypin" style="color:var(--rolex);">${svgEl('pin')}</span> <span style="color:var(--rolex);font-weight:600;">Set your city (for local prices)</span>`;
   ['av','av2','av3','av4'].forEach(i=>{ if($(i)) $(i).textContent=P.name[0].toUpperCase(); });
   checkFollowups();
   fetch(BACKEND+'/polls/feed?device='+encodeURIComponent(DEVICE),{headers:{'x-pilot-token':PILOT}}).then(r=>r.json())
@@ -490,7 +494,7 @@ async function checkFollowups(){
     const f=list[0]; sendEvent('followup_shown');
     const el=document.createElement('div');
     el.className='door purple-door';
-    el.innerHTML=`<div class="ic">🔒</div><h4>Checking in, as promised</h4><p>You asked me something a few days back. Better now, or time for that doctor visit? Tap to talk — private as always.</p>`;
+    el.innerHTML=`<div class="ic">${svgEl('lock')}</div><h4>Checking in, as promised</h4><p>You asked me something a few days back. Better now, or time for that doctor visit? Tap to talk — private as always.</p>`;
     el.onclick=()=>{ fetch(BACKEND+'/followups/done',{method:'POST',headers:{'Content-Type':'application/json','x-pilot-token':PILOT},body:JSON.stringify({id:f.id,device_id:DEVICE})}).catch(()=>{}); el.remove(); enterPrivate();
       setTimeout(()=>addThem('Friday, as promised — any better? Honest answer. If it\'s not clearly improving, this week is derm week and I can help you prep for it.'),400); };
     ($('home-alerts')||$('greet')).appendChild(el);
@@ -499,10 +503,10 @@ async function checkFollowups(){
 
 /* ============ SEED MESSAGES ============ */
 function seed(s){
-  if(s==='verdict') addThem(`Outfit or wardrobe → one verdict. 📸 Shoot.`);
-  if(s==='product') addThem(`Pick a category ↑ then snap the label. 🔍 What's inside, what the science says, matched to what you avoid.`);
-  if(s==='barber') addThem(`Your grooming corner. 💈 Tap above — or just ask.`);
-  if(s==='remind') addThem(`Say it once → I never forget. ⏰ Tap 🎤 and speak it.`);
+  if(s==='verdict') addThem(`Outfit or open wardrobe — you get one verdict. Shoot.`);
+  if(s==='product') addThem(`Pick a category above, then snap the label. What's inside, what the science says, matched to what you avoid.`);
+  if(s==='barber') addThem(`Your grooming corner. Tap above — or just ask.`);
+  if(s==='remind') addThem(`Say it once, I never forget. Tap the mic and speak it.`);
 }
 function enterPrivate(){
   go('private'); privThread=[];
@@ -518,7 +522,7 @@ function addThem(text, instant){
   for(const p of parts){
     if(/^https?:\/\//.test(p)){
       const a=document.createElement('a'); a.href=p; a.target='_blank'; a.rel='noopener';
-      a.textContent = p.includes('google.com/maps') ? '📍 Open in Maps' : p.replace(/^https?:\/\/(www\.)?/,'').slice(0,42);
+      a.textContent = p.includes('google.com/maps') ? 'Open in Maps →' : p.replace(/^https?:\/\/(www\.)?/,'').slice(0,42);
       a.style.cssText='color:var(--rolex);font-weight:700;text-decoration:underline;';
       d.appendChild(a);
     } else if(p) d.appendChild(document.createTextNode(p));
@@ -593,8 +597,8 @@ function openAddMenu(){
 function openCamSheet(){
   const s=$('sheet'); const b=$('sheet-body');
   b.innerHTML=`<h3>Add a photo</h3>
-    <button class="cta" style="margin-bottom:10px;" onclick="takeFresh()">📷 &nbsp;Click a fresh photo</button>
-    <button class="cta ghost" onclick="$('sheet').classList.remove('on');$('file-gal').click()">🖼️ &nbsp;Choose from gallery</button>
+    <button class="cta has-ic" style="margin-bottom:10px;" onclick="takeFresh()">${ic('camera')}Click a fresh photo</button>
+    <button class="cta ghost" onclick="$('sheet').classList.remove('on');$('file-gal').click()">Choose from gallery</button>
     <p class="small" style="text-align:center;margin-top:12px;">Analyzed, then deleted. Always.</p>`;
   s.classList.add('on');
 }
@@ -610,7 +614,7 @@ async function openWebCam(){
   const b=$('sheet-body');
   b.innerHTML=`<h3>Camera</h3>
     <video id="wc" autoplay playsinline style="width:100%;border-radius:16px;background:#000;"></video>
-    <button class="cta" style="margin-top:10px;" onclick="snapWebCam()">📸 &nbsp;Capture</button>
+    <button class="cta has-ic" style="margin-top:10px;" onclick="snapWebCam()">${ic('camera')}Capture</button>
     <button class="cta ghost" style="margin-top:8px;" onclick="closeWebCam()">Cancel</button>`;
   $('sheet').classList.add('on');
   $('wc').srcObject=camStream;
@@ -732,7 +736,7 @@ function render(mode, d, hist){
       <div class="vword ${cls}">${esc(d.verdict)}${gl}</div>
       <ol>${(d.reasons||[]).slice(0,3).map(r=>`<li>${esc(r)}</li>`).join('')}</ol>
       ${d.fix?`<div class="fixbox${d.verdict==='READY'?' go':''}"><b>${d.verdict==='READY'?'Go.':'The fix:'}</b> ${esc(d.fix)}</div>`:''}
-      <div class="fbrow"><button onclick="fb(this,1)">👍 Helped</button><button onclick="fb(this,0)">😐 Meh</button><button onclick="crowdAsk()">🫂 Peer review</button></div>
+      <div class="fbrow"><button onclick="fb(this,1)">${ic('check')}Helped</button><button onclick="fb(this,0)">Not for me</button><button onclick="crowdAsk()">${ic('users')}Peer review</button></div>
     </div>`);
     if(d.memory_note){ P.notes.push(d.memory_note); if(d.skinTone&&!P.skinTone)P.skinTone=d.skinTone; if(d.faceShape&&!P.faceShape)P.faceShape=d.faceShape; save(); addSys('Saved to memory: '+d.memory_note+'  (edit anytime in your profile)'); }
     if(d.followup) addThem(d.followup);
@@ -749,7 +753,7 @@ function render(mode, d, hist){
     medDisc();
     if(d.doctor && !P.push && 'Notification' in window && !pushOffered){
       pushOffered=true;
-      addHTML(`<button class="cta purple-btn" onclick="enablePush(this)">🔔 Check on me later — allow reminders</button>`);
+      addHTML(`<button class="cta purple-btn has-ic" onclick="enablePush(this)">${ic('bell')}Check on me later — allow reminders</button>`);
     }
     hist.push({role:'assistant', content:d.reply}); // correct thread, whatever mode triggered it
   }
@@ -759,14 +763,14 @@ function render(mode, d, hist){
     if(d.name) h+=`<b style="font-size:15px;">${esc(d.name)}</b>`;
     if(d.category) h+=` <span class="chip">${esc(d.category)}</span>`;
     if(d.summary) h+=`<div style="font-size:13px;color:var(--dim);margin:4px 0 2px;">${esc(d.summary)}</div>`;
-    if(d.match_count>0) h+=`<div style="font-size:13px;color:var(--notyet);font-weight:700;margin:6px 0;">🔍 ${d.match_count} match${d.match_count>1?'es':''} for your avoid-list</div>`;
+    if(d.match_count>0) h+=`<div style="font-size:13px;color:var(--notyet);font-weight:700;margin:6px 0;display:flex;align-items:center;gap:6px;"><span style="width:15px;height:15px;color:var(--notyet);">${svgEl('search')}</span> ${d.match_count} match${d.match_count>1?'es':''} for your avoid-list</div>`;
     (d.ingredients||d.hazards||[]).forEach(ing=>{ const c=lvl[ing.level]||'#66716B';
       h+=`<div style="border-left:3px solid ${c};padding:5px 0 5px 10px;margin:8px 0;">
         <b style="font-size:13px;">${esc(ing.name||ing.concern||'')}</b>${ing.level?` <span style="font-size:11px;color:${c};font-weight:700;letter-spacing:.04em;">${esc(ing.level).toUpperCase()}</span>`:''}${ing.tag?` <span class="flag ${/clean/i.test(ing.tag)?'ok':'bad'}" style="margin:0;">${esc(ing.tag)}</span>`:''}
         ${ing.what?`<div style="font-size:13px;color:var(--dim);margin-top:2px;">${esc(ing.what)}</div>`:''}
         ${ing.science?`<div style="font-size:13px;color:var(--text);margin-top:2px;">${esc(ing.science)}</div>`:''}
         ${(ing.matches&&ing.matches.length)?`<div style="font-size:11px;color:var(--notyet);margin-top:2px;">↳ on your avoid-list: ${esc(ing.matches.join(', '))}</div>`:''}
-        ${ing.source?`<div style="font-size:11px;color:var(--dim);margin-top:2px;">📚 ${ing.source_url?`<a href="${esc(ing.source_url)}" target="_blank" rel="noopener" style="color:var(--rolex);">${esc(ing.source)} ↗</a>`:esc(ing.source)}${ing.evidence?' · '+esc(ing.evidence)+' evidence':''}</div>`:''}
+        ${ing.source?`<div style="font-size:11px;color:var(--dim);margin-top:2px;">Source: ${ing.source_url?`<a href="${esc(ing.source_url)}" target="_blank" rel="noopener" style="color:var(--rolex);">${esc(ing.source)} ↗</a>`:esc(ing.source)}${ing.evidence?' · '+esc(ing.evidence)+' evidence':''}</div>`:''}
       </div>`; });
     (d.clean||d.good||[]).forEach(g=> h+=`<div style="font-size:13px;color:var(--rolex);margin:3px 0;">✓ ${esc(g)}</div>`);
     if(d.note) h+=`<p style="font-size:13px;color:var(--dim);margin-top:8px;line-height:1.5;">${esc(d.note)}</p>`;
@@ -780,7 +784,7 @@ function render(mode, d, hist){
     addHTML(`<div class="bcard" id="bc">
       <div class="t">SHOW THIS TO YOUR BARBER</div>
       <h3>${esc(d.style)}</h3>
-      <div class="steps">${(d.steps||[]).map(s=>`<div>✂️ ${esc(s)}</div>`).join('')}</div>
+      <div class="steps">${(d.steps||[]).map(s=>`<div>${esc(s)}</div>`).join('')}</div>
       ${d.hinglish?`<div class="hi">"${esc(d.hinglish)}"</div>`:''}
     </div>`);
     { const w=document.createElement('div'); w.style.alignSelf='stretch';
@@ -788,11 +792,11 @@ function render(mode, d, hist){
       b.addEventListener('click', ()=>saveCard(d)); w.appendChild(b);
       if(lastImg){
         const vb=document.createElement('button'); vb.className='cta'; vb.style.marginTop='8px';
-        vb.textContent='👀 See it on me — AI preview'; vb.addEventListener('click', ()=>seePreview(vb,d)); w.appendChild(vb);
+        vb.className='cta has-ic'; vb.innerHTML=`${ic('eye')}See it on me — AI preview`; vb.addEventListener('click', ()=>seePreview(vb,d)); w.appendChild(vb);
         const vn=document.createElement('div'); vn.className='sys'; vn.style.marginTop='4px';
         vn.textContent='Your photo is sent to Google\'s image engine to paint this, then discarded.'; w.appendChild(vn);
         const pb=document.createElement('button'); pb.className='cta ghost'; pb.style.marginTop='8px';
-        pb.textContent='🫂 Ask the brotherhood about this look'; pb.addEventListener('click', ()=>crowdAsk()); w.appendChild(pb); }
+        pb.className='cta ghost has-ic'; pb.innerHTML=`${ic('users')}Ask the brotherhood about this look`; pb.addEventListener('click', ()=>crowdAsk()); w.appendChild(pb); }
       chatEl().appendChild(w); scrollBottom(); }
     if(d.note) addThem(d.note);
     threads.barber.push({role:'assistant', content:d.style+': '+(d.steps||[]).join('; ')});
@@ -800,7 +804,7 @@ function render(mode, d, hist){
   else if(d.type==='groom'){
     if(d.reply) addThem(d.reply);
     (d.recommendations||[]).forEach(g=>{
-      addHTML(`<div class="vcard" style="margin-bottom:8px;"><b style="font-size:15px;">🧴 ${esc(g.name)}</b>${g.price?`<div style="font-size:13px;color:var(--gold-dk);font-weight:700;margin:2px 0;">${esc(g.price)}</div>`:''}<p style="font-size:13px;color:var(--dim);line-height:1.5;">${esc(g.why||'')}${g.for?` <span style="color:var(--faint);">· for ${esc(g.for)}</span>`:''}</p></div>`);
+      addHTML(`<div class="vcard" style="margin-bottom:8px;"><b style="font-size:15px;">${esc(g.name)}</b>${g.price?`<div style="font-size:13px;color:var(--gold-dk);font-weight:700;margin:2px 0;">${esc(g.price)}</div>`:''}<p style="font-size:13px;color:var(--dim);line-height:1.5;">${esc(g.why||'')}${g.for?` <span style="color:var(--faint);">· for ${esc(g.for)}</span>`:''}</p></div>`);
     });
     if(d.profile_update){ let ch=[]; ['skinType','hairType','hairConcern'].forEach(k=>{ if(d.profile_update[k] && P[k]!==d.profile_update[k]){ P[k]=d.profile_update[k]; ch.push(d.profile_update[k]); } }); if(ch.length){ save(); addSys('Saved to your grooming profile: '+ch.join(', ')+' (edit in your profile)'); } }
     if(d.note) addThem(d.note);
@@ -813,12 +817,12 @@ function render(mode, d, hist){
     items.forEach(rd=>{
       const card=document.createElement('div'); card.className='vcard'; card.style.marginBottom='8px';
       card.innerHTML=`<b style="font-size:15px;">${esc(rd.title)}</b>
-        <div style="font-size:13px;color:var(--dim);margin-top:3px;">📅 ${esc(rd.due_date||'?')}${rd.due_time?' · '+esc(rd.due_time):''}${rd.recur&&rd.recur!=='none'?' · repeats '+esc(rd.recur):''}${rd.person?' · '+esc(rd.person):''}</div>`;
+        <div style="font-size:13px;color:var(--dim);margin-top:3px;">${esc(rd.due_date||'?')}${rd.due_time?' · '+esc(rd.due_time):''}${rd.recur&&rd.recur!=='none'?' · repeats '+esc(rd.recur):''}${rd.person?' · '+esc(rd.person):''}</div>`;
       w.appendChild(card);
     });
     if(items.length){
       const sv=document.createElement('button'); sv.className='cta';
-      sv.textContent = items.length>1 ? `✓ Save all ${items.length} reminders` : '✓ Save reminder';
+      sv.className='cta has-ic'; sv.innerHTML = (items.length>1 ? `${ic('check')}Save all ${items.length} reminders` : `${ic('check')}Save reminder`);
       sv.addEventListener('click', async ()=>{ sv.disabled=true;
         try{
           const r=await fetch(BACKEND+'/reminders',{method:'POST',headers:{'Content-Type':'application/json','x-pilot-token':PILOT},body:JSON.stringify({device_id:DEVICE,reminders:items})});
@@ -828,15 +832,15 @@ function render(mode, d, hist){
           toast(j.saved>1?`All ${j.saved} locked in. Consider them remembered. 🤝`:'Locked in. Consider it remembered. 🤝');
           if(j.skipped) addThem(`Heads up — ${j.skipped} couldn't be saved: you've hit the 50-reminder cap. Tick a few off and resend those.`);
           const cal=document.createElement('button'); cal.className='cta ghost'; cal.style.marginTop='8px';
-          cal.textContent='📅 Also add to phone calendar'; cal.addEventListener('click',()=>icsExportItems(items));
+          cal.className='cta ghost has-ic'; cal.innerHTML=`${ic('calendar')}Also add to phone calendar`; cal.addEventListener('click',()=>icsExportItems(items));
           w.appendChild(cal); loadReminders();
           const timed = items.some(i=>i.due_time);
           if(timed) addThem(`For the exact-time ones — tap 📅 above. Your phone's calendar rings at the minute; my own nudges come as a morning/evening check-in, not an alarm clock.`);
           if(!P.push){
             if(/iPhone|iPad|iPod/.test(navigator.userAgent) && !navigator.standalone){
-              addHTML(`<div class="disc">🔔 Want my nudges on your lock screen? iPhone rule: Sorted must live on your Home Screen first. Tap Share <b>⎋</b> → <b>Add to Home Screen</b>, open Sorted from that icon, and I'll ask once for permission.</div>`);
+              addHTML(`<div class="disc">Want my nudges on your lock screen? iPhone rule: Sorted must live on your Home Screen first. Tap Share <b>⎋</b> → <b>Add to Home Screen</b>, open Sorted from that icon, and I'll ask once for permission.</div>`);
             } else {
-              addHTML(`<button class="cta ghost" style="margin-top:8px;" onclick="enablePush(this)">🔔 Nudge me when these come due</button>`);
+              addHTML(`<button class="cta ghost has-ic" style="margin-top:8px;" onclick="enablePush(this)">${ic('bell')}Nudge me when these come due</button>`);
             }
           }
         }catch(e){ sv.disabled=false; toast(typeof e==='string'?e:'Could not save — try again.'); }
@@ -847,7 +851,7 @@ function render(mode, d, hist){
     (d.wishes||[]).forEach(v=>{
       const wc=document.createElement('div'); wc.className='vcard'; wc.style.cssText='align-self:stretch;margin-bottom:10px;';
       const p=document.createElement('div'); p.style.cssText='font-size:15px;line-height:1.6;white-space:pre-wrap;'; p.textContent=v; wc.appendChild(p);
-      const c=document.createElement('button'); c.className='cta ghost'; c.style.marginTop='10px'; c.textContent='📋 Copy message';
+      const c=document.createElement('button'); c.className='cta ghost'; c.style.marginTop='10px'; c.textContent='Copy message';
       c.addEventListener('click',()=>{ navigator.clipboard.writeText(v).then(()=>toast('Copied — paste it in WhatsApp. 🤝')).catch(()=>toast('Long-press the text to copy.')); });
       wc.appendChild(c); chatEl().appendChild(wc);
     });
@@ -858,7 +862,7 @@ function render(mode, d, hist){
     (d.variants||[]).forEach((v,i)=>{
       const w=document.createElement('div'); w.className='vcard'; w.style.alignSelf='stretch'; w.style.marginBottom='10px';
       const p=document.createElement('div'); p.style.cssText='font-size:15px;line-height:1.6;white-space:pre-wrap;'; p.textContent=v; w.appendChild(p);
-      const c=document.createElement('button'); c.className='cta ghost'; c.style.marginTop='10px'; c.textContent='📋 Copy message';
+      const c=document.createElement('button'); c.className='cta ghost'; c.style.marginTop='10px'; c.textContent='Copy message';
       c.addEventListener('click',()=>{ navigator.clipboard.writeText(v).then(()=>toast('Copied — paste it in WhatsApp. 🤝')).catch(()=>toast('Long-press the text to copy.')); });
       w.appendChild(c); chatEl().appendChild(w);
     });
@@ -881,7 +885,7 @@ function render(mode, d, hist){
   }
 }
 // Medical disclaimer — one canonical version, shown on every health answer (private, red-flag, or fallback).
-function medDisc(){ addHTML(`<div class="disc">⚕️ <b>Not a doctor speaking</b> — this is general education only. For anything real, please see a doctor.</div>`); }
+function medDisc(){ addHTML(`<div class="disc"><b>Not a doctor speaking</b> — this is general education only. For anything real, please see a doctor.</div>`); }
 function fb(btn,v){ btn.classList.add('hit'); btn.parentElement.querySelectorAll('button').forEach(b=>{if(b!==btn)b.disabled=true;}); sendEvent(v?'helped':'meh','verdict'); toast(v?'Noted. 🤝':'Noted — I\'ll sharpen up.'); }
 
 /* ============ BARBER CARD PNG ============ */
@@ -950,7 +954,7 @@ function openBarberFinder(){
     <div class="chips" id="bf-rating" style="margin:0 0 8px;">${[['Any',''],['4.0★','4'],['4.5★','4.5']].map(([l,v],i)=>`<button data-v="${v}" onclick="bfPick('bf-rating',this)" class="${i===1?'sel':''}">${l}</button>`).join('')}</div>
     <div style="font-size:13px;color:var(--dim);margin-bottom:4px;">Price</div>
     <div class="chips" id="bf-price" style="margin:0 0 12px;">${[['Any',''],['Budget','budget'],['Mid','mid'],['Premium','premium']].map(([l,v],i)=>`<button data-v="${v}" onclick="bfPick('bf-price',this)" class="${i===0?'sel':''}">${l}</button>`).join('')}</div>
-    <button class="cta" onclick="findBarbers()">📍 Search near me</button>
+    <button class="cta has-ic" onclick="findBarbers()">${ic('pin')}Search near me</button>
     <p class="small" style="margin-top:8px;">Uses your location for "near me". If you skip that, it searches around your city.</p>
     <div id="bf-results" style="margin-top:12px;"></div>`;
   $('sheet').classList.add('on');
@@ -980,10 +984,10 @@ function renderBarberCard(p){
     <div style="font-size:13px;color:var(--dim);margin:3px 0;">${p.rating?'⭐ '+p.rating+' ('+p.reviews+')':'no rating yet'}${p.price?' · '+priceStr(p.price):''}${p.openNow===true?' · <span style="color:var(--rolex);font-weight:700;">Open now</span>':p.openNow===false?' · Closed':''}</div>
     ${p.address?`<div style="font-size:13px;color:var(--dim);margin-bottom:8px;">${esc(p.address)}</div>`:''}
     <div>
-      ${dial?`<a href="tel:${dial}" class="chipbtn" style="text-decoration:none;">📞 Call</a>`:''}
-      ${p.maps?`<a href="${p.maps}" target="_blank" rel="noopener" class="chipbtn" style="text-decoration:none;">📍 Map</a>`:''}
-      <button class="chipbtn" onclick="barberDetail('${p.id}')">⭐ Who to ask for</button>
-      <button class="chipbtn" onclick="logVisitFrom('${p.id}')">📔 Log visit</button>
+      ${dial?`<a href="tel:${dial}" class="chipbtn">${ic('phone')}Call</a>`:''}
+      ${p.maps?`<a href="${p.maps}" target="_blank" rel="noopener" class="chipbtn">${ic('pin')}Map</a>`:''}
+      <button class="chipbtn" onclick="barberDetail('${p.id}')">${ic('star')}Who to ask for</button>
+      <button class="chipbtn" onclick="logVisitFrom('${p.id}')">${ic('book')}Log visit</button>
     </div>
     <div id="bd-${p.id}"></div>
   </div>`;
@@ -994,7 +998,7 @@ async function barberDetail(id){
     const r=await fetch(BACKEND+'/barber/detail',{method:'POST',headers:{'Content-Type':'application/json','x-pilot-token':PILOT},body:JSON.stringify({place_id:id})});
     const d=await r.json();
     let h='';
-    if(d.star) h+=`<div style="font-size:13px;margin-top:8px;">🌟 The crowd says: <b>ask for ${esc(d.star)}</b></div>`;
+    if(d.star) h+=`<div style="font-size:13px;margin-top:8px;display:flex;align-items:center;gap:6px;"><span style="width:15px;height:15px;color:var(--gold-dk);">${svgEl('star')}</span> The crowd says: <b>ask for ${esc(d.star)}</b></div>`;
     if(d.vibe) h+=`<div style="font-size:13px;color:var(--dim);margin-top:2px;">${esc(d.vibe)}</div>`;
     if(!d.star&&!d.vibe) h='<div class="small" style="margin-top:8px;">No single name stands out in the reviews — any chair should be fine.</div>';
     box.innerHTML=h;
@@ -1014,11 +1018,11 @@ function openJournal(){
 function grCard(v){
   return `<div class="vcard" style="margin-bottom:10px;">
     <div style="display:flex;justify-content:space-between;gap:8px;"><b style="font-size:15px;">${esc(v.shop||'Visit')}</b><span style="font-size:13px;color:var(--dim);white-space:nowrap;">${esc(v.date||'')}</span></div>
-    <div style="font-size:13px;color:var(--dim);margin:2px 0;">${v.barber?'✂️ '+esc(v.barber):''}${v.price?' · '+esc(v.price):''}${v.style?' · '+esc(v.style):''}</div>
-    ${v.products?`<div style="font-size:13px;color:var(--dim);">🧴 ${esc(v.products)}</div>`:''}
+    <div style="font-size:13px;color:var(--dim);margin:2px 0;">${v.barber?esc(v.barber):''}${v.price?' · '+esc(v.price):''}${v.style?' · '+esc(v.style):''}</div>
+    ${v.products?`<div style="font-size:13px;color:var(--dim);">Products: ${esc(v.products)}</div>`:''}
     ${v.notes?`<div style="font-size:13px;margin-top:4px;">${esc(v.notes)}</div>`:''}
     ${(v.pre||v.post)?`<div style="display:flex;gap:6px;margin-top:6px;">${v.pre?`<img src="${v.pre}" alt="Before" style="width:72px;height:72px;object-fit:cover;border-radius:10px;">`:''}${v.post?`<img src="${v.post}" alt="After" style="width:72px;height:72px;object-fit:cover;border-radius:10px;">`:''}</div>`:''}
-    <button class="chipbtn" style="margin-top:8px;" onclick="grDel('${v.id}')">🗑 Remove</button>
+    <button class="chipbtn" style="margin-top:8px;" onclick="grDel('${v.id}')">${ic('trash')}Remove</button>
   </div>`;
 }
 function grDel(id){ grStore(grLoad().filter(v=>v.id!==id)); openJournal(); toast('Removed.'); }
@@ -1034,7 +1038,7 @@ function logVisit(prefill){
     ${fld('Style / what was done','gr-style',v.style)}
     ${fld('Products used','gr-products',v.products)}
     ${fld('Notes','gr-notes',v.notes)}
-    <div style="margin:6px 0 12px;"><button class="chipbtn" onclick="grPhoto('pre')">📷 Before pic</button><button class="chipbtn" onclick="grPhoto('post')">📷 After pic</button><span id="gr-picnote" class="small"></span></div>
+    <div style="margin:6px 0 12px;"><button class="chipbtn" onclick="grPhoto('pre')">${ic('camera')}Before pic</button><button class="chipbtn" onclick="grPhoto('post')">${ic('camera')}After pic</button><span id="gr-picnote" class="small"></span></div>
     <button class="cta" onclick="grSaveVisit()">Save to journal</button>
     <button class="cta ghost" style="margin-top:8px;" onclick="openJournal()">Cancel</button>`;
   $('sheet').classList.add('on');
@@ -1078,8 +1082,8 @@ function crowdAsk(){
   b.innerHTML=`<h3>Peer review — opinion without bias</h3>
     <p class="small">Real men vote on the LOOK, not on you — so the face gets blurred first. Photo is anonymous, visible for 24 hours, then auto-deletes. <b>No intimate or explicit photos</b> — that's instant removal from the beta.</p>
     <canvas id="blurcv" style="margin-top:10px;"></canvas>
-    <p class="small" id="blurhint" style="text-align:center;">👆 Tap the face to blur it — or use the button below to blur the whole top safely.</p>
-    <button class="cta ghost" id="fullblur" style="margin-top:8px;" onclick="blurWholeFace()">🕶️ Blur the face area for me</button>
+    <p class="small" id="blurhint" style="text-align:center;">Tap the face to blur it — or use the button below to blur the whole top safely.</p>
+    <button class="cta ghost" id="fullblur" style="margin-top:8px;" onclick="blurWholeFace()">Blur the face area for me</button>
     <button class="cta" id="postbtn" style="margin-top:8px;opacity:.5;" onclick="postPoll()">Post for votes</button>
     <button class="cta ghost" style="margin-top:8px;" onclick="$('sheet').classList.remove('on')">Cancel</button>`;
   $('sheet').classList.add('on');
@@ -1137,16 +1141,16 @@ async function loadCrowd(){
       fetch(BACKEND+'/polls/mine?device='+DEVICE,{headers:h}).then(r=>r.json()),
       fetch(BACKEND+'/polls/feed?device='+DEVICE,{headers:h}).then(r=>r.json())
     ]);
-    let html=`<button class="cta" style="margin-bottom:14px;" onclick="crowdCapture=true;openCamSheet()">📸 Post your look — face blurred, honest votes</button>`;
+    let html=`<button class="cta has-ic" style="margin-bottom:14px;" onclick="crowdCapture=true;openCamSheet()">${ic('camera')}Post your look — face blurred, honest votes</button>`;
     if(mine.length){ const m=mine[0];
       html+=`<div class="vcard" style="margin-bottom:14px;"><div class="vtag">YOUR LOOK · ${m.status==='open'?'votes coming in':'closed'}</div>
       <div style="font-size:15px;margin:6px 0;">${esc(m.question||'')}</div>
-      <div style="font-size:20px;font-weight:800;color:var(--rolex-dk);">🔥 ${m.votes_yes} &nbsp;·&nbsp; 😐 ${m.votes_no}</div></div>`; }
+      <div style="font-size:20px;font-weight:800;color:var(--rolex-dk);">${m.votes_yes} yes &nbsp;·&nbsp; ${m.votes_no} no</div></div>`; }
     if(feed.length){ const p=feed[0];
       html+=`<div class="vcard"><div class="vtag">A BROTHER ASKS · anonymous</div>
       <div style="font-size:15px;margin:6px 0;">${esc(p.question||'')}</div>
       <img src="${p.img}" alt="Another member's look, face blurred" style="width:100%;border-radius:10px;border:1px solid var(--line);">
-      <div class="fbrow"><button onclick="voteCrowd(${p.id},'yes')">🔥 Wear it</button><button onclick="voteCrowd(${p.id},'no')">😐 Rethink</button></div></div>`; }
+      <div class="fbrow"><button onclick="voteCrowd(${p.id},'yes')">${ic('check')}Wear it</button><button onclick="voteCrowd(${p.id},'no')">Rethink</button></div></div>`; }
     else html+=`<div class="msg them" style="max-width:100%;">No looks waiting for your vote right now — check back later. Meanwhile, post YOURS with the button above: face blurred, fully anonymous, votes in by tonight.</div>
     <button class="cta ghost" style="margin-top:10px;" onclick="loadCrowd()">↻ Check for new looks</button>`;
     box.innerHTML=html;
@@ -1171,7 +1175,7 @@ async function seePreview(btn, d){
     } else if(r.status===429){ addThem('That\'s your 3 previews for today, boss — the barber card has everything he needs anyway.'); btn.remove(); }
     else if(r.status===503){ addThem('Previews are maxed out for today — back to normal tomorrow. The barber card still has everything he needs.'); btn.remove(); }
     else throw 0;
-  }catch(e){ btn.disabled=false; btn.textContent='👀 See it on me — AI preview'; toast('Preview didn\'t come through — try once more.'); }
+  }catch(e){ btn.disabled=false; btn.innerHTML=`${ic('eye')}See it on me — AI preview`; toast('Preview didn\'t come through — try once more.'); }
 }
 /* ============ NEVER FORGET ============ */
 async function loadReminders(){
@@ -1184,13 +1188,13 @@ async function loadReminders(){
       const d=new Date(r.due_date+'T00:00:00'); const ds=d.toLocaleDateString('en-IN',{day:'numeric',month:'short'});
       const special=['birthday','anniversary'].includes(r.occasion);
       return `<div class="vcard" style="margin-bottom:10px;">
-        <b style="font-size:15px;">${special?'🎂':'⏰'} ${esc(r.title)}</b>
+        <b style="font-size:15px;">${esc(r.title)}</b>
         <div style="font-size:11px;color:var(--dim);margin:3px 0 8px;">${ds}${r.due_time?' · '+esc(r.due_time):''}${r.recur!=='none'?' · every '+(r.recur==='yearly'?'year':r.recur==='monthly'?'month':'week'):''}${r.lead_days?' · heads-up '+r.lead_days+'d early':''}</div>
         <div class="fbrow" style="margin-top:4px;">
-          ${special?`<button onclick="draftWish(${r.id})">💬 Wish</button><button onclick="giftIdeas(${r.id})">🎁 Gift</button>`:''}
-          <button onclick="icsExport(${r.id})">📅 Calendar</button>
-          <button onclick="remDone(${r.id},'done')">✓ Done</button>
-          <button onclick="remDone(${r.id},'deleted')">🗑</button>
+          ${special?`<button onclick="draftWish(${r.id})">${ic('message')}Wish</button><button onclick="giftIdeas(${r.id})">${ic('gift')}Gift</button>`:''}
+          <button onclick="icsExport(${r.id})">${ic('calendar')}Calendar</button>
+          <button onclick="remDone(${r.id},'done')">${ic('check')}Done</button>
+          <button onclick="remDone(${r.id},'deleted')">${ic('trash')}</button>
         </div></div>`;
     }).join('');
     window._rems=Object.fromEntries(rows.map(r=>[r.id,r]));
@@ -1265,7 +1269,7 @@ function icsExport(id){
 function profileSelfie(){ profileMode=true; openCamSheet(); }
 async function profileScan(img){
   const box=$('memlist'); // visible in-place loading, not just a toast that vanishes
-  if(box) box.innerHTML=`<div class="vcard" style="text-align:center;"><div style="font-size:15px;font-weight:700;color:var(--rolex-dk);">🔍 Reading your face…</div><div class="think" style="display:inline-block;margin-top:8px;"><span class="ln" style="animation-delay:0s">· skin tone &amp; undertone</span><br><span class="ln" style="animation-delay:.8s">· face shape</span><br><span class="ln" style="animation-delay:1.6s">· hair &amp; beard</span></div></div>`;
+  if(box) box.innerHTML=`<div class="vcard" style="text-align:center;"><div style="font-size:15px;font-weight:700;color:var(--rolex-dk);">Reading your face…</div><div class="think" style="display:inline-block;margin-top:8px;"><span class="ln" style="animation-delay:0s">· skin tone &amp; undertone</span><br><span class="ln" style="animation-delay:.8s">· face shape</span><br><span class="ln" style="animation-delay:1.6s">· hair &amp; beard</span></div></div>`;
   try{
     const r=await fetch(BACKEND+'/ask',{method:'POST',headers:{'Content-Type':'application/json','x-pilot-token':PILOT},
       body:JSON.stringify({mode:'profile',messages:[{role:'user',content:'[selfie for profile]'}],image:{data:img.b64,media_type:img.mime},profile:P,device_id:DEVICE})});
@@ -1292,11 +1296,11 @@ function renderMemory(){
   ];
   const fresh = !P.skinTone && !P.faceShape && !P.notes.length && !P.sizes;
   const intro = fresh ? `<div class="vcard" style="margin-bottom:14px;background:var(--rolex-lt);border-color:#BED8C9;"><b style="color:var(--rolex-dk);">Nothing here yet — and that's fine.</b><div class="small" style="margin-top:4px;">I learn as we go. One selfie fills in most of this in a few seconds.</div></div>` : '';
-  $('memlist').innerHTML = `<button class="cta" style="margin-bottom:14px;" onclick="profileSelfie()">📸 One selfie fills all this in</button>` + intro + rows.map(([k,v],i)=>`
+  $('memlist').innerHTML = `<button class="cta has-ic" style="margin-bottom:14px;" onclick="profileSelfie()">${ic('camera')}One selfie fills all this in</button>` + intro + rows.map(([k,v],i)=>`
     <div class="prow"><div><b>${k}</b><span>${esc(String(v))}</span></div>
     <button style="background:none;border:none;font-size:13px;color:var(--rolex);font-weight:600;cursor:pointer;padding:10px 8px;min-height:44px;" onclick="editMem(${i})">edit</button></div>`).join('')
-    + ((P.skinType||P.hairType||P.hairConcern)?`<div class="prow"><div><b>Grooming type</b><span>${esc([P.skinType&&P.skinType+' skin',P.hairType&&P.hairType+' hair',P.hairConcern].filter(Boolean).join(' · '))}</span></div><span aria-hidden="true">🧴</span></div>`:'')
-    + `<div class="prow" style="border-color:var(--royal-line);"><div><b style="color:var(--royal-dk);">Private Space</b><span>Messages never stored. Only anonymous usage counts exist.</span></div><span aria-hidden="true">🔒</span></div>
+    + ((P.skinType||P.hairType||P.hairConcern)?`<div class="prow"><div><b>Grooming type</b><span>${esc([P.skinType&&P.skinType+' skin',P.hairType&&P.hairType+' hair',P.hairConcern].filter(Boolean).join(' · '))}</span></div></div>`:'')
+    + `<div class="prow" style="border-color:var(--royal-line);"><div><b style="color:var(--royal-dk);">Private Space</b><span>Messages never stored. Only anonymous usage counts exist.</span></div></div>
     <p class="small" style="text-align:center;margin-top:8px;">Everything here lives on this phone · never sold · never trains AI</p>`;
 }
 function editMem(i){
