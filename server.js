@@ -278,10 +278,38 @@ async function askClaude(mode, messages, image, occasion, profile, extraCtx) {
     if (out.stop_reason !== 'pause_turn') break;
     body.messages = [...body.messages, { role: 'assistant', content: out.content }];
   }
-  const text = out.content.map(c => c.text || '').join('');
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  try { return JSON.parse(jsonMatch ? jsonMatch[0] : text); }
-  catch { const looksJson = /^\s*[\[{]/.test(text.trim()); return { type: 'chat', reply: looksJson ? "That one ran long and got jumbled on my end — tap send again and I'll re-read it." : text.slice(0, 800) }; }
+  let text = out.content.map(c => c.text || '').join('').trim();
+  // web_search replies often wrap the JSON in ```json fences or add citations/prose around it — strip fences first.
+  text = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '');
+  const parsed = extractJson(text);
+  if (parsed) return parsed;
+  const looksJson = /^\s*[\[{]/.test(text);
+  return { type: 'chat', reply: looksJson ? "That one ran long and got jumbled on my end — tap send again and I'll re-read it." : text.slice(0, 800) };
+}
+// Pull the first balanced JSON object out of a string (ignores prose/citations before or after),
+// and if the model got cut off mid-object, try to salvage by closing open braces/brackets.
+function extractJson(text) {
+  const start = text.indexOf('{');
+  if (start < 0) { try { return JSON.parse(text); } catch { return null; } }
+  let depth = 0, inStr = false, esc = false, end = -1;
+  for (let i = start; i < text.length; i++) {
+    const ch = text[i];
+    if (inStr) { if (esc) esc = false; else if (ch === '\\') esc = true; else if (ch === '"') inStr = false; continue; }
+    if (ch === '"') inStr = true;
+    else if (ch === '{' || ch === '[') depth++;
+    else if (ch === '}' || ch === ']') { depth--; if (depth === 0) { end = i; break; } }
+  }
+  const slice = end >= 0 ? text.slice(start, end + 1) : text.slice(start);
+  try { return JSON.parse(slice); } catch {}
+  if (end < 0) { // truncated — close whatever's still open, dropping any half-written trailing token
+    let s = slice.replace(/,\s*"[^"]*"?\s*:?\s*[^,\]}]*$/, '').replace(/,\s*$/, '');
+    let d = 0, str = false, e = false, stack = [];
+    for (const ch of s) { if (str) { if (e) e = false; else if (ch === '\\') e = true; else if (ch === '"') str = false; continue; } if (ch === '"') str = true; else if (ch === '{') stack.push('}'); else if (ch === '[') stack.push(']'); else if (ch === '}' || ch === ']') stack.pop(); }
+    if (str) s += '"';
+    while (stack.length) s += stack.pop();
+    try { return JSON.parse(s); } catch { return null; }
+  }
+  return null;
 }
 
 /* ---------- ROUTES ---------- */
