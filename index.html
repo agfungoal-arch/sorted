@@ -197,6 +197,16 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
 .sheet .panel{background:var(--ivory); width:100%; max-width:520px; margin:0 auto; border-radius:22px 22px 0 0; padding:24px 16px calc(24px + env(safe-area-inset-bottom)); max-height:80vh; max-height:80dvh; overflow-y:auto;}
 .sheet h3{color:var(--rolex-dk); font-size:16px; margin-bottom:12px;}
 .small{font-size:13px; color:var(--dim); line-height:1.6;}
+/* Grooming ticker — the barber-chair truths, one at a time */
+.ticker{background:linear-gradient(180deg,#F2F5F1,#EDF1EC); border:1px solid var(--line); border-left:3px solid var(--rolex);
+  border-radius:14px; padding:16px 16px 13px; margin:0 0 14px; min-height:78px; display:flex; flex-direction:column; justify-content:center;}
+.tick-line{font-size:17px; line-height:1.4; font-weight:600; color:var(--text); opacity:0; transform:translateY(5px);
+  transition:opacity .5s ease, transform .5s ease;}
+.tick-line.on{opacity:1; transform:none;}
+.tick-line.hero{color:var(--rolex); font-weight:800;}
+.tick-dots{display:flex; gap:5px; margin-top:11px;}
+.tick-dots i{width:5px; height:5px; border-radius:50%; background:var(--line2); transition:background .3s, width .3s;}
+.tick-dots i.on{background:var(--rolex); width:16px; border-radius:3px;}
 @media (prefers-reduced-motion:reduce){ *{animation:none !important; transition:none !important;} }
 </style>
 </head>
@@ -279,6 +289,10 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
   <!-- BARBER / GROOMING -->
   <div class="screen" id="scr-barber">
     <div class="hdr"><button class="back" onclick="go('home')">‹ Grooming</button><div class="avatar" onclick="go('memory')" id="av4">?</div></div>
+    <div class="ticker" id="groomticker" aria-live="polite">
+      <div class="tick-line" id="tickline"></div>
+      <div class="tick-dots" id="tickdots"></div>
+    </div>
     <div class="chips" id="groom-actions" style="margin:0 0 10px;">
       <button onclick="openBarberFinder()"><span class="chip-ic" data-ic="search"></span>Find a barber</button>
       <button onclick="quickGroom('What haircut would suit me? I can add a selfie.')"><span class="chip-ic" data-ic="scissors"></span>What suits me</button>
@@ -448,6 +462,56 @@ function langCode(l){ return {english:'en-IN',hinglish:'hi-IN',hindi:'hi-IN',mar
 function save(){ localStorage.setItem('sorted_profile', JSON.stringify(P)); }
 function scrollBottom(){ const c=chatEl(); if(c) setTimeout(()=>c.scrollTop=c.scrollHeight,60); }
 
+/* ---- Grooming ticker: the things men feel in the chair but never say ---- */
+const GROOM_LINES=[
+  // the chair
+  {t:"You've said it before: “Whatever you think is best.”"},
+  {t:"You knew what you wanted. You just didn't have the words for it."},
+  {t:"The mirror comes up. You say “great.” You don't mean it."},
+  {t:"You can return a shirt. You can't return a haircut."},
+  {t:"When it looks off, you blame your face. It was the brief."},
+  // finding the right barber
+  {t:"Same chair for years — not because he's good, because leaving felt rude."},
+  {t:"The best barber isn't the nearest one. He's the one men keep naming."},
+  // product quality
+  {t:"“For men” on the bottle is a colour scheme, not a formula."},
+  {t:"You bought the packaging. You never read the panel."},
+  {t:"The wrong product for your skin type is just expensive damage."},
+  {t:"You've been washing your hair with something built for someone else's."},
+  // nobody taught us
+  {t:"Nobody ever sat you down and taught you any of this."},
+  // the flip
+  {t:"You're not a passenger in that chair.", hero:true},
+  {t:"Walk in knowing. Three sentences. Walk out right.", hero:true},
+];
+let _tickI=0, _tickT=null;
+function paintTick(){
+  const el=$('tickline'), dots=$('tickdots');
+  if(!el) return;
+  const l=GROOM_LINES[_tickI];
+  el.textContent=l.t;
+  el.classList.toggle('hero', !!l.hero);
+  if(dots) dots.innerHTML=GROOM_LINES.map((_,i)=>`<i class="${i===_tickI?'on':''}"></i>`).join('');
+  requestAnimationFrame(()=>el.classList.add('on'));
+}
+function startTicker(){
+  stopTicker();
+  const box=$('groomticker'), chat=$('chat-barber');
+  if(!box) return;
+  // once he's actually in a conversation, the ticker steps aside
+  if(chat && chat.children.length){ box.style.display='none'; return; }
+  box.style.display='flex';
+  _tickI=0; paintTick();
+  _tickT=setInterval(()=>{
+    const el=$('tickline');
+    if(!el || screen!=='barber'){ stopTicker(); return; }
+    el.classList.remove('on');
+    setTimeout(()=>{ _tickI=(_tickI+1)%GROOM_LINES.length; paintTick(); }, 500);
+  }, 5000);
+}
+function stopTicker(){ if(_tickT){ clearInterval(_tickT); _tickT=null; } }
+function hideTicker(){ stopTicker(); const b=$('groomticker'); if(b) b.style.display='none'; }
+
 function go(s){
   screen=s;
   document.querySelectorAll('.screen').forEach(x=>x.classList.remove('on'));
@@ -461,6 +525,7 @@ function go(s){
   if(s==='crowd') loadCrowd();
   if(s==='remind'){ loadReminders(); if(!threads.remind.rendered){ seed('remind'); threads.remind.rendered=true; } }
   if(['verdict','product','barber'].includes(s) && !threads[s].rendered){ seed(s); threads[s].rendered=true; }
+  if(s==='barber') startTicker(); else stopTicker();
   scrollBottom();
 }
 
@@ -687,6 +752,7 @@ function pickOcc(btn,o){
 async function send(auto){
   const inp=$('inp'); const text=inp.value.trim();
   if(!text && !pendingImage) return;
+  if(screen==='barber') hideTicker(); // he's engaged now — the ticker gets out of the way
   await ensureDevice();
   if(text){ addMe(text); inp.value=''; inp.style.height='auto';
     const scrEl=document.querySelector('.screen.on'); if(scrEl) scrEl.style.paddingBottom='';
