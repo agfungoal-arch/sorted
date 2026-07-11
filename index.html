@@ -465,31 +465,31 @@ function scrollBottom(){ const c=chatEl(); if(c) setTimeout(()=>c.scrollTop=c.sc
 /* ---- Grooming ticker: the things men feel in the chair but never say ---- */
 const GROOM_LINES=[
   // the chair
-  {t:"You've said it before: “Whatever you think is best.”"},
-  {t:"You knew what you wanted. You just didn't have the words for it."},
-  {t:"The mirror comes up. You say “great.” You don't mean it."},
-  {t:"You can return a shirt. You can't return a haircut."},
-  {t:"When it looks off, you blame your face. It was the brief."},
+  {t:"You've said it before: “Whatever you think is best.”",                       h:"Aapne bhi bola hai: “Bhaiya, jo aap theek samjho.”"},
+  {t:"You knew what you wanted. You just didn't have the words for it.",           h:"Pata tha kya chahiye. Bas words nahi the."},
+  {t:"The mirror comes up. You say “great.” You don't mean it.",                   h:"Sheesha saamne aata hai. Aap bolte ho “badhiya hai.” Lagta nahi hai."},
+  {t:"You can return a shirt. You can't return a haircut.",                        h:"Shirt wapas ho jaati hai. Haircut wapas nahi hota."},
+  {t:"When it looks off, you blame your face. It was the brief.",                  h:"Kharab lage toh apne chehre ko dosh dete ho. Galti brief ki thi."},
   // finding the right barber
-  {t:"Same chair for years — not because he's good, because leaving felt rude."},
-  {t:"The best barber isn't the nearest one. He's the one men keep naming."},
+  {t:"Same chair for years — not because he's good, because leaving felt rude.",   h:"Saalon se wahi kursi — isliye nahi ki woh accha hai, isliye ki chhodna awkward lagta hai."},
+  {t:"The best barber isn't the nearest one. He's the one men keep naming.",       h:"Sabse accha barber paas wala nahi hota. Woh hota hai jiska naam log baar-baar lete hain."},
   // product quality
-  {t:"“For men” on the bottle is a colour scheme, not a formula."},
-  {t:"You bought the packaging. You never read the panel."},
-  {t:"The wrong product for your skin type is just expensive damage."},
-  {t:"You've been washing your hair with something built for someone else's."},
+  {t:"“For men” on the bottle is a colour scheme, not a formula.",                 h:"Bottle pe “For Men” ek colour hai — formula nahi."},
+  {t:"You bought the packaging. You never read the panel.",                        h:"Packaging khareedi. Panel kabhi padha hi nahi."},
+  {t:"The wrong product for your skin type is just expensive damage.",             h:"Galat product aapki skin ke liye — mehenga nuksaan, aur kuch nahi."},
+  {t:"You've been washing your hair with something built for someone else's.",     h:"Aap kisi aur ke baalon ka shampoo laga rahe ho."},
   // nobody taught us
-  {t:"Nobody ever sat you down and taught you any of this."},
+  {t:"Nobody ever sat you down and taught you any of this.",                       h:"Kisi ne kabhi baithakar yeh sab sikhaya hi nahi."},
   // the flip
-  {t:"You're not a passenger in that chair.", hero:true},
-  {t:"Walk in knowing. Three sentences. Walk out right.", hero:true},
+  {t:"You're not a passenger in that chair.", hero:true,                           h:"Us kursi pe aap passenger nahi ho."},
+  {t:"Walk in knowing. Three sentences. Walk out right.", hero:true,               h:"Jaante hue jao. Teen line bolo. Sahi lekar niklo."},
 ];
 let _tickI=0, _tickT=null;
 function paintTick(){
   const el=$('tickline'), dots=$('tickdots');
   if(!el) return;
   const l=GROOM_LINES[_tickI];
-  el.textContent=l.t;
+  el.textContent=(P && P.lang==='hinglish' && l.h) ? l.h : l.t; // speaks his language once we've heard it
   el.classList.toggle('hero', !!l.hero);
   if(dots) dots.innerHTML=GROOM_LINES.map((_,i)=>`<i class="${i===_tickI?'on':''}"></i>`).join('');
   requestAnimationFrame(()=>el.classList.add('on'));
