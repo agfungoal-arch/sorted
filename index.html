@@ -197,12 +197,12 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
     <div id="citychip" role="button" tabindex="0" aria-label="Change your city" onclick="editMem(1)" style="display:inline-flex;align-items:center;gap:5px;font-size:12.5px;color:var(--dim);background:var(--paper);border:1px solid var(--line);border-radius:20px;padding:7px 13px;min-height:36px;margin-bottom:12px;cursor:pointer;"></div>
     <div id="home-alerts"></div>
     <div class="hgrid">
-      <div class="tile" role="button" tabindex="0" onclick="go('verdict')"><div class="ic">📸</div><h4>What do I wear?</h4><p>One clear verdict on your look.</p><span class="chip">MOST USED</span></div>
-      <div class="tile purple-door" role="button" tabindex="0" onclick="go('gate')"><div class="ic">🔒</div><h4>Private Space</h4><p>The 2am questions. Never saved.</p><span class="chip p">PRIVATE</span></div>
+      <div class="tile" role="button" tabindex="0" onclick="go('verdict')"><div class="ic">📸</div><h4>What do I wear?</h4><p>One outfit → one verdict</p><span class="chip">MOST USED</span></div>
+      <div class="tile purple-door" role="button" tabindex="0" onclick="go('gate')"><div class="ic">🔒</div><h4>Private Space</h4><p>2am questions · never saved</p><span class="chip p">PRIVATE</span></div>
       <div class="tile" role="button" tabindex="0" onclick="go('product')"><div class="ic">🧴</div><h4>Check a product</h4><p>Real, or just marketing?</p></div>
-      <div class="tile" role="button" tabindex="0" onclick="go('barber')"><div class="ic">💈</div><h4>Grooming</h4><p>Find a barber, peek your look, get products for your type.</p></div>
-      <div class="tile wide" role="button" tabindex="0" onclick="go('remind')"><div class="ic">⏰</div><div><h4>Never Forget</h4><p>Wife said, boss said, birthday coming. Say it once — I remind you, draft the wish, suggest the gift.</p></div></div>
-      <div class="tile moat" role="button" tabindex="0" onclick="go('crowd')"><div class="ic">🫂</div><div><span class="tag">THE MOAT</span><h4>Peer Review</h4><p>Post your look, get honest votes from other men — faces blurred, names never shown.<span id="peercount" style="font-weight:700;color:var(--rolex);"></span></p></div></div>
+      <div class="tile" role="button" tabindex="0" onclick="go('barber')"><div class="ic">💈</div><h4>Grooming</h4><p>Barbers · products · your look</p></div>
+      <div class="tile wide" role="button" tabindex="0" onclick="go('remind')"><div class="ic">⏰</div><div><h4>Never Forget</h4><p>Say it once · reminders, wishes &amp; gifts</p></div></div>
+      <div class="tile moat" role="button" tabindex="0" onclick="go('crowd')"><div class="ic">🫂</div><div><span class="tag">THE MOAT</span><h4>Peer Review</h4><p>Honest votes · faces blurred · no names<span id="peercount" style="font-weight:700;color:var(--rolex);"></span></p></div></div>
     </div>
   </div>
 
@@ -238,7 +238,14 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
   <!-- BARBER / GROOMING -->
   <div class="screen" id="scr-barber">
     <div class="hdr"><button class="back" onclick="go('home')">← Grooming</button><div class="avatar" onclick="go('memory')" id="av4">?</div></div>
-    <div class="chips" style="margin:0 0 8px;"><button onclick="openBarberFinder()">🔍 Find a barber</button><button onclick="openJournal()">📔 My journal</button></div>
+    <div class="chips" id="groom-actions" style="margin:0 0 10px;">
+      <button onclick="openBarberFinder()">🔍 Find a barber</button>
+      <button onclick="quickGroom('What haircut would suit me? I can add a selfie.')">✂️ What suits me</button>
+      <button onclick="quickGroom('Recommend grooming products for my skin and hair type, in my city.')">🧴 Products for me</button>
+      <button onclick="prefillGroom('My barber recommended ')">🧔 Barber&#39;s pick</button>
+      <button onclick="quickGroom('Build me a simple daily grooming routine for my skin and hair type.')">💆 My routine</button>
+      <button onclick="openJournal()">📔 Journal</button>
+    </div>
     <div class="chat" id="chat-barber"></div>
   </div>
   <input type="file" id="gr-file" accept="image/*" hidden>
@@ -438,13 +445,7 @@ Tell me the occasion and shoot.`);
 · "Rosemary water — real or a scam?"
 
 No brand pays me. You get it straight.`);
-  if(s==='barber') addThem(`Your grooming corner. 💈
-· "What haircut suits me?" — send a selfie → barber card + a preview on your own face
-· "My barber said use a matte clay — right for me?" — I'll read it and learn your hair type
-· "Best face wash for oily skin${P.city?' in '+P.city:''}?" — real brands, your budget
-Up top: 🔍 find a barber near you (ratings, price, who to ask for), 📔 keep a grooming journal of every visit.
-
-What's up?`);
+  if(s==='barber') addThem(`Your grooming corner. 💈 Tap above — or just ask.`);
   if(s==='remind') addThem(`Say it once, then forget it — that's my job now. ⏰
 
 · "Wife said get rangoli colours, Saturday"
@@ -839,6 +840,10 @@ function wrapText(x,t,cx,y,maxW,lh){
     if(x.measureText(test).width>maxW && line){ x.fillText(line.trim(),cx,y); line=w+' '; y+=lh; } else line=test; }
   x.fillText(line.trim(),cx,y); return y;
 }
+
+/* ============ GROOMING: QUICK ACTIONS ============ */
+function quickGroom(text){ if(screen!=='barber') go('barber'); const i=$('inp'); i.value=text; send(); }
+function prefillGroom(text){ if(screen!=='barber') go('barber'); const i=$('inp'); i.value=text; i.focus(); }
 
 /* ============ GROOMING: FIND A BARBER ============ */
 function openBarberFinder(){
