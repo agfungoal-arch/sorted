@@ -250,6 +250,17 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
 .tick-dots{display:flex; gap:5px; margin-top:11px;}
 .tick-dots i{width:5px; height:5px; border-radius:50%; background:var(--line2); transition:background .3s, width .3s;}
 .tick-dots i.on{background:var(--rolex); width:16px; border-radius:3px;}
+/* ---- HIERARCHY (last word, so it wins) ----
+   Chalk carries structure. Green is spent only on action and verdict.
+   Brass is the identity + anything with a value attached. One accent per job. */
+.tile h4,.door h4,.bigline,.back,.sheet h3{color:var(--text);}
+.tile.purple-door h4,.door.purple-door h4{color:var(--royal-dk);}
+.brand,.logo{color:var(--text);}
+.brand em,.logo em{color:var(--gold);}
+.statcard .num{color:var(--gold);}
+.vtag{color:var(--faint);}
+/* the mark needs to lift off near-black */
+:root:not([data-theme="light"]) .logomark path[fill]{fill:#1C8A5A;}
 @media (prefers-reduced-motion:reduce){ *{animation:none !important; transition:none !important;} }
 </style>
 </head>
