@@ -48,7 +48,9 @@
 .purple{ --bg:var(--royal-lt); --bubble-line:var(--royal-line); }
 *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
 html,body{height:100%;}
-body{background:var(--bg); color:var(--text); font-family:var(--f-body); transition:background .4s;}
+/* background-color, NOT the `background` shorthand: Chrome fails to repaint a
+   shorthand transition when the value comes from a custom property that changed. */
+body{background-color:var(--bg); color:var(--text); font-family:var(--f-body); transition:background-color .35s ease, color .35s ease;}
 /* DISPLAY — signage. Used with restraint: the wordmark, screen titles, verdicts, tile names. */
 .brand,.logo,.bigline,.vword,.tile h4,.door h4,.sheet h3,.gate h2,.bcard h3,.back,.tick-line.hero{
   font-family:var(--f-display); font-weight:800; letter-spacing:.01em;}
