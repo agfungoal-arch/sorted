@@ -521,14 +521,14 @@ function langCode(l){ return {english:'en-IN',hinglish:'hi-IN',hindi:'hi-IN',mar
 function save(){ localStorage.setItem('sorted_profile', JSON.stringify(P)); }
 /* Theme — dark is the default. 2am is where this product lives. */
 function applyTheme(){
-  const light = P && P.theme === 'light';
+  const light = !(P && P.theme === 'dark'); // light is the default
   document.documentElement.dataset.theme = light ? 'light' : 'dark';
   document.querySelector('meta[name=theme-color]').setAttribute('content', light ? '#F8F6F1' : '#0E1A14');
   const t=$('themetog'), l=$('themelbl');
   if(t) t.classList.toggle('off', light);
   if(l) l.textContent = light ? 'Light — the daytime read.' : 'Dark — built for the 2am read.';
 }
-function toggleTheme(){ P.theme = (P.theme==='light') ? 'dark' : 'light'; save(); applyTheme(); }
+function toggleTheme(){ P.theme = (P.theme==='dark') ? 'light' : 'dark'; save(); applyTheme(); }
 function scrollBottom(){ const c=chatEl(); if(c) setTimeout(()=>c.scrollTop=c.scrollHeight,60); }
 
 /* ---- Grooming ticker: the things men feel in the chair but never say ---- */
