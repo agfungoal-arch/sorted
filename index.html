@@ -8,65 +8,22 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-<!-- Bunny Fonts: a no-logging, GDPR-safe Google Fonts mirror — keeps the privacy promise intact -->
-<link rel="preconnect" href="https://fonts.bunny.net" crossorigin>
-<link rel="stylesheet" href="https://fonts.bunny.net/css?family=big-shoulders-display:700,800|ibm-plex-sans:400,500,600,700|ibm-plex-mono:500,600&display=swap">
 <style>
-/* ============================================================
-   THE BARBERSHOP MIRROR
-   The shop after hours: a dark room, a lit glass, and a man
-   looking at himself honestly. Dark is the default because 2am
-   is where this product actually lives.
-   Display = signage.  Body = plain speech.  Mono = specification.
-   ============================================================ */
 :root{
-  /* dark — default */
-  --ivory:#0E1A14; --paper:#16241D; --mist:#1F332A; --line:#2C4438; --line2:#3E5C4C;
-  --text:#EFEAE0; --dim:#A7B8AD; --faint:#93A79A; --faint2:#829788;
-  --rolex:#22C07A; --rolex-dk:#6FE0AE; --rolex-lt:#142C21;
-  --gold:#D7A94E; --gold-dk:#E8C173; --gold-lt:#2A2417;
-  --ready:#22C07A; --almost:#E5B24A; --notyet:#F0765E;
-  --royal:#A594F0; --royal-lt:#1E1A33; --royal-line:#3A3163; --royal-dk:#C3B6FA;
-  --on-accent:#08150F; --edge:#2F5A44; --bad-lt:#35191A; --bad-line:#5C2C28;
-  --knob:#EFEAE0; --scrim:rgba(0,0,0,.62); --shadow:rgba(0,0,0,.45);
-  --bg:var(--ivory); --bubble-them:var(--paper); --bubble-line:var(--line);
-  /* type: three roles, one job each */
-  --f-display:'Big Shoulders Display','Arial Narrow',Impact,sans-serif;
-  --f-body:'IBM Plex Sans',-apple-system,system-ui,'Segoe UI',Roboto,sans-serif;
-  --f-spec:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
-}
-:root[data-theme="light"]{
   --ivory:#F8F6F1; --paper:#FFFFFF; --mist:#EFECE4; --line:#E3DFD3; --line2:#D6D1C2;
   --text:#1F2B26; --dim:#5C665F; --faint:#6B746D; --faint2:#79837C;
   --rolex:#006039; --rolex-dk:#004D2E; --rolex-lt:#E7F0EA;
   --gold:#A37E2C; --gold-dk:#7A5A1A; --gold-lt:#F4EDDC;
   --ready:#006039; --almost:#B07C1F; --notyet:#B04A38;
   --royal:#5B4A9E; --royal-lt:#F0EDF9; --royal-line:#D8D1EE; --royal-dk:#463877;
-  --on-accent:#FFFFFF; --edge:var(--edge); --bad-lt:var(--bad-lt); --bad-line:var(--bad-line);
-  --knob:#FFFFFF; --scrim:rgba(31,43,38,.45); --shadow:rgba(31,43,38,.10);
+  --on-accent:#FFFFFF; --edge:#BED8C9; --bad-lt:#F9E9E5; --bad-line:#E8C4BB;
+  --knob:#FFFFFF; --scrim:rgba(31,43,38,.45); --shadow:rgba(31,43,38,.06);
+  --bg:var(--ivory); --bubble-them:var(--paper); --bubble-line:var(--line);
 }
 .purple{ --bg:var(--royal-lt); --bubble-line:var(--royal-line); }
 *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
 html,body{height:100%;}
-/* background-color, NOT the `background` shorthand: Chrome fails to repaint a
-   shorthand transition when the value comes from a custom property that changed. */
-body{background-color:var(--bg); color:var(--text); font-family:var(--f-body); transition:background-color .35s ease, color .35s ease;}
-/* DISPLAY — signage. Used with restraint: the wordmark, screen titles, verdicts, tile names. */
-.brand,.logo,.bigline,.vword,.tile h4,.door h4,.sheet h3,.gate h2,.bcard h3,.back,.tick-line.hero{
-  font-family:var(--f-display); font-weight:800; letter-spacing:.01em;}
-.brand,.logo{text-transform:uppercase; letter-spacing:.06em;}
-.tile h4,.door h4{font-size:19px; line-height:1.1; text-transform:uppercase; letter-spacing:.03em;}
-.bigline{font-size:26px;}
-.vword{font-size:38px; text-transform:uppercase; letter-spacing:.02em;}
-.sheet h3,.gate h2{font-size:22px; text-transform:uppercase; letter-spacing:.04em;}
-.back{font-size:17px; text-transform:uppercase; letter-spacing:.05em;}
-.tick-line.hero{font-size:22px; letter-spacing:.02em;}
-/* SPEC — mono carries anything a man would read out loud as a specification:
-   clipper numbers, prices, ratings, doses, tallies, dates. It is the whole thesis. */
-.chip,.vtag,.flag,.fresh,.statcard .num,.bcard .steps b,.bcard .t,.spec,.sys{
-  font-family:var(--f-spec); font-weight:500; font-feature-settings:'tnum' 1;}
-.chip,.vtag,.flag,.bcard .t{letter-spacing:.08em;}
-.statcard .num{font-weight:600;}
+body{background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,Roboto,sans-serif; transition:background .4s;}
 #app{max-width:520px; margin:0 auto; min-height:100vh; min-height:100dvh; display:flex; flex-direction:column; position:relative;}
 .screen{display:none; flex:1; flex-direction:column; padding:calc(16px + env(safe-area-inset-top)) 16px 112px;}
 .screen.on{display:flex; animation:screenIn .28s cubic-bezier(.22,1,.36,1);}
@@ -232,7 +189,7 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
 .disc{align-self:stretch; font-size:13px; color:var(--dim); background:var(--royal-lt); border-left:3px solid var(--royal); border-radius:0 8px 8px 0; padding:8px 10px; line-height:1.5;}
 .disc b{color:var(--royal-dk);}
 /* toast */
-#toast{position:fixed; bottom:calc(96px + env(safe-area-inset-bottom)); left:50%; transform:translateX(-50%); background:var(--mist); color:var(--text); border:1px solid var(--line); font-size:13px; padding:10px 18px; border-radius:22px; opacity:0; transition:.3s; z-index:99; pointer-events:none; max-width:86%; text-align:center;}
+#toast{position:fixed; bottom:calc(96px + env(safe-area-inset-bottom)); left:50%; transform:translateX(-50%); background:var(--rolex-dk); color:#fff; font-size:13px; padding:10px 18px; border-radius:22px; opacity:0; transition:.3s; z-index:99; pointer-events:none; max-width:86%; text-align:center;}
 #toast.show{opacity:1;}
 /* settings sheet */
 .sheet{position:fixed; inset:0; background:var(--scrim); display:none; align-items:flex-end; z-index:50;}
@@ -252,17 +209,6 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
 .tick-dots{display:flex; gap:5px; margin-top:11px;}
 .tick-dots i{width:5px; height:5px; border-radius:50%; background:var(--line2); transition:background .3s, width .3s;}
 .tick-dots i.on{background:var(--rolex); width:16px; border-radius:3px;}
-/* ---- HIERARCHY (last word, so it wins) ----
-   Chalk carries structure. Green is spent only on action and verdict.
-   Brass is the identity + anything with a value attached. One accent per job. */
-.tile h4,.door h4,.bigline,.back,.sheet h3{color:var(--text);}
-.tile.purple-door h4,.door.purple-door h4{color:var(--royal-dk);}
-.brand,.logo{color:var(--text);}
-.brand em,.logo em{color:var(--gold);}
-.statcard .num{color:var(--gold);}
-.vtag{color:var(--faint);}
-/* the mark needs to lift off near-black */
-:root:not([data-theme="light"]) .logomark path[fill]{fill:#1C8A5A;}
 @media (prefers-reduced-motion:reduce){ *{animation:none !important; transition:none !important;} }
 </style>
 </head>
@@ -385,7 +331,6 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
   <div class="screen" id="scr-privacy">
     <div class="hdr"><button class="back" onclick="go('memory')">‹ Privacy Center</button></div>
     <p class="small" style="margin-bottom:14px;">Plain language. No lawyer-speak. This is everything.</p>
-    <div class="prow" role="button" tabindex="0" onclick="toggleTheme()" style="cursor:pointer;"><div><b>Night mode</b><span id="themelbl">Dark — built for the 2am read.</span></div><div class="tog" id="themetog"></div></div>
     <div class="prow"><div><b>Auto-delete photos</b><span>Analyzed, then gone. Not stored, not trained on.</span></div><div class="tog"></div></div>
     <div class="prow"><div><b>Private Space history</b><span>OFF — never saved. Only you remember those chats.</span></div><div class="tog off"></div></div>
     <div class="prow"><div><b>Memory on this phone only</b><span>Your profile lives in this browser, not on our servers.</span></div><div class="tog"></div></div>
@@ -519,16 +464,6 @@ function detectLang(t){
 // Map his language to a speech-recognition locale so the mic transcribes correctly.
 function langCode(l){ return {english:'en-IN',hinglish:'hi-IN',hindi:'hi-IN',marathi:'mr-IN',tamil:'ta-IN',telugu:'te-IN',bengali:'bn-IN',gujarati:'gu-IN',kannada:'kn-IN',malayalam:'ml-IN',punjabi:'pa-IN',urdu:'ur-IN',arabic:'ar-SA'}[l]||'en-IN'; }
 function save(){ localStorage.setItem('sorted_profile', JSON.stringify(P)); }
-/* Theme — dark is the default. 2am is where this product lives. */
-function applyTheme(){
-  const light = !(P && P.theme === 'dark'); // light is the default
-  document.documentElement.dataset.theme = light ? 'light' : 'dark';
-  document.querySelector('meta[name=theme-color]').setAttribute('content', light ? '#F8F6F1' : '#0E1A14');
-  const t=$('themetog'), l=$('themelbl');
-  if(t) t.classList.toggle('off', light);
-  if(l) l.textContent = light ? 'Light — the daytime read.' : 'Dark — built for the 2am read.';
-}
-function toggleTheme(){ P.theme = (P.theme==='dark') ? 'light' : 'dark'; save(); applyTheme(); }
 function scrollBottom(){ const c=chatEl(); if(c) setTimeout(()=>c.scrollTop=c.scrollHeight,60); }
 
 /* ---- Grooming ticker: the things men feel in the chair but never say ---- */
@@ -1581,7 +1516,6 @@ document.addEventListener('keydown', e=>{
 });
 if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
 // Secure the device id (and migrate any legacy reminders) BEFORE first render, so home data loads under the signed id.
-applyTheme(); // before first paint — no flash of the wrong theme
 ensureDevice().finally(()=>{
   if(P){ go('home'); } else { $('scr-onboard').classList.add('on'); $('askbar').style.display='none'; }
 });
