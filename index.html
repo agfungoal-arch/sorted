@@ -447,6 +447,8 @@ function sendEvent(event, mode){ // fire-and-forget, anonymous
 
 /* ============ STATE ============ */
 let P = JSON.parse(localStorage.getItem('sorted_profile') || 'null'); // profile
+// Normalise older profiles: array fields must exist, or renderMemory/notes-push throw.
+if(P){ for(const k of ['notes','avoid','avoidCustom','blocked']) if(!Array.isArray(P[k])) P[k]=[]; }
 let screen = 'home';
 let pendingImage = null;          // {b64, mime, url}
 let threads = { verdict:[], product:[], barber:[], remind:[] }; // api message history (text only)
@@ -1483,9 +1485,9 @@ function renderMemory(){
     ['Skin tone', P.skinTone||'— learns from your first photo'],
     ['Face shape', P.faceShape||'— learns from your first selfie'],
     ['Sizes', P.sizes||'— tell me anytime'],
-    ['Style wins', P.notes.length?P.notes.slice(-4).join(' · '):'— your READY verdicts land here'],
+    ['Style wins', (P.notes||[]).length?P.notes.slice(-4).join(' · '):'— your READY verdicts land here'],
   ];
-  const fresh = !P.skinTone && !P.faceShape && !P.notes.length && !P.sizes;
+  const fresh = !P.skinTone && !P.faceShape && !(P.notes||[]).length && !P.sizes;
   const intro = fresh ? `<div class="vcard" style="margin-bottom:14px;background:var(--rolex-lt);border-color:var(--edge);"><b style="color:var(--rolex-dk);">Nothing here yet — and that's fine.</b><div class="small" style="margin-top:4px;">I learn as we go. One selfie fills in most of this in a few seconds.</div></div>` : '';
   $('memlist').innerHTML = `<button class="cta has-ic" style="margin-bottom:14px;" onclick="profileSelfie()">${ic('camera')}One selfie fills all this in</button>` + intro + rows.map(([k,v],i)=>`
     <div class="prow"><div><b>${k}</b><span>${esc(String(v))}</span></div>
