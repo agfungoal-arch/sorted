@@ -789,11 +789,13 @@ async function checkFollowups(){
 }
 
 /* ============ SEED MESSAGES ============ */
+/* The ticker and the chips already say what the section IS.
+   This line's only job is to tell him what to DO next. */
 function seed(s){
-  if(s==='verdict') addThem(`Outfit or open wardrobe — you get one verdict. Shoot.`);
-  if(s==='product') addThem(`Is it safe to eat, drink, or put on your body? Pick a category, snap the label — I'll tell you straight what's in it, what it does to you, and whether it's real.`);
-  if(s==='barber') addThem(`Your grooming corner. Tap above — or just ask.`);
-  if(s==='remind') addThem(`Say it once, I never forget. Tap the mic and speak it.`);
+  if(s==='verdict') addThem(`Tap ＋ and photograph your outfit — or your open wardrobe. One photo, one verdict.`);
+  if(s==='product') addThem(`Pick a category above, then tap ＋ and photograph the label. Back of the pack is best.`);
+  if(s==='barber')  addThem(`Tap ＋ and add a selfie for a haircut that suits you — or just ask.`);
+  if(s==='remind')  addThem(`Tap the mic 🎤 and just say it — "wife's birthday is 3rd March". I'll take it from there.`);
 }
 function enterPrivate(){
   go('private'); privThread=[];
