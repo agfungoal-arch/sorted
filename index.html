@@ -206,16 +206,14 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
   transition:opacity .5s ease, transform .5s ease; min-height:38px; display:flex; align-items:center;}
 .tick-line.on{opacity:1; transform:none;}
 .tick-line.hero{color:var(--rolex); font-weight:800;}
-.popwrap{margin:0 0 12px;}
-.poplbl{font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--faint); font-weight:700; margin:0 0 7px 2px;}
-.chips.pop{margin:0;}
-.chips.pop button{background:var(--paper); border:1px solid var(--line); color:var(--dim); font-weight:500; text-align:left; white-space:normal; min-height:40px; padding:9px 13px; line-height:1.35; font-size:13px;}
-.chips.pop button:active{border-color:var(--rolex); color:var(--rolex);}
-.purple .chips.pop button:active{border-color:var(--royal); color:var(--royal-dk);}
 .purple .ticker{border-left-color:var(--royal);}
 .purple .tick-line.hero{color:var(--royal-dk);}
 .purple .tick-dots i.on{background:var(--royal);}
-.tick-dots{display:flex; gap:4px; margin-top:6px;}
+.tick-dots{display:flex; gap:4px; margin-top:6px; align-items:center;}
+.tick-cta{margin-left:auto; font-size:10px; letter-spacing:.08em; text-transform:uppercase; font-weight:700; color:var(--rolex);}
+.ticker.askable{cursor:pointer;}
+.ticker.askable:active{border-color:var(--rolex);}
+.tick-line.ask{color:var(--rolex-dk); font-weight:700;}
 .tick-dots i{width:5px; height:5px; border-radius:50%; background:var(--line2); transition:background .3s, width .3s;}
 .tick-dots i.on{background:var(--rolex); width:16px; border-radius:3px;}
 @media (prefers-reduced-motion:reduce){ *{animation:none !important; transition:none !important;} }
@@ -261,10 +259,6 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
       <div class="tick-line"></div>
       <div class="tick-dots"></div>
     </div>
-    <div class="popwrap" id="popwrap-verdict">
-      <div class="poplbl">Men also ask</div>
-      <div class="chips pop" id="pop-verdict"></div>
-    </div>
     <div class="chat" id="chat-verdict"></div>
   </div>
 
@@ -286,10 +280,6 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
       <div class="tick-line"></div>
       <div class="tick-dots"></div>
     </div>
-    <div class="popwrap" id="popwrap-private">
-      <div class="poplbl">Men also ask</div>
-      <div class="chips pop" id="pop-private"></div>
-    </div>
     <div class="chat" id="chat-private"></div>
   </div>
 
@@ -300,14 +290,20 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
       <div class="tick-line"></div>
       <div class="tick-dots"></div>
     </div>
-    <div class="popwrap" id="popwrap-product">
-      <div class="poplbl">Men also ask</div>
-      <div class="chips pop" id="pop-product"></div>
+    <div class="chips" id="prod-cats" style="margin:0 0 8px;">
+      <button onclick="pickProdCat(this,'skin &amp; hair','Skincare, sunscreen, shampoo — snap it')"><span class="chip-ic" data-ic="droplet"></span>Skin &amp; hair</button>
+      <button onclick="pickProdCat(this,'deodorant','Deo or antiperspirant — snap it')"><span class="chip-ic" data-ic="spray"></span>Deodorant</button>
+      <button onclick="pickProdCat(this,'fragrance','Perfume, attar, oud — snap it')"><span class="chip-ic" data-ic="sparkle"></span>Fragrance</button>
+      <button onclick="pickProdCat(this,'clothing &amp; fabric','Snap the fabric / care label')"><span class="chip-ic" data-ic="shirt"></span>Clothing</button>
+      <button onclick="pickProdCat(this,'kitchenware','Non-stick pan, bottle — snap it')"><span class="chip-ic" data-ic="pan"></span>Kitchenware</button>
+      <button onclick="pickProdCat(this,'drinks','Energy drink, soda, juice — snap it')"><span class="chip-ic" data-ic="cup"></span>Drinks</button>
+      <button onclick="pickProdCat(this,'packaged food','Canned / packaged label — snap it')"><span class="chip-ic" data-ic="box"></span>Packaged food</button>
+      <button onclick="pickProdCat(this,'pharmacy','OTC medicine or vitamin — snap it')"><span class="chip-ic" data-ic="pill"></span>Pharmacy</button>
+      <button onclick="pickProdCat(this,'supplements','Protein, creatine — snap it')"><span class="chip-ic" data-ic="dumbbell"></span>Supplements</button>
+      <button onclick="pickProdCat(this,'ayurveda','Ayurvedic / herbal — snap it')"><span class="chip-ic" data-ic="leaf"></span>Ayurveda</button>
+      <button onclick="pickProdCat(this,'household','Cleaner, air freshener — snap it')"><span class="chip-ic" data-ic="spray"></span>Household</button>
     </div>
-    <div class="chips" style="margin:0 0 10px;">
-      <button class="chipbtn" id="prodcatbtn" onclick="openProdCats()"><span class="chip-ic" data-ic="target"></span>Category · auto</button>
-      <button class="chipbtn" onclick="openPriorities()"><span class="chip-ic" data-ic="target"></span>What I'm avoiding</button>
-    </div>
+    <div style="margin:0 0 10px;"><button class="chipbtn" onclick="openPriorities()"><span class="chip-ic" data-ic="target"></span>What I'm avoiding</button></div>
     <div class="chat" id="chat-product"></div>
   </div>
 
@@ -317,10 +313,6 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
     <div class="ticker" id="tick-barber" aria-live="polite">
       <div class="tick-line"></div>
       <div class="tick-dots"></div>
-    </div>
-    <div class="popwrap" id="popwrap-barber">
-      <div class="poplbl">Men also ask</div>
-      <div class="chips pop" id="pop-barber"></div>
     </div>
     <div class="chips" id="groom-actions" style="margin:0 0 10px;">
       <button onclick="openBarberFinder()"><span class="chip-ic" data-ic="search"></span>Find a barber</button>
@@ -341,10 +333,6 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
       <div class="tick-line"></div>
       <div class="tick-dots"></div>
     </div>
-    <div class="popwrap" id="popwrap-remind">
-      <div class="poplbl">Men also ask</div>
-      <div class="chips pop" id="pop-remind"></div>
-    </div>
     <div id="remlist"></div>
     <div class="chat" id="chat-remind"></div>
   </div>
@@ -355,10 +343,6 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
     <div class="ticker" id="tick-crowd" aria-live="polite">
       <div class="tick-line"></div>
       <div class="tick-dots"></div>
-    </div>
-    <div class="popwrap" id="popwrap-crowd">
-      <div class="poplbl">Men also ask</div>
-      <div class="chips pop" id="pop-crowd"></div>
     </div>
     <div id="crowdbox"><p class="small">Loading…</p></div>
   </div>
@@ -603,77 +587,76 @@ const TICKERS = {
 };
 
 /* ============================================================
-   MEN ALSO ASK — the real top-5 per section, taken from what men
-   actually post on Reddit and Quora (India / Gulf / global), not
-   from what sounds good. Tapping one just asks it for him.
+   MEN ALSO ASK — the real top questions per section, taken from what
+   men actually post on Reddit and Quora (India / Gulf / global).
+   These are interleaved INTO the ticker and are tappable: when a
+   question is showing, tapping the box asks it for him.
 
-   Note on Never Forget: men essentially never post "how do I
-   remember dates" — that names a character defect. They post
-   "what do I get her?" constantly. So we lead with the gift and
-   capture the date as a side-effect of answering it.
+   Note on Never Forget: men essentially never post "how do I remember
+   dates" — that names a character defect. They post "what do I get her?"
+   constantly. So we lead with the gift and capture the date as a
+   side-effect of answering it.
    ============================================================ */
-const POPULAR = {
+const ASKS = {
   verdict: [
-    "What do I wear to this wedding?",
-    "What do I wear to my interview tomorrow?",
-    "What do I wear on a first date?",
-    "What do I wear with this? (I'll add a photo)",
-    "What does 'smart casual' actually mean?",
+    {t:"What do I wear to this wedding?",                    h:"Is shaadi mein kya pehnu?"},
+    {t:"What do I wear to my interview tomorrow?",           h:"Kal interview hai — kya pehnu?"},
+    {t:"What do I wear on a first date?",                    h:"First date pe kya pehnu?"},
+    {t:"What does 'smart casual' actually mean?",            h:"'Smart casual' ka matlab hota kya hai?"},
+    {t:"What do I wear with this?",                          h:"Iske saath kya pehnu?"},
   ],
   private: [
-    // Physical/practical only. We do not invite mental-health topics.
-    // Odour lives here in its honest form — he can't smell himself and nobody will tell him.
-    "I'm losing my hair. What actually works?",
-    "Do I actually smell? How would I even know?",
-    "Why do I still smell right after a shower?",
-    "Should I get this checked, or am I overreacting?",
-    "How do I get rid of chest fat?",
+    {t:"I'm losing my hair. What actually works?",           h:"Baal jhad rahe hain. Kya sach mein kaam karta hai?"},
+    {t:"Do I actually smell? How would I even know?",        h:"Kya sach mein smell aati hai? Pata kaise chale?"},
+    {t:"Why do I still smell right after a shower?",         h:"Nahane ke turant baad bhi smell kyun aati hai?"},
+    {t:"Should I get this checked, or am I overreacting?",   h:"Ise dikhana chahiye, ya main zyada soch raha hoon?"},
+    {t:"How do I get rid of chest fat?",                     h:"Chest fat kaise kam karun?"},
   ],
   product: [
-    "It's past the expiry — can I still use it?",
-    "Is my protein powder fake or adulterated?",
-    "My non-stick pan is scratched — is it poisoning me?",
-    "What is this chemical actually doing to me?",
-    "Is it safe to take this every day?",
+    {t:"It's past the expiry — can I still use it?",         h:"Expiry nikal gayi — ab bhi use kar sakta hoon?"},
+    {t:"Is my protein powder fake or adulterated?",          h:"Mera protein powder nakli toh nahi?"},
+    {t:"My non-stick pan is scratched — is it poisoning me?",h:"Non-stick pan scratch ho gaya — nuksaan kar raha hai?"},
+    {t:"What is this chemical actually doing to me?",        h:"Yeh chemical mere body ko kar kya raha hai?"},
+    {t:"Is it safe to take this every day?",                 h:"Isse roz lena safe hai?"},
   ],
   barber: [
-    // Odour also lives here — in its aspirational form. Men come through the
-    // "how do I smell as good as them" door, never the "I stink" door.
-    "What do I tell my barber to get this cut?",
-    "Which cut suits my face?",
-    "My deo dies in 2 hours in this heat — what works?",
-    "Deo, antiperspirant or perfume — which do I need?",
-    "How do I stop my hair fall and dandruff?",
-    "My barber messed it up — how do I fix this?",
+    {t:"What do I tell my barber to get this cut?",          h:"Barber ko yeh cut samjhaun kaise?"},
+    {t:"Which cut suits my face?",                           h:"Mere chehre pe kaunsa cut jamega?"},
+    {t:"My deo dies in 2 hours in this heat — what works?",  h:"Is garmi mein deo 2 ghante mein khatam. Kya kaam karega?"},
+    {t:"Deo, antiperspirant or perfume — which do I need?",  h:"Deo, antiperspirant ya perfume — chahiye kya?"},
+    {t:"How do I stop my hair fall and dandruff?",           h:"Hairfall aur dandruff kaise roku?"},
+    {t:"My barber messed it up — how do I fix this?",        h:"Barber ne kharab kar diya — ab kya karun?"},
   ],
   remind: [
-    "Her birthday's coming. What do I get?",
-    "She says she doesn't want anything. Now what?",
-    "Our anniversary's coming up — what should I do?",
-    "Will she like what I got her?",
-    "I forgot. Help me fix it.",
+    {t:"Her birthday's coming. What do I get?",              h:"Uska birthday aa raha hai. Kya lun?"},
+    {t:"She says she doesn't want anything. Now what?",      h:"Woh keh rahi hai kuch nahi chahiye. Ab kya?"},
+    {t:"Our anniversary's coming up — what should I do?",    h:"Anniversary aa rahi hai — karun kya?"},
+    {t:"Will she like what I got her?",                      h:"Jo liya hai, usse pasand aayega?"},
+    {t:"I forgot. Help me fix it.",                          h:"Bhool gaya. Ab sambhaal do."},
+  ],
+  crowd: [ // these set the question his look gets voted on
+    {t:"How does this look?",                                h:"Yeh kaisa lag raha hai?"},
+    {t:"Is this okay for the interview?",                    h:"Interview ke liye theek hai?"},
+    {t:"Too tight, or just right?",                          h:"Zyada tight hai, ya theek hai?"},
+    {t:"Do I dress too young for my age?",                   h:"Main apni age se chhota dress karta hoon kya?"},
+    {t:"Which one should I wear?",                           h:"Kaunsa pehnu?"},
   ],
 };
-// Peer Review has no ask bar — these set the question his look gets voted on.
-const CROWD_ASKS = [
-  "How does this look?",
-  "Is this okay for the interview?",
-  "Too tight, or just right?",
-  "Do I dress too young for my age?",
-  "Which one should I wear?",
-];
-function renderPopular(){
-  for(const s in POPULAR){
-    const box=document.getElementById('pop-'+s); if(!box) continue;
-    box.innerHTML = POPULAR[s].map(q=>`<button onclick="askPopular(${JSON.stringify(q).replace(/"/g,'&quot;')})">${esc(q)}</button>`).join('');
+// Weave the questions in among the truths, so a tappable one comes round quickly.
+(function weaveTickers(){
+  for(const s in ASKS){
+    const truths=TICKERS[s]||[], qs=ASKS[s].map(q=>Object.assign({}, q, {q:true, poll:s==='crowd'}));
+    const out=[]; let i=0,j=0;
+    while(i<truths.length || j<qs.length){
+      if(i<truths.length) out.push(truths[i++]);
+      if(j<qs.length) out.push(qs[j++]);
+    }
+    TICKERS[s]=out;
   }
-  const cb=document.getElementById('pop-crowd');
-  if(cb) cb.innerHTML = CROWD_ASKS.map(q=>`<button onclick="askCrowd(${JSON.stringify(q).replace(/"/g,'&quot;')})">${esc(q)}</button>`).join('');
-}
+})();
 function askPopular(q){
   const i=$('inp'); if(!i) return;
   i.value=q;
-  if(/photo/i.test(q)){ i.focus(); toast('Add the photo with +, then send.'); return; }
   send();
 }
 function askCrowd(q){ lastOccasion=q; crowdCapture=true; openCamSheet(); }
@@ -687,16 +670,20 @@ function paintTick(s){
   const l=lines[st.i];
   el.textContent=(P && P.lang==='hinglish' && l.h) ? l.h : l.t; // speaks his language once we've heard it
   el.classList.toggle('hero', !!l.hero);
-  if(dots) dots.innerHTML=lines.map((_,i)=>`<i class="${i===st.i?'on':''}"></i>`).join('');
+  el.classList.toggle('ask', !!l.q);
+  box.classList.toggle('askable', !!l.q);
+  box.dataset.ask  = l.q ? el.textContent : '';
+  box.dataset.poll = l.poll ? '1' : '';
+  if(dots) dots.innerHTML=lines.map((_,i)=>`<i class="${i===st.i?'on':''}"></i>`).join('') + (l.q?'<span class="tick-cta">Tap to ask</span>':'');
   requestAnimationFrame(()=>el.classList.add('on'));
 }
 function startTicker(s){
   stopTickers();
   const box=tickBox(s), lines=TICKERS[s];
   if(!box || !lines) return;
-  const pw=document.getElementById('popwrap-'+s);
-  if(_tickDone[s]){ box.style.display='none'; if(pw) pw.style.display='none'; return; }   // he's already asked something here
-  box.style.display='flex'; if(pw) pw.style.display='block';
+  if(_tickDone[s]){ box.style.display='none'; return; }   // he's already asked something here
+  box.style.display='flex';
+  box.onclick=()=>{ const q=box.dataset.ask; if(!q) return; if(box.dataset.poll) askCrowd(q); else askPopular(q); };
   _tick[s]={ i:0 };
   paintTick(s);
   _tick[s].timer=setInterval(()=>{
@@ -712,7 +699,6 @@ function hideTicker(s){
   if(_tick[s] && _tick[s].timer) clearInterval(_tick[s].timer);
   delete _tick[s];
   const b=tickBox(s); if(b) b.style.display='none';
-  const pw=document.getElementById('popwrap-'+s); if(pw) pw.style.display='none';
 }
 
 function go(s){
@@ -1217,37 +1203,12 @@ function savePriorities(){
 
 /* ============ PRODUCT CATEGORIES ============ */
 let prodCat=null;
-const PROD_CATS=[
-  ['skin & hair','droplet','Skincare, sunscreen, shampoo'],
-  ['deodorant','spray','Deo or antiperspirant'],
-  ['fragrance','sparkle','Perfume, attar, oud'],
-  ['clothing & fabric','shirt','Fabric / care label'],
-  ['kitchenware','pan','Non-stick pan, bottle'],
-  ['drinks','cup','Energy drink, soda, juice'],
-  ['packaged food','box','Canned / packaged label'],
-  ['pharmacy','pill','OTC medicine or vitamin'],
-  ['supplements','dumbbell','Protein, creatine'],
-  ['ayurveda','leaf','Ayurvedic / herbal'],
-  ['household','spray','Cleaner, air freshener'],
-];
-function openProdCats(){
-  const b=$('sheet-body');
-  b.innerHTML=`<h3>What am I looking at?</h3>
-    <p class="small">Leave it on auto and I'll work it out from the photo. Pick one only if you want me to look through a particular lens.</p>
-    <div class="chips" style="margin-top:12px;">
-      <button class="${!prodCat?'sel':''}" onclick="setProdCat(null)">Auto — work it out</button>
-      ${PROD_CATS.map(([c,ic,hint])=>`<button class="${prodCat===c?'sel':''}" onclick="setProdCat('${c.replace(/'/g,"\\'")}')"><span class="chip-ic" data-ic="${ic}"></span>${esc(c)}</button>`).join('')}
-    </div>
-    <button class="cta ghost" style="margin-top:14px;" onclick="$('sheet').classList.remove('on')">Close</button>`;
-  paintIcons(b);
-  $('sheet').classList.add('on');
-}
-function setProdCat(cat){
+function pickProdCat(btn,cat,hint){
   prodCat=cat;
-  const btn=$('prodcatbtn');
-  if(btn) btn.innerHTML=`<span class="chip-ic" data-ic="target"></span>Category · ${cat||'auto'}`, paintIcons(btn);
-  $('sheet').classList.remove('on');
-  if($('inp')) $('inp').placeholder = cat ? 'Snap the label or ask' : 'Snap any label — I\'ll work out what it is';
+  document.querySelectorAll('#prod-cats button').forEach(b=>b.classList.remove('sel')); btn.classList.add('sel');
+  if($('inp')) $('inp').placeholder=hint||'Snap the label or ask';
+  addSys('Checking '+cat+'. Snap the label \uD83D\uDCF7 or just ask.');
+  if($('inp')) $('inp').focus();
 }
 
 /* ============ GROOMING: QUICK ACTIONS ============ */
@@ -1733,7 +1694,6 @@ $('inp').addEventListener('input',function(){
 
 /* ============ BOOT ============ */
 paintIcons();
-renderPopular();
 // Keyboard access for role="button" elements (home doors, peer bar, avatar) — Enter/Space activate them.
 document.addEventListener('keydown', e=>{
   const el=document.activeElement;
