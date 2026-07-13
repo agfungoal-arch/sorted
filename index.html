@@ -248,6 +248,10 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
   <!-- VERDICT -->
   <div class="screen" id="scr-verdict">
     <div class="hdr"><button class="back" onclick="go('home')">‹ Am I ready?</button><div class="avatar" onclick="go('memory')" id="av2">?</div></div>
+    <div class="ticker" id="tick-verdict" aria-live="polite">
+      <div class="tick-line"></div>
+      <div class="tick-dots"></div>
+    </div>
     <div class="chat" id="chat-verdict"></div>
   </div>
 
@@ -265,12 +269,20 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
   <div class="screen" id="scr-private">
     <div class="hdr"><button class="back" onclick="leavePrivate()">‹  Private Space</button><span style="font-size:11px;color:var(--royal);">no history saved</span></div>
     <div class="pnote">Private mode — this conversation disappears when you leave.</div>
+    <div class="ticker" id="tick-private" aria-live="polite">
+      <div class="tick-line"></div>
+      <div class="tick-dots"></div>
+    </div>
     <div class="chat" id="chat-private"></div>
   </div>
 
   <!-- PRODUCT -->
   <div class="screen" id="scr-product">
     <div class="hdr"><button class="back" onclick="go('home')">‹ Check a product</button><div class="avatar" onclick="go('memory')" id="av3">?</div></div>
+    <div class="ticker" id="tick-product" aria-live="polite">
+      <div class="tick-line"></div>
+      <div class="tick-dots"></div>
+    </div>
     <div class="chips" id="prod-cats" style="margin:0 0 10px;">
       <button onclick="pickProdCat(this,'skin &amp; hair','Skincare, sunscreen, shampoo — snap it')"><span class="chip-ic" data-ic="droplet"></span>Skin &amp; hair</button>
       <button onclick="pickProdCat(this,'deodorant','Deo or antiperspirant — snap it')"><span class="chip-ic" data-ic="spray"></span>Deodorant</button>
@@ -291,9 +303,9 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
   <!-- BARBER / GROOMING -->
   <div class="screen" id="scr-barber">
     <div class="hdr"><button class="back" onclick="go('home')">‹ Grooming</button><div class="avatar" onclick="go('memory')" id="av4">?</div></div>
-    <div class="ticker" id="groomticker" aria-live="polite">
-      <div class="tick-line" id="tickline"></div>
-      <div class="tick-dots" id="tickdots"></div>
+    <div class="ticker" id="tick-barber" aria-live="polite">
+      <div class="tick-line"></div>
+      <div class="tick-dots"></div>
     </div>
     <div class="chips" id="groom-actions" style="margin:0 0 10px;">
       <button onclick="openBarberFinder()"><span class="chip-ic" data-ic="search"></span>Find a barber</button>
@@ -310,6 +322,10 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
   <!-- REMIND -->
   <div class="screen" id="scr-remind">
     <div class="hdr"><button class="back" onclick="go('home')">‹  Never Forget</button></div>
+    <div class="ticker" id="tick-remind" aria-live="polite">
+      <div class="tick-line"></div>
+      <div class="tick-dots"></div>
+    </div>
     <div id="remlist"></div>
     <div class="chat" id="chat-remind"></div>
   </div>
@@ -317,6 +333,10 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
   <!-- CROWD -->
   <div class="screen" id="scr-crowd">
     <div class="hdr"><button class="back" onclick="go('home')">‹  Brotherhood</button></div>
+    <div class="ticker" id="tick-crowd" aria-live="polite">
+      <div class="tick-line"></div>
+      <div class="tick-dots"></div>
+    </div>
     <div id="crowdbox"><p class="small">Loading…</p></div>
   </div>
 
@@ -467,56 +487,132 @@ function save(){ localStorage.setItem('sorted_profile', JSON.stringify(P)); }
 function scrollBottom(){ const c=chatEl(); if(c) setTimeout(()=>c.scrollTop=c.scrollHeight,60); }
 
 /* ---- Grooming ticker: the things men feel in the chair but never say ---- */
-const GROOM_LINES=[
-  // the chair — the surrender line every man has said
-  {t:"You've said it: “Bhai, kar de jo kar sake.”",                                h:"Aapne bhi bola hai: “Bhai, kar de jo kar sake.”"},
-  {t:"Or: “Jo aap theek samjho.” Same surrender, politer words.",                  h:"Ya phir: “Jo aap theek samjho.” Wahi surrender, thoda politely."},
-  {t:"You didn't give up on the haircut. You gave up on yourself.",                h:"Aapne haircut pe haar nahi maani. Aapne apne aap pe maani."},
-  {t:"You knew what you wanted. You just didn't have the words for it.",           h:"Pata tha kya chahiye. Bas words nahi the."},
-  {t:"The mirror comes up. You say “great.” You don't mean it.",                   h:"Sheesha saamne aata hai. Aap bolte ho “badhiya hai.” Lagta nahi hai."},
-  {t:"You can return a shirt. You can't return a haircut.",                        h:"Shirt wapas ho jaati hai. Haircut wapas nahi hota."},
-  {t:"When it looks off, you blame your face. It was the brief.",                  h:"Kharab lage toh apne chehre ko dosh dete ho. Galti brief ki thi."},
-  // finding the right barber
-  {t:"Same chair for years — not because he's good, because leaving felt rude.",   h:"Saalon se wahi kursi — isliye nahi ki woh accha hai, isliye ki chhodna awkward lagta hai."},
-  {t:"The best barber isn't the nearest one. He's the one men keep naming.",       h:"Sabse accha barber paas wala nahi hota. Woh hota hai jiska naam log baar-baar lete hain."},
-  // product quality
-  {t:"“For men” on the bottle is a colour scheme, not a formula.",                 h:"Bottle pe “For Men” ek colour hai — formula nahi."},
-  {t:"You bought the packaging. You never read the panel.",                        h:"Packaging khareedi. Panel kabhi padha hi nahi."},
-  {t:"The wrong product for your skin type is just expensive damage.",             h:"Galat product aapki skin ke liye — mehenga nuksaan, aur kuch nahi."},
-  {t:"You've been washing your hair with something built for someone else's.",     h:"Aap kisi aur ke baalon ka shampoo laga rahe ho."},
-  // nobody taught us
-  {t:"Nobody ever sat you down and taught you any of this.",                       h:"Kisi ne kabhi baithakar yeh sab sikhaya hi nahi."},
-  // the flip
-  {t:"You're not a passenger in that chair.", hero:true,                           h:"Us kursi pe aap passenger nahi ho."},
-  {t:"Walk in knowing. Three sentences. Walk out right.", hero:true,               h:"Jaante hue jao. Teen line bolo. Sahi lekar niklo."},
-];
-let _tickI=0, _tickT=null, _groomEngaged=false;
-function paintTick(){
-  const el=$('tickline'), dots=$('tickdots');
-  if(!el) return;
-  const l=GROOM_LINES[_tickI];
+/* ============================================================
+   SECTION TICKERS — every section opens by naming the thing he
+   already feels but has never said out loud, then turns it.
+   Each line has a Hinglish twin, used once we've heard him speak it.
+   ============================================================ */
+const TICKERS = {
+
+  verdict: [
+    {t:"You've changed three times. You still don't know.",                          h:"Teen baar kapde badle. Ab bhi pata nahi."},
+    {t:"You asked her. She said “fine.” That's not an answer.",                      h:"Usse poocha. Bola “theek hai.” Yeh jawab nahi hai."},
+    {t:"The mirror at home lies. The photos never do.",                              h:"Ghar ka sheesha jhooth bolta hai. Photo kabhi nahi."},
+    {t:"You've owned that shirt two years. You've worn it twice.",                   h:"Do saal se woh shirt hai. Do baar pehni hai."},
+    {t:"Overdressed is a fear. Underdressed is a memory.",                           h:"Zyada dressed hone ka darr hai. Kam dressed hone ki yaad hai."},
+    {t:"“Is this too much?” — you've asked that out loud to nobody.",                h:"“Zyada toh nahi lag raha?” — yeh sawaal aapne kisi se nahi poocha."},
+    {t:"Every room has a dress code. Nobody ever taught you the rooms.",             h:"Har jagah ka apna code hai. Kisi ne woh sikhaya hi nahi."},
+    {t:"One outfit. One honest verdict. No maybes.", hero:true,                      h:"Ek outfit. Ek seedha jawab. Koi “shayad” nahi."},
+    {t:"Walk in like you meant it.", hero:true,                                      h:"Aise jao jaise soch ke aaye ho."},
+  ],
+
+  private: [
+    {t:"The question you typed into Google at 2am, then deleted.",                   h:"Woh sawaal jo raat 2 baje Google mein type karke delete kar diya."},
+    {t:"You'd rather search it than say it. That's most men.",                       h:"Bolne se accha search karna lagta hai. Zyadatar mard aise hi hain."},
+    {t:"You've been “meaning to get it checked” for eight months.",                  h:"“Dikha lunga” bolte-bolte aath mahine ho gaye."},
+    {t:"Men don't ask. Then men find out late.",                                     h:"Mard poochte nahi. Phir der ho jaati hai."},
+    {t:"No name. No history. Nothing saved. Nothing shown to anyone.",               h:"Na naam. Na history. Kuch save nahi. Kisi ko kuch nahi dikhta."},
+    {t:"Embarrassing to say out loud is not the same as unimportant.",               h:"Bolne mein sharam aana matlab yeh nahi ki baat choti hai."},
+    {t:"Nothing you say here is stored. Not the question. Not the answer.",          h:"Yahan kuch store nahi hota. Na sawaal, na jawab."},
+    {t:"Ask it. Properly. Once.", hero:true,                                         h:"Poochh lo. Theek se. Ek baar."},
+    {t:"No judgment. That's the whole point of this room.", hero:true,               h:"Koi judgment nahi. Yeh kamra isi ke liye hai."},
+  ],
+
+  product: [
+    {t:"You bought it because the bottle looked serious.",                           h:"Bottle serious lag rahi thi, isliye le liya."},
+    {t:"“Dermatologically tested” is a sentence, not a fact.",                       h:"“Dermatologically tested” ek line hai — sach nahi."},
+    {t:"You've never once turned the pack around.",                                  h:"Aapne kabhi pack palat ke dekha hi nahi."},
+    {t:"The front is marketing. The back is the truth.",                             h:"Aage marketing hai. Peeche sach hai."},
+    {t:"Natural, herbal, ayurvedic — none of those are protected words.",            h:"Natural, herbal, ayurvedic — inka koi legal matlab hi nahi."},
+    {t:"Non-stick. Until it isn't.",                                                 h:"Non-stick. Jab tak hai."},
+    {t:"You're paying for the packaging, and for the ad you saw.",                   h:"Aap packaging ke paise de rahe ho — aur us ad ke bhi."},
+    {t:"The dose makes the poison. The label rarely tells you the dose.",            h:"Zeher matra se banta hai. Label matra batata hi nahi."},
+    {t:"Ingredients, not opinions.", hero:true,                                      h:"Ingredients — opinions nahi."},
+    {t:"Read the back. I'll do it for you.", hero:true,                              h:"Peeche padho. Main padh dunga."},
+  ],
+
+  remind: [
+    {t:"You didn't forget. You remembered too late.",                                h:"Bhoole nahi the. Bas yaad der se aaya."},
+    {t:"“Belated” is a word men invented.",                                          h:"“Belated” shabd shayad mardon ne hi banaya hoga."},
+    {t:"She remembers what you forgot. Every single time.",                          h:"Jo aap bhool jaate ho, usse yaad rehta hai. Har baar."},
+    {t:"Your mother's birthday. You know the month, not the date.",                  h:"Maa ka birthday. Mahina pata hai, taareekh nahi."},
+    {t:"“Sorry, I've been swamped” is not a gift.",                                  h:"“Yaar busy tha” koi gift nahi hai."},
+    {t:"Nobody was ever moved by an 11:58pm message.",                               h:"Raat 11:58 ke message se aaj tak koi khush nahi hua."},
+    {t:"You're not careless. You're just carrying too much.",                        h:"Aap laaparwah nahi ho. Bas sar pe bahut kuch hai."},
+    {t:"Say it once. I'll never let you forget it.", hero:true,                      h:"Ek baar bol do. Main kabhi bhoolne nahi dunga."},
+    {t:"Tell me now. I'll remind you then.", hero:true,                              h:"Abhi bata do. Main waqt pe yaad dila dunga."},
+  ],
+
+  crowd: [
+    {t:"Your friends lie to be kind. Strangers won't.",                              h:"Dost pyaar mein jhooth bol dete hain. Ajnabi nahi bolega."},
+    {t:"“You look nice.” She says that every time.",                                 h:"“Acha lag raha hai.” Woh har baar yahi bolti hai."},
+    {t:"No face. No name. Nobody knows it's you.",                                   h:"Na chehra. Na naam. Kisi ko pata hi nahi ki aap ho."},
+    {t:"You'd never post this on Instagram. That's exactly the point.",              h:"Yeh Instagram pe kabhi nahi daaloge. Baat hi yahi hai."},
+    {t:"Men are honest when there's nothing at stake.",                              h:"Jab kuch daav pe na ho, mard sach bolte hain."},
+    {t:"You vote on his. He votes on yours. No one's keeping score.",                h:"Aap uske pe vote karo, woh aapke pe. Koi hisaab nahi rakhta."},
+    {t:"The verdict your friends were too polite to give you.", hero:true,           h:"Woh sach jo dost sharam mein nahi bol paaye."},
+    {t:"Honest men. Blurred faces. Real answers.", hero:true,                        h:"Sacche mard. Blurred chehre. Seedha jawab."},
+  ],
+
+  barber: [
+    // the chair — the surrender line every man has said
+    {t:"You've said it: “Bhai, kar de jo kar sake.”",                                h:"Aapne bhi bola hai: “Bhai, kar de jo kar sake.”"},
+    {t:"Or: “Jo aap theek samjho.” Same surrender, politer words.",                  h:"Ya phir: “Jo aap theek samjho.” Wahi surrender, thoda politely."},
+    {t:"You didn't give up on the haircut. You gave up on yourself.",                h:"Aapne haircut pe haar nahi maani. Aapne apne aap pe maani."},
+    {t:"You knew what you wanted. You just didn't have the words for it.",           h:"Pata tha kya chahiye. Bas words nahi the."},
+    {t:"The mirror comes up. You say “great.” You don't mean it.",                   h:"Sheesha saamne aata hai. Aap bolte ho “badhiya hai.” Lagta nahi hai."},
+    {t:"You can return a shirt. You can't return a haircut.",                        h:"Shirt wapas ho jaati hai. Haircut wapas nahi hota."},
+    {t:"When it looks off, you blame your face. It was the brief.",                  h:"Kharab lage toh apne chehre ko dosh dete ho. Galti brief ki thi."},
+    // finding the right barber
+    {t:"Same chair for years — not because he's good, because leaving felt rude.",   h:"Saalon se wahi kursi — isliye nahi ki woh accha hai, isliye ki chhodna awkward lagta hai."},
+    {t:"The best barber isn't the nearest one. He's the one men keep naming.",       h:"Sabse accha barber paas wala nahi hota. Woh hota hai jiska naam log baar-baar lete hain."},
+    // product quality
+    {t:"“For men” on the bottle is a colour scheme, not a formula.",                 h:"Bottle pe “For Men” ek colour hai — formula nahi."},
+    {t:"You bought the packaging. You never read the panel.",                        h:"Packaging khareedi. Panel kabhi padha hi nahi."},
+    {t:"The wrong product for your skin type is just expensive damage.",             h:"Galat product aapki skin ke liye — mehenga nuksaan, aur kuch nahi."},
+    {t:"You've been washing your hair with something built for someone else's.",     h:"Aap kisi aur ke baalon ka shampoo laga rahe ho."},
+    // nobody taught us
+    {t:"Nobody ever sat you down and taught you any of this.",                       h:"Kisi ne kabhi baithakar yeh sab sikhaya hi nahi."},
+    // the flip
+    {t:"You're not a passenger in that chair.", hero:true,                           h:"Us kursi pe aap passenger nahi ho."},
+    {t:"Walk in knowing. Three sentences. Walk out right.", hero:true,               h:"Jaante hue jao. Teen line bolo. Sahi lekar niklo."},
+  ],
+};
+
+let _tick={}, _tickDone={};   // per-screen: rotation state, and "he's engaged, step aside"
+function tickBox(s){ return document.getElementById('tick-'+s); }
+function paintTick(s){
+  const box=tickBox(s), lines=TICKERS[s], st=_tick[s];
+  if(!box || !lines || !st) return;
+  const el=box.querySelector('.tick-line'), dots=box.querySelector('.tick-dots');
+  const l=lines[st.i];
   el.textContent=(P && P.lang==='hinglish' && l.h) ? l.h : l.t; // speaks his language once we've heard it
   el.classList.toggle('hero', !!l.hero);
-  if(dots) dots.innerHTML=GROOM_LINES.map((_,i)=>`<i class="${i===_tickI?'on':''}"></i>`).join('');
+  if(dots) dots.innerHTML=lines.map((_,i)=>`<i class="${i===st.i?'on':''}"></i>`).join('');
   requestAnimationFrame(()=>el.classList.add('on'));
 }
-function startTicker(){
-  stopTicker();
-  const box=$('groomticker');
-  if(!box) return;
-  // once HE has actually asked something, the ticker steps aside (the seeded intro doesn't count)
-  if(_groomEngaged){ box.style.display='none'; return; }
+function startTicker(s){
+  stopTickers();
+  const box=tickBox(s), lines=TICKERS[s];
+  if(!box || !lines) return;
+  if(_tickDone[s]){ box.style.display='none'; return; }   // he's already asked something here
   box.style.display='flex';
-  _tickI=0; paintTick();
-  _tickT=setInterval(()=>{
-    const el=$('tickline');
-    if(!el || screen!=='barber'){ stopTicker(); return; }
+  _tick[s]={ i:0 };
+  paintTick(s);
+  _tick[s].timer=setInterval(()=>{
+    const b=tickBox(s);
+    if(!b || screen!==s){ stopTickers(); return; }
+    const el=b.querySelector('.tick-line');
     el.classList.remove('on');
-    setTimeout(()=>{ _tickI=(_tickI+1)%GROOM_LINES.length; paintTick(); }, 500);
+    setTimeout(()=>{ if(!_tick[s]) return; _tick[s].i=(_tick[s].i+1)%lines.length; paintTick(s); }, 500);
   }, 5000);
 }
-function stopTicker(){ if(_tickT){ clearInterval(_tickT); _tickT=null; } }
-function hideTicker(){ stopTicker(); const b=$('groomticker'); if(b) b.style.display='none'; }
+function stopTickers(){ for(const k in _tick){ if(_tick[k] && _tick[k].timer) clearInterval(_tick[k].timer); } _tick={}; }
+function hideTicker(s){
+  if(_tick[s] && _tick[s].timer) clearInterval(_tick[s].timer);
+  delete _tick[s];
+  const b=tickBox(s); if(b) b.style.display='none';
+}
 
 function go(s){
   screen=s;
@@ -531,7 +627,7 @@ function go(s){
   if(s==='crowd') loadCrowd();
   if(s==='remind'){ loadReminders(); if(!threads.remind.rendered){ seed('remind'); threads.remind.rendered=true; } }
   if(['verdict','product','barber'].includes(s) && !threads[s].rendered){ seed(s); threads[s].rendered=true; }
-  if(s==='barber') startTicker(); else stopTicker();
+  if(TICKERS[s]) startTicker(s); else stopTickers();
   scrollBottom();
 }
 
@@ -758,7 +854,7 @@ function pickOcc(btn,o){
 async function send(auto){
   const inp=$('inp'); const text=inp.value.trim();
   if(!text && !pendingImage) return;
-  if(screen==='barber'){ _groomEngaged=true; hideTicker(); } // he's engaged now — the ticker gets out of the way
+  if(TICKERS[screen]){ _tickDone[screen]=true; hideTicker(screen); } // he's engaged now — the ticker gets out of the way
   await ensureDevice();
   if(text){ addMe(text); inp.value=''; inp.style.height='auto';
     const scrEl=document.querySelector('.screen.on'); if(scrEl) scrEl.style.paddingBottom='';
