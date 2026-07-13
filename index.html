@@ -206,6 +206,12 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
   transition:opacity .5s ease, transform .5s ease;}
 .tick-line.on{opacity:1; transform:none;}
 .tick-line.hero{color:var(--rolex); font-weight:800;}
+.popwrap{margin:0 0 12px;}
+.poplbl{font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--faint); font-weight:700; margin:0 0 7px 2px;}
+.chips.pop{margin:0;}
+.chips.pop button{background:var(--paper); border:1px solid var(--line); color:var(--dim); font-weight:500; text-align:left; white-space:normal; min-height:40px; padding:9px 13px; line-height:1.35; font-size:13px;}
+.chips.pop button:active{border-color:var(--rolex); color:var(--rolex);}
+.purple .chips.pop button:active{border-color:var(--royal); color:var(--royal-dk);}
 .purple .ticker{border-left-color:var(--royal);}
 .purple .tick-line.hero{color:var(--royal-dk);}
 .purple .tick-dots i.on{background:var(--royal);}
@@ -241,7 +247,7 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
     <div class="hgrid">
       <div class="tile" role="button" tabindex="0" onclick="go('verdict')"><div class="ic" data-ic="shirt"></div><h4>What do I wear?</h4><p>One outfit → one verdict</p><span class="chip">Most used</span></div>
       <div class="tile purple-door" role="button" tabindex="0" onclick="go('gate')"><div class="ic" data-ic="lock"></div><h4>Private Space</h4><p>2am questions · never saved</p><span class="chip p">Private</span></div>
-      <div class="tile" role="button" tabindex="0" onclick="go('product')"><div class="ic" data-ic="droplet"></div><h4>Check a product</h4><p>Real, or just marketing?</p></div>
+      <div class="tile" role="button" tabindex="0" onclick="go('product')"><div class="ic" data-ic="droplet"></div><h4>Check a product</h4><p>Safe to eat, drink or use?</p></div>
       <div class="tile" role="button" tabindex="0" onclick="go('barber')"><div class="ic" data-ic="scissors"></div><h4>Grooming</h4><p>Barbers · products · your look</p></div>
       <div class="tile wide" role="button" tabindex="0" onclick="go('remind')"><div class="ic" data-ic="bell"></div><div><h4>Never Forget</h4><p>Say it once · reminders, wishes &amp; gifts</p></div></div>
       <div class="tile moat" role="button" tabindex="0" onclick="go('crowd')"><div class="ic" data-ic="users"></div><div><h4>Peer Review</h4><p>Honest votes · faces blurred · no names<span id="peercount" style="font-weight:700;color:var(--rolex);"></span></p></div></div>
@@ -254,6 +260,10 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
     <div class="ticker" id="tick-verdict" aria-live="polite">
       <div class="tick-line"></div>
       <div class="tick-dots"></div>
+    </div>
+    <div class="popwrap" id="popwrap-verdict">
+      <div class="poplbl">Men also ask</div>
+      <div class="chips pop" id="pop-verdict"></div>
     </div>
     <div class="chat" id="chat-verdict"></div>
   </div>
@@ -276,6 +286,10 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
       <div class="tick-line"></div>
       <div class="tick-dots"></div>
     </div>
+    <div class="popwrap" id="popwrap-private">
+      <div class="poplbl">Men also ask</div>
+      <div class="chips pop" id="pop-private"></div>
+    </div>
     <div class="chat" id="chat-private"></div>
   </div>
 
@@ -285,6 +299,10 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
     <div class="ticker" id="tick-product" aria-live="polite">
       <div class="tick-line"></div>
       <div class="tick-dots"></div>
+    </div>
+    <div class="popwrap" id="popwrap-product">
+      <div class="poplbl">Men also ask</div>
+      <div class="chips pop" id="pop-product"></div>
     </div>
     <div class="chips" id="prod-cats" style="margin:0 0 10px;">
       <button onclick="pickProdCat(this,'skin &amp; hair','Skincare, sunscreen, shampoo — snap it')"><span class="chip-ic" data-ic="droplet"></span>Skin &amp; hair</button>
@@ -310,6 +328,10 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
       <div class="tick-line"></div>
       <div class="tick-dots"></div>
     </div>
+    <div class="popwrap" id="popwrap-barber">
+      <div class="poplbl">Men also ask</div>
+      <div class="chips pop" id="pop-barber"></div>
+    </div>
     <div class="chips" id="groom-actions" style="margin:0 0 10px;">
       <button onclick="openBarberFinder()"><span class="chip-ic" data-ic="search"></span>Find a barber</button>
       <button onclick="quickGroom('What haircut would suit me? I can add a selfie.')"><span class="chip-ic" data-ic="scissors"></span>What suits me</button>
@@ -329,6 +351,10 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
       <div class="tick-line"></div>
       <div class="tick-dots"></div>
     </div>
+    <div class="popwrap" id="popwrap-remind">
+      <div class="poplbl">Men also ask</div>
+      <div class="chips pop" id="pop-remind"></div>
+    </div>
     <div id="remlist"></div>
     <div class="chat" id="chat-remind"></div>
   </div>
@@ -339,6 +365,10 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
     <div class="ticker" id="tick-crowd" aria-live="polite">
       <div class="tick-line"></div>
       <div class="tick-dots"></div>
+    </div>
+    <div class="popwrap" id="popwrap-crowd">
+      <div class="poplbl">Men also ask</div>
+      <div class="chips pop" id="pop-crowd"></div>
     </div>
     <div id="crowdbox"><p class="small">Loading…</p></div>
   </div>
@@ -582,6 +612,77 @@ const TICKERS = {
   ],
 };
 
+/* ============================================================
+   MEN ALSO ASK — the real top-5 per section, taken from what men
+   actually post on Reddit and Quora (India / Gulf / global), not
+   from what sounds good. Tapping one just asks it for him.
+
+   Note on Never Forget: men essentially never post "how do I
+   remember dates" — that names a character defect. They post
+   "what do I get her?" constantly. So we lead with the gift and
+   capture the date as a side-effect of answering it.
+   ============================================================ */
+const POPULAR = {
+  verdict: [
+    "What do I wear to this wedding?",
+    "What do I wear to my interview tomorrow?",
+    "What do I wear on a first date?",
+    "What do I wear with this? (I'll add a photo)",
+    "What does 'smart casual' actually mean?",
+  ],
+  private: [
+    "I'm losing my hair. What actually works?",
+    "I have no friends. How do I fix that?",
+    "Everyone's ahead of me. Am I a failure?",
+    "Should I get this checked, or am I overreacting?",
+    "How do I get rid of chest fat?",
+  ],
+  product: [
+    "It's past the expiry — can I still use it?",
+    "Is my protein powder fake or adulterated?",
+    "My non-stick pan is scratched — is it poisoning me?",
+    "What is this chemical actually doing to me?",
+    "Is it safe to take this every day?",
+  ],
+  barber: [
+    "What do I tell my barber to get this cut?",
+    "Which cut suits my face?",
+    "My barber messed it up — how do I fix this?",
+    "How do I stop my hair fall and dandruff?",
+    "My beard's patchy — will it fill in?",
+  ],
+  remind: [
+    "Her birthday's coming. What do I get?",
+    "She says she doesn't want anything. Now what?",
+    "Our anniversary's coming up — what should I do?",
+    "Will she like what I got her?",
+    "I forgot. Help me fix it.",
+  ],
+};
+// Peer Review has no ask bar — these set the question his look gets voted on.
+const CROWD_ASKS = [
+  "How does this look?",
+  "Is this okay for the interview?",
+  "Too tight, or just right?",
+  "Do I dress too young for my age?",
+  "Which one should I wear?",
+];
+function renderPopular(){
+  for(const s in POPULAR){
+    const box=document.getElementById('pop-'+s); if(!box) continue;
+    box.innerHTML = POPULAR[s].map(q=>`<button onclick="askPopular(${JSON.stringify(q).replace(/"/g,'&quot;')})">${esc(q)}</button>`).join('');
+  }
+  const cb=document.getElementById('pop-crowd');
+  if(cb) cb.innerHTML = CROWD_ASKS.map(q=>`<button onclick="askCrowd(${JSON.stringify(q).replace(/"/g,'&quot;')})">${esc(q)}</button>`).join('');
+}
+function askPopular(q){
+  const i=$('inp'); if(!i) return;
+  i.value=q;
+  if(/photo/i.test(q)){ i.focus(); toast('Add the photo with +, then send.'); return; }
+  send();
+}
+function askCrowd(q){ lastOccasion=q; crowdCapture=true; openCamSheet(); }
+
 let _tick={}, _tickDone={};   // per-screen: rotation state, and "he's engaged, step aside"
 function tickBox(s){ return document.getElementById('tick-'+s); }
 function paintTick(s){
@@ -598,8 +699,9 @@ function startTicker(s){
   stopTickers();
   const box=tickBox(s), lines=TICKERS[s];
   if(!box || !lines) return;
-  if(_tickDone[s]){ box.style.display='none'; return; }   // he's already asked something here
-  box.style.display='flex';
+  const pw=document.getElementById('popwrap-'+s);
+  if(_tickDone[s]){ box.style.display='none'; if(pw) pw.style.display='none'; return; }   // he's already asked something here
+  box.style.display='flex'; if(pw) pw.style.display='block';
   _tick[s]={ i:0 };
   paintTick(s);
   _tick[s].timer=setInterval(()=>{
@@ -615,6 +717,7 @@ function hideTicker(s){
   if(_tick[s] && _tick[s].timer) clearInterval(_tick[s].timer);
   delete _tick[s];
   const b=tickBox(s); if(b) b.style.display='none';
+  const pw=document.getElementById('popwrap-'+s); if(pw) pw.style.display='none';
 }
 
 function go(s){
@@ -683,7 +786,7 @@ async function checkFollowups(){
 /* ============ SEED MESSAGES ============ */
 function seed(s){
   if(s==='verdict') addThem(`Outfit or open wardrobe — you get one verdict. Shoot.`);
-  if(s==='product') addThem(`Pick a category above, then snap the label. What's inside, what the science says, matched to what you avoid.`);
+  if(s==='product') addThem(`Is it safe to eat, drink, or put on your body? Pick a category, snap the label — I'll tell you straight what's in it, what it does to you, and whether it's real.`);
   if(s==='barber') addThem(`Your grooming corner. Tap above — or just ask.`);
   if(s==='remind') addThem(`Say it once, I never forget. Tap the mic and speak it.`);
 }
@@ -1314,7 +1417,7 @@ async function postPoll(){
   $('sheet').classList.remove('on');
   try{
     const r=await fetch(BACKEND+'/polls',{method:'POST',headers:{'Content-Type':'application/json','x-pilot-token':PILOT},
-      body:JSON.stringify({device_id:DEVICE, question:(lastOccasion?lastOccasion+' — yes or no?':'This look — yes or no?'), img:blurred})});
+      body:JSON.stringify({device_id:DEVICE, question:(lastOccasion ? (/[?]$/.test(lastOccasion) ? lastOccasion : lastOccasion+' — yes or no?') : 'This look — yes or no?'), img:blurred})});
     if(!r.ok) throw 0;
     toast('Posted. Unbiased votes incoming — check 🫂 Peer review later.');
   }catch(e){ toast('Could not post right now — try again in a minute.'); }
@@ -1608,6 +1711,7 @@ $('inp').addEventListener('input',function(){
 
 /* ============ BOOT ============ */
 paintIcons();
+renderPopular();
 // Keyboard access for role="button" elements (home doors, peer bar, avatar) — Enter/Space activate them.
 document.addEventListener('keydown', e=>{
   const el=document.activeElement;
