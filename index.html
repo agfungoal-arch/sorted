@@ -199,11 +199,11 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
 .sheet .panel{background:var(--ivory); width:100%; max-width:520px; margin:0 auto; border-radius:22px 22px 0 0; padding:24px 16px calc(24px + env(safe-area-inset-bottom)); max-height:80vh; max-height:80dvh; overflow-y:auto;}
 .sheet h3{color:var(--rolex-dk); font-size:16px; margin-bottom:12px;}
 .small{font-size:13px; color:var(--dim); line-height:1.6;}
-/* Grooming ticker — the barber-chair truths, one at a time */
+/* Section ticker — one compact box. It sets the tone, then gets out of the way. */
 .ticker{background:var(--paper); border:1px solid var(--line); border-left:3px solid var(--rolex);
-  border-radius:14px; padding:16px 16px 13px; margin:0 0 14px; min-height:78px; display:flex; flex-direction:column; justify-content:center;}
-.tick-line{font-size:17px; line-height:1.4; font-weight:600; color:var(--text); opacity:0; transform:translateY(5px);
-  transition:opacity .5s ease, transform .5s ease;}
+  border-radius:12px; padding:10px 13px 8px; margin:0 0 10px; display:flex; flex-direction:column; justify-content:center;}
+.tick-line{font-size:14px; line-height:1.4; font-weight:600; color:var(--text); opacity:0; transform:translateY(4px);
+  transition:opacity .5s ease, transform .5s ease; min-height:38px; display:flex; align-items:center;}
 .tick-line.on{opacity:1; transform:none;}
 .tick-line.hero{color:var(--rolex); font-weight:800;}
 .popwrap{margin:0 0 12px;}
@@ -215,7 +215,7 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
 .purple .ticker{border-left-color:var(--royal);}
 .purple .tick-line.hero{color:var(--royal-dk);}
 .purple .tick-dots i.on{background:var(--royal);}
-.tick-dots{display:flex; gap:5px; margin-top:11px;}
+.tick-dots{display:flex; gap:4px; margin-top:6px;}
 .tick-dots i{width:5px; height:5px; border-radius:50%; background:var(--line2); transition:background .3s, width .3s;}
 .tick-dots i.on{background:var(--rolex); width:16px; border-radius:3px;}
 @media (prefers-reduced-motion:reduce){ *{animation:none !important; transition:none !important;} }
@@ -304,20 +304,10 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
       <div class="poplbl">Men also ask</div>
       <div class="chips pop" id="pop-product"></div>
     </div>
-    <div class="chips" id="prod-cats" style="margin:0 0 10px;">
-      <button onclick="pickProdCat(this,'skin &amp; hair','Skincare, sunscreen, shampoo — snap it')"><span class="chip-ic" data-ic="droplet"></span>Skin &amp; hair</button>
-      <button onclick="pickProdCat(this,'deodorant','Deo or antiperspirant — snap it')"><span class="chip-ic" data-ic="spray"></span>Deodorant</button>
-      <button onclick="pickProdCat(this,'fragrance','Perfume, attar, oud — snap it')"><span class="chip-ic" data-ic="sparkle"></span>Fragrance</button>
-      <button onclick="pickProdCat(this,'clothing &amp; fabric','Snap the fabric / care label')"><span class="chip-ic" data-ic="shirt"></span>Clothing</button>
-      <button onclick="pickProdCat(this,'kitchenware','Non-stick pan, bottle — snap it')"><span class="chip-ic" data-ic="pan"></span>Kitchenware</button>
-      <button onclick="pickProdCat(this,'drinks','Energy drink, soda, juice — snap it')"><span class="chip-ic" data-ic="cup"></span>Drinks</button>
-      <button onclick="pickProdCat(this,'packaged food','Canned / packaged label — snap it')"><span class="chip-ic" data-ic="box"></span>Packaged food</button>
-      <button onclick="pickProdCat(this,'pharmacy','OTC medicine or vitamin — snap it')"><span class="chip-ic" data-ic="pill"></span>Pharmacy</button>
-      <button onclick="pickProdCat(this,'supplements','Protein, creatine — snap it')"><span class="chip-ic" data-ic="dumbbell"></span>Supplements</button>
-      <button onclick="pickProdCat(this,'ayurveda','Ayurvedic / herbal — snap it')"><span class="chip-ic" data-ic="leaf"></span>Ayurveda</button>
-      <button onclick="pickProdCat(this,'household','Cleaner, air freshener — snap it')"><span class="chip-ic" data-ic="spray"></span>Household</button>
+    <div class="chips" style="margin:0 0 10px;">
+      <button class="chipbtn" id="prodcatbtn" onclick="openProdCats()"><span class="chip-ic" data-ic="target"></span>Category · auto</button>
+      <button class="chipbtn" onclick="openPriorities()"><span class="chip-ic" data-ic="target"></span>What I'm avoiding</button>
     </div>
-    <div style="margin:0 0 8px;"><button class="chipbtn" onclick="openPriorities()"><span class="chip-ic" data-ic="target"></span>What I'm avoiding</button></div>
     <div class="chat" id="chat-product"></div>
   </div>
 
@@ -793,7 +783,7 @@ async function checkFollowups(){
    This line's only job is to tell him what to DO next. */
 function seed(s){
   if(s==='verdict') addThem(`Tap ＋ and photograph your outfit — or your open wardrobe. One photo, one verdict.`);
-  if(s==='product') addThem(`Pick a category above, then tap ＋ and photograph the label. Back of the pack is best.`);
+  if(s==='product') addThem(`Tap ＋ and photograph the label — the back of the pack is best. I'll work out what it is.`);
   if(s==='barber')  addThem(`Tap ＋ and add a selfie for a haircut that suits you — or just ask.`);
   if(s==='remind')  addThem(`Tap the mic 🎤 and just say it — "wife's birthday is 3rd March". I'll take it from there.`);
 }
@@ -919,7 +909,7 @@ function snapWebCam(){
   pendingImage={ b64:url.split(',')[1], mime:'image/jpeg', url };
   addPic(url); addSys('Photo attached — analyzed, then deleted. Always.');
   if(screen==='verdict' && !occasion){ askOccasion(); return; }
-  if(screen==='product'){ if(!prodCat){ addThem('Pick a category above first, then it analyses automatically.'); return; } $('inp').value=''; send(); }
+  if(screen==='product'){ $('inp').value=''; send(); }   // no category needed — we work it out from the label
 }
 $('file-gal').addEventListener('change', e=>handleFile(e));
 $('file').addEventListener('change', e=>handleFile(e));
@@ -935,7 +925,7 @@ async function handleFile(e){
   addSys('Photo attached — analyzed, then deleted. Always.');
   e.target.value='';
   if(screen==='verdict' && !occasion){ askOccasion(); return; }
-  if(screen==='product'){ if(!prodCat){ addThem('Pick a category above first (so I read the right things), then it analyses automatically.'); return; } $('inp').value=''; send(); }
+  if(screen==='product'){ $('inp').value=''; send(); }   // no category needed — we work it out from the label
 }
 function compress(file){
   return new Promise(res=>{
@@ -1227,12 +1217,37 @@ function savePriorities(){
 
 /* ============ PRODUCT CATEGORIES ============ */
 let prodCat=null;
-function pickProdCat(btn,cat,hint){
+const PROD_CATS=[
+  ['skin & hair','droplet','Skincare, sunscreen, shampoo'],
+  ['deodorant','spray','Deo or antiperspirant'],
+  ['fragrance','sparkle','Perfume, attar, oud'],
+  ['clothing & fabric','shirt','Fabric / care label'],
+  ['kitchenware','pan','Non-stick pan, bottle'],
+  ['drinks','cup','Energy drink, soda, juice'],
+  ['packaged food','box','Canned / packaged label'],
+  ['pharmacy','pill','OTC medicine or vitamin'],
+  ['supplements','dumbbell','Protein, creatine'],
+  ['ayurveda','leaf','Ayurvedic / herbal'],
+  ['household','spray','Cleaner, air freshener'],
+];
+function openProdCats(){
+  const b=$('sheet-body');
+  b.innerHTML=`<h3>What am I looking at?</h3>
+    <p class="small">Leave it on auto and I'll work it out from the photo. Pick one only if you want me to look through a particular lens.</p>
+    <div class="chips" style="margin-top:12px;">
+      <button class="${!prodCat?'sel':''}" onclick="setProdCat(null)">Auto — work it out</button>
+      ${PROD_CATS.map(([c,ic,hint])=>`<button class="${prodCat===c?'sel':''}" onclick="setProdCat('${c.replace(/'/g,"\\'")}')"><span class="chip-ic" data-ic="${ic}"></span>${esc(c)}</button>`).join('')}
+    </div>
+    <button class="cta ghost" style="margin-top:14px;" onclick="$('sheet').classList.remove('on')">Close</button>`;
+  paintIcons(b);
+  $('sheet').classList.add('on');
+}
+function setProdCat(cat){
   prodCat=cat;
-  document.querySelectorAll('#prod-cats button').forEach(b=>b.classList.remove('sel')); btn.classList.add('sel');
-  if($('inp')) $('inp').placeholder=hint||'Snap the label or ask';
-  addSys('Checking '+cat+'. Snap the label 📷 or just ask.');
-  if($('inp')) $('inp').focus();
+  const btn=$('prodcatbtn');
+  if(btn) btn.innerHTML=`<span class="chip-ic" data-ic="target"></span>Category · ${cat||'auto'}`, paintIcons(btn);
+  $('sheet').classList.remove('on');
+  if($('inp')) $('inp').placeholder = cat ? 'Snap the label or ask' : 'Snap any label — I\'ll work out what it is';
 }
 
 /* ============ GROOMING: QUICK ACTIONS ============ */
