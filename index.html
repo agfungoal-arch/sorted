@@ -446,7 +446,7 @@ let P = JSON.parse(localStorage.getItem('sorted_profile') || 'null'); // profile
 if(P){ for(const k of ['notes','avoid','avoidCustom','blocked']) if(!Array.isArray(P[k])) P[k]=[]; }
 let screen = 'home';
 let pendingImage = null;          // {b64, mime, url}
-let threads = { verdict:[], product:[], barber:[], remind:[] }; // api message history (text only)
+let threads = { verdict:[], product:[], barber:[], remind:[], buddy:[] }; // api message history (text only)
 let privThread = [];              // in-memory only, never persisted
 let occasion = null;
 
@@ -986,7 +986,8 @@ async function send(auto){
     private:['Thinking this through properly…'],
     product:['Reading the label…','· checking ingredient flags','· checking the claims'],
     barber:['Reading your face shape…','· matching styles that suit you'],
-    remind:['Noting it all down…','· sorting the dates','· setting your nudges']
+    remind:['Noting it all down…','· sorting the dates','· setting your nudges'],
+    buddy:['…']
   }[mode];
   const th=thinking(thinkLines);
 
@@ -996,7 +997,7 @@ async function send(auto){
     const res=await fetch(BACKEND+'/ask',{
       method:'POST', headers:{'Content-Type':'application/json','x-pilot-token':PILOT}, signal:ctrl.signal,
       body:JSON.stringify({ mode, messages:hist.slice(-12), image:img?{data:img.b64,media_type:img.mime}:null,
-        occasion: mode==='verdict'?occasion:null, category: mode==='product'?prodCat:null, profile:P, device_id:DEVICE, local_now:new Date().toString().slice(0,24) })
+        occasion: mode==='verdict'?occasion:null, category: mode==='product'?prodCat:null, buddy: mode==='buddy'?P.buddy:null, profile:P, device_id:DEVICE, local_now:new Date().toString().slice(0,24) })
     });
     clearTimeout(to);
     if(res.status===503){ const e=new Error('cap'); e.cap=true; throw e; }
@@ -1049,6 +1050,15 @@ function render(mode, d, hist){
       addHTML(`<button class="cta purple-btn has-ic" onclick="enablePush(this)">${ic('bell')}Check on me later — allow reminders</button>`);
     }
     hist.push({role:'assistant', content:d.reply}); // correct thread, whatever mode triggered it
+  }
+  else if(d.type==='buddy'){
+    if(d.red_flag && d.crisis){
+      addThem(d.reply);
+      addHTML(`<div class="docbox" style="border-color:var(--royal-line);"><b>Reach a real person now:</b> ${esc(d.doctor.action)}<br><span style="color:var(--dim);font-size:13px;">${esc(d.doctor.script||'')}</span></div>`);
+    } else {
+      addBuddyReply(d.reply);
+      hist.push({role:'assistant', content:d.reply});
+    }
   }
   else if(d.type==='product'){
     const lvl={fine:'#006039',watch:'#B07C1F',caution:'#C06A1F',avoid:'#B04A38'};
@@ -1672,7 +1682,7 @@ function exportData(){
 }
 function deleteEverything(){
   if(!confirm('Sure? Gone in 5 seconds, no recovery.')) return;
-  localStorage.clear(); privThread=[]; threads={verdict:[],product:[],barber:[],remind:[]};
+  localStorage.clear(); privThread=[]; threads={verdict:[],product:[],barber:[],remind:[],buddy:[]};
   toast('Done. Nothing remains.');
   setTimeout(()=>location.reload(),1200);
 }
@@ -1726,8 +1736,51 @@ const BUDDY_LOOKS=[
   {id:'mate',   ic:'message', label:'A friend',   bg:'var(--rolex-lt)', fg:'var(--rolex)'},
 ];
 let _bLook='bro', _bImg=null, _bTone='warm', VOICES=[];
-function renderBuddy(){
+function renderBuddy(){ if(P.buddy && P.buddy.name) renderBuddyChat(); else renderBuddySetup(); }
+function buddyFace(sz){
+  const b=P.buddy||{}, look=BUDDY_LOOKS.find(l=>l.id===b.look)||BUDDY_LOOKS[0];
+  return b.img ? `<img src="${b.img}" alt="" style="width:${sz}px;height:${sz}px;border-radius:50%;object-fit:cover;border:1px solid var(--line);">`
+    : `<div style="width:${sz}px;height:${sz}px;border-radius:50%;background:${look.bg};color:${look.fg};display:flex;align-items:center;justify-content:center;">${ic(look.ic)}</div>`;
+}
+function renderBuddyChat(){
+  const box=$('buddybox'); if(!box) return;
+  const nm=esc(P.buddy.name);
+  box.innerHTML=`<div style="display:flex;align-items:center;gap:10px;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:8px 10px;margin-bottom:10px;">
+      ${buddyFace(40)}
+      <div style="flex:1;"><div style="font-weight:700;font-size:15px;">${nm}</div><div class="small" style="color:var(--faint);">an AI mate — in your corner</div></div>
+      <button class="minirep" onclick="renderBuddySetup()">Change</button>
+    </div>
+    <div class="chat" id="chat-buddy"></div>`;
+  $('askbar').style.display='flex';
+  $('inp').placeholder=`Tell ${nm} about your day…`;
+  if(!threads.buddy.length){
+    addThem(`Hey — ${nm} here. I'm an AI mate, not a real person, but I'm properly in your corner. How's your day been?`, true);
+  } else { // repaint prior turns
+    threads.buddy.forEach(m=>{ if(m.role==='user') addMe(m.content); else addBuddyReply(m.content, true); });
+  }
+  scrollBottom();
+}
+function speakBuddy(text, btn){
+  if(!window.speechSynthesis){ toast('Voice isn\'t supported on this device.'); return; }
+  const b=P.buddy||{}; const u=new SpeechSynthesisUtterance(text);
+  const vs=speechSynthesis.getVoices()||[]; const v=vs.find(x=>x.voiceURI===b.voiceURI); if(v) u.voice=v;
+  u.pitch=b.pitch!=null?b.pitch:1; u.rate=b.rate!=null?b.rate:1;
+  speechSynthesis.cancel(); speechSynthesis.speak(u);
+  if(btn){ btn.textContent='◼'; u.onend=()=>{ btn.textContent='🔊'; }; }
+}
+function addBuddyReply(text, quiet){
+  const d=document.createElement('div'); d.className='msg them'; d.style.paddingBottom='6px';
+  d.appendChild(document.createTextNode(String(text)));
+  const bar=document.createElement('div'); bar.style.cssText='margin-top:6px;';
+  const hear=document.createElement('button'); hear.textContent='🔊';
+  hear.style.cssText='background:none;border:none;cursor:pointer;font-size:15px;padding:2px 4px;opacity:.7;';
+  hear.setAttribute('aria-label','Hear this'); hear.onclick=()=>speakBuddy(text, hear);
+  bar.appendChild(hear); d.appendChild(bar);
+  chatEl().appendChild(d); scrollBottom();
+}
+function renderBuddySetup(){
   const b=P.buddy||{}; _bLook=b.look||'bro'; _bImg=b.img||null; _bTone=b.tone||'warm';
+  $('askbar').style.display='none';
   const box=$('buddybox'); if(!box) return;
   box.innerHTML=`
     <p class="small" style="margin-bottom:14px;">Pick how your buddy looks and sounds. Change it whenever you like.</p>
@@ -1800,9 +1853,9 @@ function saveBuddy(){
             persona:($('buddyPersona')?$('buddyPersona').value.trim().slice(0,240):'')||null,
             pitch:$('buddyPitch')?+$('buddyPitch').value:1, rate:$('buddyRate')?+$('buddyRate').value:1,
             voiceURI:uri||null, voiceName:(VOICES.find(v=>v.voiceURI===uri)||{}).name||null };
-  save(); toast('Buddy saved.'); go('home');
+  save(); toast('Buddy saved.'); threads.buddy=[]; renderBuddy();
 }
-if(window.speechSynthesis){ speechSynthesis.onvoiceschanged=()=>{ if(screen==='buddy') loadVoices(); }; }
+if(window.speechSynthesis){ speechSynthesis.onvoiceschanged=()=>{ if(screen==='buddy'&&$('buddyVoice')) loadVoices(); }; }
 
 /* ============ BOOT ============ */
 paintIcons();

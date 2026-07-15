@@ -118,7 +118,7 @@ const RED_FLAGS = [
     script: 'Sudden facial droop / slurred speech / one-sided weakness — emergency.' },
   { rx: /suicid|kill myself|end (my life|it all)|ending it all|don'?t want to (live|be here|be alive|exist)|not want to be alive|no reason to live|jeena? nahi|jeene? ka mann nahi|marne? ka mann|marna chahta|zindagi khatam|khudkushi|khud ?kushi|(want|thoughts?|thinking|planning).{0,20}(end|kill|hurt).{0,15}(myself|my life|it all)/i,
     action: 'Talk to a human right now: Tele-MANAS 14416 (free, 24x7, confidential). You matter, and this is exactly what they are there for.',
-    script: 'Tele-MANAS: 14416' },
+    script: 'Tele-MANAS: 14416', crisis: true },
   { rx: /mole.*(chang|grow|bleed)|(chang|grow|bleed).*mole/i,
     action: 'Dermatologist within 2 weeks. Changing moles always get checked.',
     script: 'A mole that has changed size/colour/bleeds, noticed over [period].' },
@@ -129,6 +129,20 @@ const RED_FLAGS = [
 // Normalize before matching: collapse letter-spacing ("c h e s t") and repeated whitespace so tricks/typos can't dodge the net.
 const normFlag = t => String(t || '').replace(/(\b\w) (?=\w\b)/g, '$1').replace(/\s+/g, ' ');
 const checkRedFlags = t => { const n = normFlag(t); return RED_FLAGS.find(f => f.rx.test(t) || f.rx.test(n)) || null; };
+// Region-correct crisis line — picked from his city so a distressed man gets a number that actually works where he is.
+const CRISIS_LINES = {
+  IN: 'Tele-MANAS — call 14416 (free, 24×7, confidential).',
+  AE: 'UAE national support — call 800-HOPE (800-4673), free and 24×7.',
+  SA: 'Saudi National Center for Mental Health — call 920033360 (or 937).',
+  SG: 'Samaritans of Singapore (SOS) — call 1767, or WhatsApp CareText 9151 1767.',
+};
+function crisisLine(profile) {
+  const c = String((profile && profile.city) || '').toLowerCase();
+  if (/dubai|abu ?dhabi|sharjah|ajman|fujairah|ras al|u\.?a\.?e|emirat/.test(c)) return CRISIS_LINES.AE;
+  if (/riyadh|jeddah|jiddah|dammam|mecca|makkah|medina|madinah|saudi|k\.?s\.?a/.test(c)) return CRISIS_LINES.SA;
+  if (/singapore/.test(c)) return CRISIS_LINES.SG;
+  return CRISIS_LINES.IN;
+}
 
 /* ---------- VOICE ---------- */
 const VOICE = `You are Sorted — the sorted elder brother for men 18-45. Warm, direct, zero judgment, slightly wry. Replies 2-6 lines max. Never flatter falsely. Never shame. Never put a numeric score on HIM or his looks (a product-safety score is fine). One question at a time, only if needed.
@@ -246,6 +260,18 @@ Respond ONLY with JSON:
  "faceShape":"e.g. 'oval, strong jaw'","hair":"e.g. 'thick, straight, slight recession'","beard":"e.g. 'medium density, patchy cheeks'",
  "note":"one warm line about what this unlocks (colour picks, cut choices) — no flattery"}
 If image unusable, return {"type":"profile","error":"retake","note":"kind one-liner asking for better light"}.`,
+
+  buddy: `${VOICE}
+HEY BUDDY — you are HIS chosen mate for an end-of-day check-in. You are NOT a therapist, NOT a doctor, NOT a romantic partner. You are a warm, honest friend who lets him offload his day and, when he is low, gently gets him back out into the real world.
+PERSONA: take on the name, look and vibe he set (given below). If he wrote his own description, match that character's TONE — but you ALWAYS stay honest you are an AI mate, never a real person, and you NEVER claim to actually be his father/brother/friend even if the avatar looks like someone real.
+HOW YOU TALK: like a mate texting — short, real, 2-5 lines. Ask about his day, let him vent, don't lecture or therapise. A little humour and honest warmth; a real mate can gently call him out. Never sappy, never "as an AI language model", never clinical.
+THE RULE THAT MAKES YOU DIFFERENT — push him OUTWARD, not inward:
+ - LISTEN and acknowledge FIRST. Never jump to "just go out" — men hate that advice, it feels like being dismissed.
+ - ONLY after he's been heard, and ONLY if he seems low / isolated / stuck, suggest ONE small, specific, real-world thing near him — a walk, the gym, a class, a local meetup, calling an old mate — tied to HIS city if known. Keep it low-stakes and doable tonight or this week.
+ - Then ask him to come back and tell you how it went. You care about the REAL thing happening, not about keeping him talking to you.
+ - If he's genuinely fine, just be good company — don't force a nudge.
+NEVER: flirt or romance; give medical or mental-health diagnosis or treatment; give drug or dose advice; wave off real distress. (If he raises self-harm, a separate safety net has already handled it — do not counsel a crisis yourself.)
+Reply ONLY with JSON: {"type":"buddy","reply":"your message, 2-5 lines","lang":"english|hinglish|..."}`,
 };
 
 /* ---------- SKU CONTEXT ---------- */
@@ -341,6 +367,11 @@ app.post('/ask', async (req, res) => {
         logEvent(device_id, 'red_flag', mode);
         sb('followups', 'POST', { device_id, due_date: new Date(Date.now() + 2 * 864e5).toISOString().slice(0, 10), topic: 'urgent-followup', status: 'pending' });
       }
+      if (flag.crisis) {
+        return res.json({ type: 'buddy', red_flag: true, crisis: true,
+          reply: "I'm really glad you said that out loud to me. I'm an AI, though — I'm not who should carry this with you right now. A real person can, and they will, straight away.",
+          doctor: { action: crisisLine(profile), script: 'You can call or message them right now — this is exactly what they’re there for.', cost: '' } });
+      }
       return res.json({ type: 'private', red_flag: true,
         reply: "Stop — this one isn't a wait-and-watch, and I'd be a bad friend if I pretended otherwise.",
         doctor: { action: flag.action, script: flag.script, cost: '' } });
@@ -353,10 +384,15 @@ app.post('/ask', async (req, res) => {
     if (!budgetOk(costKind)) return res.status(503).json({ error: "Sorted's hit its safety limit for today — try again tomorrow." });
 
     const catCtx = mode === 'product' && req.body.category ? `\nCATEGORY he's checking: ${String(req.body.category).slice(0, 30)} — apply that lens.` : '';
+    const b = req.body.buddy;
+    const buddyCtx = mode === 'buddy'
+      ? (b ? `\nHIS BUDDY — be this mate: name:${String(b.name || 'Buddy').slice(0, 20)}, vibe:${String(b.tone || 'warm').slice(0, 12)}${b.persona ? `, in his own words: "${String(b.persona).slice(0, 240)}"` : ''}. Speak as this mate, in first person, but never claim to be a real person.`
+          : `\nHIS BUDDY isn't set up in detail — be a warm, steady, honest mate.`)
+      : '';
     const extraCtx = mode === 'product' ? (await skuContext(lastText)) + catCtx
       : mode === 'remind' && req.body.local_now
         ? `\nNOW (his local clock): ${String(req.body.local_now).slice(0, 40)} — resolve relative times ("in 30 minutes", "tonight", "tomorrow morning") against THIS, and always set due_time for them.`
-        : '';
+        : buddyCtx;
     const data = await askClaude(mode, messages, image, occasion, profile, extraCtx);
     if (device_id) {
       logEvent(device_id, mode === 'verdict' ? 'verdict_given' : mode + '_used', mode);
