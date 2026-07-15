@@ -216,6 +216,8 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
 .tick-line.ask{color:var(--rolex-dk); font-weight:700;}
 .tick-dots i{width:5px; height:5px; border-radius:50%; background:var(--line2); transition:background .3s, width .3s;}
 .tick-dots i.on{background:var(--rolex); width:16px; border-radius:3px;}
+.tile.buddywidget{background:var(--rolex-lt); border:1.5px solid var(--edge);}
+.tile.buddywidget h4{color:var(--rolex-dk);}
 /* Hey Buddy — avatar + voice picker */
 .bhead{display:flex; flex-direction:column; align-items:center; text-align:center; margin:6px 0 4px;}
 .bhead .pic{width:100px; height:100px; border-radius:50%; object-fit:cover; border:2px solid var(--line);}
@@ -256,12 +258,12 @@ select.bsel{flex:1; font-size:16px; padding:12px 14px; border:1px solid var(--li
     <div id="citychip" role="button" tabindex="0" aria-label="Change your city" onclick="editMem(1)" style="display:inline-flex;align-items:center;gap:5px;font-size:13px;color:var(--dim);background:var(--paper);border:1px solid var(--line);border-radius:22px;padding:10px 14px;min-height:44px;margin-bottom:12px;cursor:pointer;"></div>
     <div id="home-alerts"></div>
     <div class="hgrid">
-      <div class="tile" role="button" tabindex="0" onclick="go('verdict')"><div class="ic" data-ic="shirt"></div><h4>What do I wear?</h4><p>One outfit → one verdict</p><span class="chip">Most used</span></div>
-      <div class="tile purple-door" role="button" tabindex="0" onclick="go('gate')"><div class="ic" data-ic="lock"></div><h4>Private Space</h4><p>2am questions · never saved</p><span class="chip p">Private</span></div>
-      <div class="tile" role="button" tabindex="0" onclick="go('product')"><div class="ic" data-ic="droplet"></div><h4>Check a product</h4><p>Safe to eat, drink or use?</p></div>
+      <div class="tile wide buddywidget" role="button" tabindex="0" onclick="go('buddy')"><div class="ic" data-ic="message"></div><div><h4>Hey Buddy</h4><p id="buddysub">Someone in your corner · tell him about your day</p></div></div>
       <div class="tile" role="button" tabindex="0" onclick="go('barber')"><div class="ic" data-ic="scissors"></div><h4>Grooming</h4><p>Barbers · products · your look</p></div>
+      <div class="tile" role="button" tabindex="0" onclick="go('product')"><div class="ic" data-ic="droplet"></div><h4>Check a product</h4><p>Safe to eat, drink or use?</p></div>
+      <div class="tile purple-door" role="button" tabindex="0" onclick="go('gate')"><div class="ic" data-ic="lock"></div><h4>Private Space</h4><p>2am questions · never saved</p><span class="chip p">Private</span></div>
+      <div class="tile" role="button" tabindex="0" onclick="go('verdict')"><div class="ic" data-ic="shirt"></div><h4>What do I wear?</h4><p>One outfit → one verdict</p><span class="chip">Most used</span></div>
       <div class="tile wide" role="button" tabindex="0" onclick="go('remind')"><div class="ic" data-ic="bell"></div><div><h4>Never Forget</h4><p>Say it once · reminders, wishes &amp; gifts</p></div></div>
-      <div class="tile wide" role="button" tabindex="0" onclick="go('buddy')"><div class="ic" data-ic="message"></div><div><h4>Hey Buddy</h4><p>Someone in your corner · end-of-day check-in</p></div></div>
       <div class="tile moat" role="button" tabindex="0" onclick="go('crowd')"><div class="ic" data-ic="users"></div><div><h4>Peer Review</h4><p>Honest votes · faces blurred · no names<span id="peercount" style="font-weight:700;color:var(--rolex);"></span></p></div></div>
     </div>
   </div>
@@ -755,6 +757,7 @@ function renderHome(){
   $('greet').textContent=g;
   if($('citychip')) $('citychip').innerHTML = P.city ? `<span class="citypin" style="color:var(--rolex);">${svgEl('pin')}</span> ${esc(P.city)} <span style="color:var(--rolex);font-weight:600;">· change</span>` : `<span class="citypin" style="color:var(--rolex);">${svgEl('pin')}</span> <span style="color:var(--rolex);font-weight:600;">Set your city (for local prices)</span>`;
   ['av','av2','av3','av4','av5'].forEach(i=>{ if($(i)) $(i).textContent=P.name[0].toUpperCase(); });
+  if($('buddysub') && P.buddy && P.buddy.name) $('buddysub').textContent = `${P.buddy.name}'s around · tell him about your day`;
   checkFollowups();
   fetch(BACKEND+'/polls/feed?device='+encodeURIComponent(DEVICE),{headers:{'x-pilot-token':PILOT}}).then(r=>r.json())
     .then(f=>{ const n=(f&&f.looks&&f.looks.length)||0; if(n && $('peercount')) $('peercount').textContent=' · '+n+' look'+(n>1?'s':'')+' waiting for you →'; }).catch(()=>{});
@@ -1732,18 +1735,29 @@ function renderBuddy(){
     <div class="field" style="margin-top:14px;"><input type="text" id="buddyName" placeholder="Name your buddy — 'Sabir', 'Bro', anyone" maxlength="20" value="${esc(b.name||'')}" oninput="paintBhead()"></div>
     <div class="blabel">The look</div>
     <div class="bgrid" id="blookgrid"></div>
-    <div class="blabel">The vibe</div>
+    <div class="blabel">The vibe — quick pick</div>
     <div class="chips" id="btone"></div>
+    <textarea id="buddyPersona" maxlength="240" placeholder="…or describe him in your own words — e.g. 'a dry, older-brother type who calls me out but always has my back'" oninput="_bTone=''; paintTone()" style="width:100%; margin-top:10px; background:var(--paper); border:1px solid var(--line); border-radius:12px; padding:12px 14px; font-size:16px; color:var(--text); font-family:inherit; min-height:78px; resize:none;">${esc(b.persona||'')}</textarea>
     <div class="blabel">The voice</div>
     <div style="display:flex; gap:8px; align-items:center;">
       <select class="bsel" id="buddyVoice"></select>
       <button class="cta ghost" style="width:auto; padding:12px 16px; white-space:nowrap;" onclick="previewVoice()">▶ Hear</button>
     </div>
-    <p class="small" style="margin-top:6px; color:var(--faint);">Voices come from your phone. On iPhone you can add more in Settings → Accessibility → Spoken Content → Voices.</p>
+    <div style="margin-top:14px;">
+      <div style="display:flex; justify-content:space-between; font-size:13px; color:var(--dim);"><span>Depth</span><span id="pitchval" style="color:var(--rolex);"></span></div>
+      <input type="range" id="buddyPitch" min="0.5" max="1.6" step="0.1" value="${(b.pitch!=null?b.pitch:1)}" style="width:100%; accent-color:var(--rolex);" oninput="labelPitch()">
+    </div>
+    <div style="margin-top:10px;">
+      <div style="display:flex; justify-content:space-between; font-size:13px; color:var(--dim);"><span>Pace</span><span id="rateval" style="color:var(--rolex);"></span></div>
+      <input type="range" id="buddyRate" min="0.7" max="1.3" step="0.1" value="${(b.rate!=null?b.rate:1)}" style="width:100%; accent-color:var(--rolex);" oninput="labelRate()">
+    </div>
+    <p class="small" style="margin-top:8px; color:var(--faint);">Voices come from your phone. On iPhone add more in Settings → Accessibility → Spoken Content → Voices. For a richer, more human voice, see the note below the app.</p>
     <button class="cta" style="margin-top:18px;" onclick="saveBuddy()">Save buddy</button>
     <p class="small" style="text-align:center; margin-top:10px; color:var(--faint);">Buddy wears the look and voice you pick — but stays honest it's an AI mate, not a real person.</p>`;
-  paintBhead(); paintLooks(); paintTone(); loadVoices();
+  paintBhead(); paintLooks(); paintTone(); loadVoices(); labelPitch(); labelRate();
 }
+function labelPitch(){ const v=$('buddyPitch'); if($('pitchval')&&v) $('pitchval').textContent = +v.value<0.85?'deeper':+v.value>1.15?'brighter':'natural'; }
+function labelRate(){ const v=$('buddyRate'); if($('rateval')&&v) $('rateval').textContent = +v.value<0.9?'slower':+v.value>1.1?'faster':'natural'; }
 function paintBhead(){
   const el=$('bhead'); if(!el) return;
   const look=BUDDY_LOOKS.find(l=>l.id===_bLook)||BUDDY_LOOKS[0];
@@ -1776,11 +1790,15 @@ function previewVoice(){
   if(!window.speechSynthesis){ toast('Voice preview isn\'t supported on this device.'); return; }
   const u=new SpeechSynthesisUtterance("Hey, it's me. Long day? Tell me about it.");
   const uri=$('buddyVoice')?$('buddyVoice').value:'', v=VOICES.find(x=>x.voiceURI===uri); if(v) u.voice=v;
+  if($('buddyPitch')) u.pitch=+$('buddyPitch').value;
+  if($('buddyRate')) u.rate=+$('buddyRate').value;
   speechSynthesis.cancel(); speechSynthesis.speak(u);
 }
 function saveBuddy(){
   const uri=$('buddyVoice')?$('buddyVoice').value:'';
   P.buddy={ name:(($('buddyName').value||'Buddy').trim()||'Buddy').slice(0,20), look:_bLook, img:_bImg||null, tone:_bTone,
+            persona:($('buddyPersona')?$('buddyPersona').value.trim().slice(0,240):'')||null,
+            pitch:$('buddyPitch')?+$('buddyPitch').value:1, rate:$('buddyRate')?+$('buddyRate').value:1,
             voiceURI:uri||null, voiceName:(VOICES.find(v=>v.voiceURI===uri)||{}).name||null };
   save(); toast('Buddy saved.'); go('home');
 }
