@@ -186,6 +186,7 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
 .gate h2{color:var(--royal-dk); font-size:20px; margin:10px 0 6px;}
 .gate p{color:var(--royal); font-size:13px; line-height:1.7; margin-bottom:22px;}
 .pnote{background:var(--paper); border:1px solid var(--royal-line); border-radius:10px; padding:10px 14px; font-size:13px; color:var(--royal-dk); margin-bottom:12px;}
+.asknote{position:fixed; bottom:calc(60px + env(safe-area-inset-bottom)); left:0; right:0; margin:0 auto; max-width:520px; text-align:center; font-size:10px; color:var(--faint); padding:3px 12px 2px; z-index:19; display:none; pointer-events:none;}
 .disc{align-self:stretch; font-size:13px; color:var(--dim); background:var(--royal-lt); border-left:3px solid var(--royal); border-radius:0 8px 8px 0; padding:8px 10px; line-height:1.5;}
 .disc b{color:var(--royal-dk);}
 /* toast */
@@ -389,6 +390,7 @@ select.bsel{flex:1; font-size:16px; padding:12px 14px; border:1px solid var(--li
   </div>
 
   <!-- ASK BAR -->
+  <div class="asknote" id="asknote">AI-generated · a guide, not a verdict — use your own judgement.</div>
   <div class="askbar" id="askbar">
     <input type="file" id="file" accept="image/*" capture="environment" hidden>
     <input type="file" id="file-gal" accept="image/*" hidden>
@@ -409,8 +411,8 @@ select.bsel{flex:1; font-size:16px; padding:12px 14px; border:1px solid var(--li
 <script>
 /* ============ CONFIG ============ */
 const BACKEND_PROD = 'https://sorted-grew.onrender.com';
-const BACKEND = localStorage.getItem('sorted_backend') ||
-  (BACKEND_PROD.startsWith('http') ? BACKEND_PROD : 'http://localhost:8787');
+// Fixed backend — no localStorage override in production (that was an API-repoint risk).
+const BACKEND = (location.hostname==='localhost'||location.hostname==='127.0.0.1') ? 'http://localhost:8787' : BACKEND_PROD;
 let DEVICE = localStorage.getItem('sorted_device') || '';
 const PILOT = 'sp26-k7x9m-pilot'; // shared beta token (speed bump vs drive-by abuse)
 // Silent device key: the server issues a signed device id on first run. No login, no name —
@@ -496,6 +498,7 @@ const $ = id => document.getElementById(id);
 const chatEl = () => $('chat-' + (screen==='private'?'private':screen));
 function toast(t){ const el=$('toast'); el.textContent=t; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),2600); }
 function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+function safeUrl(u){ return /^https?:\/\//i.test(String(u||'')); } // only ever render http(s) links from model output — blocks javascript: etc.
 // Detect the user's language from his message. Non-Latin scripts are unambiguous; romanized Hinglish via keywords.
 // (Romanized regional languages like Latin-script Tamil are caught by the model's own "lang" field on reply.)
 function detectLang(t){
@@ -730,6 +733,7 @@ function go(s){
   $('scr-'+s).classList.add('on');
   document.body.classList.toggle('purple', s==='private');
   $('askbar').style.display = ['verdict','private','product','barber','remind'].includes(s)?'flex':'none';
+  if($('asknote')) $('asknote').style.display = $('askbar').style.display==='flex'?'block':'none';
   const hi = P && P.lang==='hinglish';
   $('inp').placeholder = s==='private' ? 'Ask anything…' : s==='product' ? 'Is this deo aluminium-free?' : s==='verdict' ? (hi?'Shaadi tonight — what do I wear?':'Wedding tonight — what do I wear?') : s==='remind' ? 'Wife said… boss said… type or speak it' : 'Message Sorted…';
   if(s==='home') renderHome();
@@ -1073,7 +1077,7 @@ function render(mode, d, hist){
         ${ing.what?`<div style="font-size:13px;color:var(--dim);margin-top:2px;">${esc(ing.what)}</div>`:''}
         ${ing.science?`<div style="font-size:13px;color:var(--text);margin-top:2px;">${esc(ing.science)}</div>`:''}
         ${(ing.matches&&ing.matches.length)?`<div style="font-size:11px;color:var(--notyet);margin-top:2px;">↳ on your avoid-list: ${esc(ing.matches.join(', '))}</div>`:''}
-        ${ing.source?`<div style="font-size:11px;color:var(--dim);margin-top:2px;">Source: ${ing.source_url?`<a href="${esc(ing.source_url)}" target="_blank" rel="noopener" style="color:var(--rolex);">${esc(ing.source)} ↗</a>`:esc(ing.source)}${ing.evidence?' · '+esc(ing.evidence)+' evidence':''}</div>`:''}
+        ${ing.source?`<div style="font-size:11px;color:var(--dim);margin-top:2px;">Source: ${(ing.source_url&&safeUrl(ing.source_url))?`<a href="${esc(ing.source_url)}" target="_blank" rel="noopener" style="color:var(--rolex);">${esc(ing.source)} ↗</a>`:esc(ing.source)}${ing.evidence?' · '+esc(ing.evidence)+' evidence':''}</div>`:''}
       </div>`; });
     (d.clean||d.good||[]).forEach(g=> h+=`<div style="font-size:13px;color:var(--rolex);margin:3px 0;">✓ ${esc(g)}</div>`);
     if(d.note) h+=`<p style="font-size:13px;color:var(--dim);margin-top:8px;line-height:1.5;">${esc(d.note)}</p>`;
@@ -1497,9 +1501,13 @@ async function voteCrowd(id,vote){
   renderReviewCard();
 }
 async function reportPoll(id){
-  if(!confirm('Report this photo? It is hidden immediately and sent for review.')) return;
+  if(!confirm("Report this photo? You won't see it again, and if enough men report it, it's removed for everyone.")) return;
+  const cur=_feed[_feedIdx];
+  if(cur && cur.poster){ P.blocked=[...new Set([...(P.blocked||[]),cur.poster])]; save(); } // hide it for the reporter right away
   try{ await fetch(BACKEND+'/polls/report',{method:'POST',headers:{'Content-Type':'application/json','x-pilot-token':PILOT},body:JSON.stringify({poll_id:id,device_id:DEVICE})}); }catch(e){}
-  _feedIdx++; toast('Reported and hidden. Thanks for keeping it clean.'); renderReviewCard();
+  if(cur) _feed=_feed.filter(x=>x.poster!==cur.poster);
+  if(_feedIdx>=_feed.length) _feedIdx=Math.max(0,_feed.length-1);
+  toast('Reported and hidden. Thanks for keeping it clean.'); renderReviewCard();
 }
 function blockPoster(hash){
   P.blocked=[...new Set([...(P.blocked||[]),hash])]; save();
@@ -1751,7 +1759,7 @@ function renderBuddyChat(){
       <button class="minirep" onclick="renderBuddySetup()">Change</button>
     </div>
     <div class="chat" id="chat-buddy"></div>`;
-  $('askbar').style.display='flex';
+  $('askbar').style.display='flex'; if($('asknote')) $('asknote').style.display='block';
   $('inp').placeholder=`Tell ${nm} about your day…`;
   if(!threads.buddy.length){
     addThem(`Hey — ${nm} here. I'm an AI mate, not a real person, but I'm properly in your corner. How's your day been?`, true);
@@ -1780,7 +1788,7 @@ function addBuddyReply(text, quiet){
 }
 function renderBuddySetup(){
   const b=P.buddy||{}; _bLook=b.look||'bro'; _bImg=b.img||null; _bTone=b.tone||'warm';
-  $('askbar').style.display='none';
+  $('askbar').style.display='none'; if($('asknote')) $('asknote').style.display='none';
   const box=$('buddybox'); if(!box) return;
   box.innerHTML=`
     <p class="small" style="margin-bottom:14px;">Pick how your buddy looks and sounds. Change it whenever you like.</p>

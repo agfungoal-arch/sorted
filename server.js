@@ -9,7 +9,8 @@ let webpush = null; try { webpush = require('web-push'); } catch (e) { console.l
 
 const app = express();
 app.set('trust proxy', 1); // Render sits one proxy hop in front — makes req.ip the REAL client IP, not a client-spoofable header
-app.use(cors());
+const APP_ORIGIN = process.env.APP_ORIGIN || 'https://sorted-grew.onrender.com';
+app.use(cors({ origin: [APP_ORIGIN, 'http://localhost:3000', 'http://localhost:8080'] })); // lock the API to our own origin
 app.use(express.json({ limit: '1500kb' }));
 app.use(express.static(__dirname));
 
@@ -72,12 +73,17 @@ const DAYK = () => new Date().toISOString().slice(0, 10);
 const DAILY_USD_CAP = Number(process.env.DAILY_USD_CAP || 5);
 const COST_USD = { text: 0.015, vision: 0.02, product: 0.11, preview: 0.05 }; // est. $/call: text ask, photo ask, product scan (incl. up to 3 web searches + retrieved tokens + longer cited output), Gemini preview
 let spend = { day: DAYK(), usd: 0, n: 0 };
-function budgetOk(kind) {
+const devSpend = new Map();                                     // per-device daily spend — one abuser can't drain the shared pool
+const DEVICE_USD_CAP = Number(process.env.DEVICE_USD_CAP || 0.60);
+function budgetOk(kind, dev) {
   const d = DAYK();
-  if (spend.day !== d) spend = { day: d, usd: 0, n: 0 };
+  if (spend.day !== d) { spend = { day: d, usd: 0, n: 0 }; devSpend.clear(); }
   const c = COST_USD[kind] || 0.015;
-  if (spend.usd + c > DAILY_USD_CAP) return false;
-  spend.usd += c; spend.n++;
+  if (spend.usd + c > DAILY_USD_CAP) return false;              // global backstop
+  const key = 'dev:' + (dev || 'anon');
+  let ds = devSpend.get(key); if (!ds || ds.day !== d) { ds = { day: d, usd: 0 }; devSpend.set(key, ds); }
+  if (ds.usd + c > DEVICE_USD_CAP) return false;                // per-device ceiling — the real DoS fix
+  spend.usd += c; spend.n++; ds.usd += c;
   return true;
 }
 
@@ -380,8 +386,9 @@ app.post('/ask', async (req, res) => {
     // Paid call from here — enforce the daily spend ceiling (safety red-flags above are free and already handled).
     const hasImg = !!(image && image.data);
     if (hasImg && String(image.data).length > 1500000) return res.status(413).json({ error: 'image too large' });
+    if (!deviceOk(device_id)) return res.status(403).json({ error: 'device not recognized' }); // paid call — require a signed device, not just the public token
     const costKind = mode === 'product' ? 'product' : hasImg ? 'vision' : 'text';
-    if (!budgetOk(costKind)) return res.status(503).json({ error: "Sorted's hit its safety limit for today — try again tomorrow." });
+    if (!budgetOk(costKind, device_id)) return res.status(503).json({ error: "Sorted's hit its safety limit for today — try again tomorrow." });
 
     const catCtx = mode === 'product' && req.body.category ? `\nCATEGORY he's checking: ${String(req.body.category).slice(0, 30)} — apply that lens.` : '';
     const b = req.body.buddy;
@@ -441,7 +448,7 @@ app.post('/push/subscribe', async (req, res) => {
 app.post('/polls', async (req, res) => {
   if (!gate(req, res)) return;
   const { device_id, question, img } = req.body || {};
-  if (!device_id || !img || img.length > 400000) return res.status(400).json({ error: 'bad poll' });
+  if (!deviceOk(device_id) || !img || img.length > 400000) return res.status(400).json({ error: 'bad poll' });
   const open = await sb('polls', 'GET', null, `?device_id=eq.${encodeURIComponent(device_id)}&status=eq.open&select=id`);
   if (open && open.length >= 2) return res.status(429).json({ error: 'max 2 open polls' });
   const row = await sb('polls', 'POST', { device_id, question: String(question || 'This look — yes or no?').slice(0, 140), img });
@@ -476,8 +483,13 @@ app.post('/polls/report', async (req, res) => {
   const poll_id = parseInt(req.body && req.body.poll_id, 10);
   if (!Number.isInteger(poll_id) || !deviceOk(device_id)) return res.status(400).json({ error: 'bad report' });
   logEvent(device_id, 'poll_report', String(poll_id));
-  await sb(`polls?id=eq.${poll_id}`, 'PATCH', { status: 'removed' }); // reported content is pulled immediately, then reviewed
-  res.json({ ok: true });
+  // Pull content only once ENOUGH distinct users report it — one tap can't nuke someone's post.
+  // (The reporter still stops seeing it immediately: the client hides/blocks it locally.)
+  const reports = await sb('events', 'GET', null, `?event=eq.poll_report&mode=eq.${poll_id}&select=device_id&limit=50`) || [];
+  const distinct = new Set(reports.map(r => r.device_id)); distinct.add(device_id);
+  const removed = distinct.size >= 3;
+  if (removed) await sb(`polls?id=eq.${poll_id}`, 'PATCH', { status: 'removed' });
+  res.json({ ok: true, removed });
 });
 
 app.get('/polls/mine', async (req, res) => {
@@ -491,7 +503,7 @@ app.post('/polls/vote', async (req, res) => {
   if (!gate(req, res)) return;
   const { device_id, vote } = req.body || {};
   const poll_id = parseInt(req.body && req.body.poll_id, 10); // numeric only — blocks PostgREST filter injection
-  if (!Number.isInteger(poll_id) || !device_id || !['yes', 'no'].includes(vote)) return res.status(400).json({ error: 'bad vote' });
+  if (!Number.isInteger(poll_id) || !deviceOk(device_id) || !['yes', 'no'].includes(vote)) return res.status(400).json({ error: 'bad vote' });
   const existing = await sb('poll_votes', 'GET', null, `?poll_id=eq.${poll_id}&device_id=eq.${encodeURIComponent(device_id)}&select=poll_id`);
   if (existing && existing.length) return res.json({ ok: true, dup: true });
   await sb('poll_votes', 'POST', { poll_id, device_id, vote });
@@ -619,8 +631,9 @@ app.post('/preview', async (req, res) => {
     const { device_id, image, style } = req.body || {};
     if (!image || !image.data) return res.status(400).json({ error: 'need photo' });
     if (String(image.data).length > 1500000) return res.status(413).json({ error: 'image too large' });
+    if (!deviceOk(device_id)) return res.status(403).json({ error: 'device not recognized' });
     if (!limitOk('preview:' + (device_id || 'x'), 3, 86400000)) return res.status(429).json({ error: 'daily limit' });
-    if (!budgetOk('preview')) return res.status(503).json({ error: "Previews are at capacity for today — try again tomorrow." });
+    if (!budgetOk('preview', device_id)) return res.status(503).json({ error: "Previews are at capacity for today — try again tomorrow." });
     const prompt = `Edit this photo: change ONLY the hair and beard to: ${String(style || 'a clean modern haircut').slice(0, 300)}. Keep the person's face, identity, skin tone, expression, clothing and background exactly the same. Photorealistic, natural lighting.`;
     const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${GEMINI_KEY}`, {
       method: 'POST', headers: { 'content-type': 'application/json' },
