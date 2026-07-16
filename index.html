@@ -157,6 +157,74 @@ input[type=checkbox]{width:26px !important; height:26px !important;}
 .door .ic svg{width:24px; height:24px;}
 /* input bar */
 .askbar{position:fixed; bottom:0; left:0; right:0; margin:0 auto; max-width:520px; background:var(--paper); border-top:1px solid var(--line); padding:12px 12px calc(14px + env(safe-area-inset-bottom)); display:flex; gap:7px; align-items:flex-end; z-index:20;}
+/* ===== SORTED-MAN RATING — new look ===== */
+.tabbar{position:fixed; bottom:0; left:0; right:0; margin:0 auto; max-width:520px; background:rgba(255,255,255,.92); backdrop-filter:saturate(1.4) blur(10px); -webkit-backdrop-filter:saturate(1.4) blur(10px); border-top:1px solid var(--line); display:none; justify-content:space-around; padding:8px 6px calc(8px + env(safe-area-inset-bottom)); z-index:30;}
+.tabbar.on{display:flex;}
+.tabitem{flex:1; background:none; border:none; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:3px; padding:4px 2px; color:var(--faint2); font-size:10.5px; font-weight:600; letter-spacing:.02em; min-height:48px;}
+.tabitem svg{width:23px; height:23px; stroke-width:1.8;}
+.tabitem.sel{color:var(--rolex);}
+.tabitem.sel .tabdot{opacity:1;}
+.tabdot{width:5px; height:5px; border-radius:50%; background:var(--rolex); opacity:0; margin-top:1px;}
+.rt-hero{text-align:center; padding:14px 6px 4px;}
+.rt-kicker{font-size:12px; letter-spacing:.22em; font-weight:700; color:var(--gold-dk); text-transform:uppercase;}
+.rt-big{font-size:30px; line-height:1.1; font-weight:800; color:var(--rolex-dk); margin:8px 0 6px; letter-spacing:-.01em;}
+.rt-sub{font-size:14.5px; color:var(--dim); line-height:1.5; max-width:340px; margin:0 auto 4px;}
+.rt-scan{margin:18px auto 8px; width:100%;}
+.rt-disc{font-size:10.5px; color:var(--faint2); text-align:center; margin:10px auto 0; max-width:330px; line-height:1.5;}
+/* score ring */
+.ring{--p:0; --c:var(--rolex); width:132px; height:132px; border-radius:50%; margin:2px auto; display:flex; align-items:center; justify-content:center; background:conic-gradient(var(--c) calc(var(--p)*1%), var(--mist) 0); position:relative;}
+.ring::before{content:""; position:absolute; inset:11px; border-radius:50%; background:var(--paper);}
+.ring b{position:relative; font-size:38px; font-weight:800; color:var(--text); line-height:1;}
+.ring b i{font-size:15px; font-weight:600; color:var(--faint); font-style:normal;}
+.tierchip{display:inline-flex; align-items:center; gap:6px; font-size:12.5px; font-weight:700; letter-spacing:.06em; padding:6px 13px; border-radius:22px; text-transform:uppercase;}
+.tier-Rough{background:var(--bad-lt); color:#9a4030; border:1px solid var(--bad-line);}
+.tier-Steady{background:var(--gold-lt); color:var(--gold-dk); border:1px solid #e6d6a8;}
+.tier-Sharp{background:var(--rolex-lt); color:var(--rolex-dk); border:1px solid var(--edge);}
+.tier-Sorted{background:linear-gradient(135deg,#0a6b41,#0e8a53); color:#fff; border:1px solid #0a6b41;}
+/* tier ladder */
+.ladder{display:flex; gap:6px; margin:16px 0 6px;}
+.rung{flex:1; text-align:center; font-size:11px; font-weight:700; letter-spacing:.04em; padding:9px 2px; border-radius:10px; background:var(--mist); color:var(--faint2); border:1px solid transparent;}
+.rung.act{background:var(--rolex); color:#fff; border-color:var(--rolex-dk);}
+.rung .rn{display:block; font-size:9px; opacity:.7; font-weight:600;}
+/* scorecard */
+.sccard{background:var(--paper); border:1px solid var(--line); border-radius:18px; padding:18px 16px; box-shadow:0 6px 20px var(--shadow); margin-bottom:14px;}
+.dimrow{display:flex; gap:12px; margin:14px 0 4px;}
+.dim{flex:1; background:var(--ivory); border:1px solid var(--line); border-radius:14px; padding:12px;}
+.dim h5{font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--faint); font-weight:700; margin-bottom:4px;}
+.dim .dv{font-size:22px; font-weight:800; color:var(--rolex-dk);}
+.pillar{display:flex; align-items:center; gap:12px; padding:13px 4px; border-top:1px solid var(--line); cursor:pointer;}
+.pillar:first-of-type{border-top:none;}
+.pillar .pic{width:38px; height:38px; border-radius:11px; background:var(--rolex-lt); color:var(--rolex); display:flex; align-items:center; justify-content:center; flex:none;}
+.pillar .pic svg{width:20px;height:20px;}
+.pillar .pmid{flex:1; min-width:0;}
+.pillar .pname{font-size:14.5px; font-weight:700; color:var(--text);}
+.pillar .pbar{height:7px; border-radius:4px; background:var(--mist); margin-top:6px; overflow:hidden;}
+.pillar .pbar i{display:block; height:100%; border-radius:4px; background:linear-gradient(90deg,var(--gold),var(--rolex));}
+.pillar .psc{font-size:19px; font-weight:800; color:var(--text); flex:none;}
+.pillar .plock{font-size:12px; color:var(--faint2); font-weight:600;}
+.pill-detail{background:var(--ivory); border:1px solid var(--line); border-radius:14px; padding:14px; margin:10px 0;}
+.pill-detail h4{font-size:15px; color:var(--rolex-dk); margin-bottom:2px;}
+.plist{margin:8px 0 0; padding:0; list-style:none;}
+.plist li{font-size:13.5px; color:var(--text); line-height:1.5; padding:5px 0 5px 22px; position:relative;}
+.plist li::before{content:""; position:absolute; left:4px; top:11px; width:7px; height:7px; border-radius:50%; background:var(--rolex);}
+.plist.imp li::before{background:var(--gold);}
+.nextbox{background:var(--rolex-lt); border:1px solid var(--edge); border-radius:12px; padding:12px 14px; margin-top:10px; font-size:14px; color:var(--rolex-dk); line-height:1.5;}
+.nextbox b{display:block; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--gold-dk); margin-bottom:3px;}
+.gymcard{display:flex; align-items:center; gap:13px; background:var(--paper); border:1px solid var(--line); border-radius:16px; padding:15px; margin-bottom:11px; cursor:pointer; box-shadow:0 3px 12px var(--shadow);}
+.gymcard .gic{width:46px; height:46px; border-radius:13px; display:flex; align-items:center; justify-content:center; flex:none; background:var(--rolex-lt); color:var(--rolex);}
+.gymcard .gic svg{width:24px;height:24px;}
+.gymcard h4{font-size:16px; color:var(--text); margin-bottom:2px;}
+.gymcard p{font-size:13px; color:var(--dim); line-height:1.45;}
+.gymcard .gsc{margin-left:auto; text-align:center; flex:none;}
+.gymcard .gsc b{font-size:18px; font-weight:800; color:var(--rolex-dk);}
+.gymcard .gsc span{display:block; font-size:9px; color:var(--faint2); letter-spacing:.05em;}
+.qopt{display:block; width:100%; text-align:left; background:var(--paper); border:1.5px solid var(--line); border-radius:13px; padding:14px 15px; margin-bottom:10px; font-size:14.5px; color:var(--text); cursor:pointer; line-height:1.4;}
+.qopt:hover{border-color:var(--edge);}
+.qopt.sel{border-color:var(--rolex); background:var(--rolex-lt);}
+.rt-passage{background:var(--ivory); border:1px solid var(--line); border-left:3px solid var(--gold); border-radius:12px; padding:15px 16px; font-size:16px; line-height:1.6; color:var(--text); margin:12px 0;}
+.stepdots{display:flex; gap:6px; justify-content:center; margin:6px 0 14px;}
+.stepdots i{width:7px; height:7px; border-radius:50%; background:var(--line2);}
+.stepdots i.on{background:var(--rolex); width:20px; border-radius:4px;}
 .purple .askbar{background:var(--royal-lt); border-color:var(--royal-line);}
 .cam{width:44px; height:44px; border-radius:50%; background:var(--rolex-lt); border:1px solid var(--edge); color:var(--rolex); cursor:pointer; flex-shrink:0; display:inline-flex; align-items:center; justify-content:center;}
 .cam svg{width:22px; height:22px;}
@@ -380,6 +448,25 @@ select.bsel{flex:1; font-size:16px; padding:12px 14px; border:1px solid var(--li
     <div class="danger" onclick="deleteEverything()">Delete everything — instant</div>
   </div>
 
+  <!-- RATING (Your Edge) -->
+  <div class="screen" id="scr-rating">
+    <div class="hdr"><div class="brand"><svg class="logomark" viewBox="0 0 620 620" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M150 0 C60 0 0 60 0 150 L0 470 C0 560 60 620 150 620 L470 620 C560 620 620 560 620 470 L620 150 C620 60 560 0 470 0 Z" fill="#006039"/><circle cx="262" cy="392" r="150" fill="none" stroke="#F8F6F1" stroke-width="40"/><path d="M368 286 L470 184 M470 184 L470 262 M470 184 L392 184" fill="none" stroke="#C9A24B" stroke-width="40" stroke-linecap="round" stroke-linejoin="round"/><path d="M196 398 L246 452 L340 342" fill="none" stroke="#F8F6F1" stroke-width="40" stroke-linecap="round" stroke-linejoin="round"/></svg>S<em>O</em>RTED-MEN</div><div class="avatar" id="av6" role="button" tabindex="0" onclick="go('memory')">?</div></div>
+    <div id="ratebox"></div>
+  </div>
+
+  <!-- GYMS -->
+  <div class="screen" id="scr-gyms">
+    <div class="hdr"><div class="brand" style="font-size:15px;">The Gyms</div><div class="avatar" id="av7" role="button" tabindex="0" onclick="go('memory')">?</div></div>
+    <div id="gymsbox"></div>
+  </div>
+
+  <!-- GYM CHAT -->
+  <div class="screen" id="scr-gym">
+    <div class="hdr"><button class="back" onclick="go('gyms')">‹ Gym</button><div class="avatar" onclick="go('memory')" id="av8">?</div></div>
+    <div class="ticker" id="tick-gym" aria-live="polite" style="display:none;"><div class="tick-line"></div><div class="tick-dots"></div></div>
+    <div class="chat" id="chat-gym"></div>
+  </div>
+
   <!-- ASK BAR -->
   <div class="asknote" id="asknote">AI-generated · a guide, not a verdict — use your own judgement.</div>
   <div class="askbar" id="askbar">
@@ -390,6 +477,15 @@ select.bsel{flex:1; font-size:16px; padding:12px 14px; border:1px solid var(--li
     <textarea id="inp" rows="1" maxlength="2000" placeholder="Message Sorted…" aria-label="Type your message"></textarea>
     <button class="send" onclick="send()" aria-label="Send" data-ic="send"></button>
   </div>
+
+  <!-- BOTTOM NAV -->
+  <nav class="tabbar" id="tabbar">
+    <button class="tabitem" id="tab-rating" onclick="go('rating')" aria-label="Rating"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3l2.5 5.2 5.7.8-4.1 4 1 5.6L12 21l-5.1 2.6 1-5.6-4.1-4 5.7-.8z"/></svg><span>Rating</span><span class="tabdot"></span></button>
+    <button class="tabitem" id="tab-gyms" onclick="go('gyms')" aria-label="Gyms"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 9v6M20 9v6M7 6v12M17 6v12M7 12h10"/></svg><span>Gyms</span><span class="tabdot"></span></button>
+    <button class="tabitem" id="tab-home" onclick="go('home')" aria-label="Tools"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span>Tools</span><span class="tabdot"></span></button>
+    <button class="tabitem" id="tab-buddy" onclick="go('buddy')" aria-label="Buddy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 5h16v11H9l-4 4V5z"/></svg><span>Buddy</span><span class="tabdot"></span></button>
+    <button class="tabitem" id="tab-memory" onclick="go('memory')" aria-label="Me"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-6 8-6s8 2 8 6"/></svg><span>Me</span><span class="tabdot"></span></button>
+  </nav>
 
   <div id="toast"></div>
 
@@ -439,7 +535,7 @@ let P = JSON.parse(localStorage.getItem('sorted_profile') || 'null'); // profile
 if(P){ for(const k of ['notes','avoid','avoidCustom','blocked']) if(!Array.isArray(P[k])) P[k]=[]; }
 let screen = 'home';
 let pendingImage = null;          // {b64, mime, url}
-let threads = { verdict:[], product:[], barber:[], remind:[], buddy:[] }; // api message history (text only)
+let threads = { verdict:[], product:[], barber:[], remind:[], buddy:[], gym:[] }; // api message history (text only)
 let privThread = [];              // in-memory only, never persisted
 let occasion = null;
 
@@ -699,15 +795,21 @@ function hideTicker(s){
   const b=tickBox(s); if(b) b.style.display='none';
 }
 
+// which bottom-tab a screen belongs under (sub-screens map to their parent tab)
+const TABOF = { rating:'rating', gyms:'gyms', gym:'gyms', home:'home', verdict:'home', product:'home', barber:'home', remind:'home', gate:'home', private:'home', buddy:'buddy', memory:'memory', privacy:'memory' };
 function go(s){
   screen=s;
   document.querySelectorAll('.screen').forEach(x=>x.classList.remove('on'));
   $('scr-'+s).classList.add('on');
   document.body.classList.toggle('purple', s==='private');
-  $('askbar').style.display = ['verdict','private','product','barber','remind'].includes(s)?'flex':'none';
+  $('askbar').style.display = ['verdict','private','product','barber','remind','gym'].includes(s)?'flex':'none';
   if($('asknote')) $('asknote').style.display = $('askbar').style.display==='flex'?'block':'none';
+  // bottom nav — visible on every screen except onboarding; highlight the active tab
+  const tb=$('tabbar'); if(tb){ tb.classList.toggle('on', ['rating','gyms','home','memory'].includes(s)); const t=TABOF[s]; document.querySelectorAll('.tabitem').forEach(b=>b.classList.toggle('sel', b.id==='tab-'+t)); }
   const hi = P && P.lang==='hinglish';
-  $('inp').placeholder = s==='private' ? 'Ask anything…' : s==='product' ? 'Is this deo aluminium-free?' : s==='verdict' ? (hi?'Shaadi tonight — what do I wear?':'Wedding tonight — what do I wear?') : s==='remind' ? 'Wife said… boss said… type or speak it' : 'Message Sorted…';
+  $('inp').placeholder = s==='private' ? 'Ask anything…' : s==='product' ? 'Is this deo aluminium-free?' : s==='verdict' ? (hi?'Shaadi tonight — what do I wear?':'Wedding tonight — what do I wear?') : s==='remind' ? 'Wife said… boss said… type or speak it' : s==='gym' ? 'Reply to your coach…' : 'Message Sorted…';
+  if(s==='rating') renderRating();
+  if(s==='gyms') renderGyms();
   if(s==='home') renderHome();
   if(s==='buddy') renderBuddy();
   if(s==='memory') renderMemory();
@@ -731,7 +833,7 @@ function finishOnboard(){
   if(!$('ob-age').checked) return toast('Please confirm 18+ and agree to the Terms & Disclaimer.');
   // We store only that age & consent were confirmed — not the date of birth itself (data minimisation).
   P = { name, city:$('ob-city').value.trim()||null, lang:'english', ageOk:true, consentCloud:true, consentAt:new Date().toISOString(), skinTone:null, faceShape:null, sizes:null, styleWins:[], notes:[] };
-  save(); sendEvent('activated'); go('home');
+  save(); sendEvent('activated'); go('rating');
 }
 function renderHome(){
   const h=new Date().getHours(), hi=P.lang==='hinglish';
@@ -785,6 +887,230 @@ function enterPrivate(){
   addThem(`Private mode. 2am questions — straight answers, zero judgment, doctor-time when it's real.`, true);
 }
 function leavePrivate(){ privThread=[]; $('chat-private').innerHTML=''; go('home'); }
+
+/* ============ SORTED-MAN RATING (Your Edge) ============ */
+const TIERS=['Rough','Steady','Sharp','Sorted'];
+const PILLARS=[
+  {k:'physical',name:'Physical',ic:'user',blurb:'Looks, grooming & presence'},
+  {k:'voice',name:'Voice',ic:'mic',blurb:'How you speak & land'},
+  {k:'mental',name:'Mental',ic:'target',blurb:'Judgement & composure'},
+  {k:'emotional',name:'Emotional',ic:'message',blurb:'Self-awareness & EQ'},
+];
+function tierOf(sc){ return sc>=85?'Sorted':sc>=65?'Sharp':sc>=40?'Steady':'Rough'; }
+function avg(a){ const v=a.filter(x=>x!=null); return v.length?Math.round(v.reduce((x,y)=>x+y,0)/v.length):null; }
+function rating(){ return (P && P.rating) || {}; }
+function saveRating(o){ P.rating=Object.assign({}, P.rating, o); save(); }
+let gymPillar='physical';
+
+function renderRating(){
+  const box=$('ratebox'); if(!box) return;
+  const r=rating(); const done=PILLARS.filter(p=>r[p.k]!=null);
+  box.innerHTML = done.length ? scorecardHTML(r,done) : rateHeroHTML();
+}
+function rateHeroHTML(){
+  return `<div class="rt-hero">
+    <div class="rt-kicker">Your Edge</div>
+    <div class="rt-big">The Sorted-Man Rating</div>
+    <div class="rt-sub">A boy can be good-looking. A man is all four — how he looks, speaks, thinks and carries himself. See where you stand.</div>
+  </div>
+  <div class="ladder">${TIERS.map((t,i)=>`<div class="rung"><span class="rn">0${i+1}</span>${t}</div>`).join('')}</div>
+  <button class="cta rt-scan has-ic" onclick="scanStart()">${ic('camera')}Scan my face — free</button>
+  <div class="rt-disc">AI-generated · a guide, not a verdict on your worth. Your photo is sent to cloud AI to read, then discarded — never stored, never used to train. 18+.</div>
+  <div class="sccard" style="margin-top:20px;">${PILLARS.map(p=>`<div class="pillar"><div class="pic">${ic(p.ic)}</div><div class="pmid"><div class="pname">${p.name}</div><div style="font-size:12.5px;color:var(--dim);">${p.blurb}</div></div><div class="plock">🔒</div></div>`).join('')}</div>`;
+}
+function scoreBlock(d){
+  return `<div class="ring" style="--p:${d.score};"><b>${d.score}<i>/100</i></b></div>
+    <div style="text-align:center;margin:8px 0;"><span class="tierchip tier-${d.tier}">${d.tier}</span></div>
+    <div class="sccard"><div style="font-size:15px;color:var(--rolex-dk);font-weight:700;text-align:center;">${esc(d.headline||'')}</div>
+      ${d.strengths&&d.strengths.length?`<div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);font-weight:700;margin-top:12px;">Working for you</div><ul class="plist">${d.strengths.map(s=>`<li>${esc(s)}</li>`).join('')}</ul>`:''}
+      ${d.improvements&&d.improvements.length?`<div style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);font-weight:700;margin-top:12px;">Level up</div><ul class="plist imp">${d.improvements.map(s=>`<li>${esc(s)}</li>`).join('')}</ul>`:''}
+      ${d.next?`<div class="nextbox"><b>Do this first</b>${esc(d.next)}</div>`:''}</div>`;
+}
+async function rateCall(pillar, extra){
+  await ensureDevice();
+  const msg = extra.text ? `PILLAR: ${pillar}\n${extra.text}` : `PILLAR: ${pillar}\n[photo attached]`;
+  const body={ mode:'rate', messages:[{role:'user',content:msg}], image:extra.image||null, profile:P, device_id:DEVICE };
+  const r=await fetch(BACKEND+'/ask',{method:'POST',headers:{'Content-Type':'application/json','x-pilot-token':PILOT},body:JSON.stringify(body)});
+  if(!r.ok){ const j=await r.json().catch(()=>({})); throw new Error(j.error||('http '+r.status)); }
+  const d=await r.json();
+  if(d.type!=='rate' || typeof d.score!=='number') throw new Error('bad-rate');
+  d.tier = d.tier && TIERS.includes(d.tier) ? d.tier : tierOf(d.score);
+  return d;
+}
+function fileToImg(file){ return new Promise((res,rej)=>{ const img=new Image(); img.onload=()=>{ const M=900,rr=Math.min(1,M/Math.max(img.width,img.height)); const c=document.createElement('canvas'); c.width=Math.round(img.width*rr); c.height=Math.round(img.height*rr); c.getContext('2d').drawImage(img,0,0,c.width,c.height); const url=c.toDataURL('image/jpeg',.85); res({b64:url.split(',')[1],mime:'image/jpeg',url}); }; img.onerror=rej; img.src=URL.createObjectURL(file); }); }
+function scanStart(){
+  let inp=$('ratecap');
+  if(!inp){ inp=document.createElement('input'); inp.type='file'; inp.accept='image/*'; inp.setAttribute('capture','user'); inp.id='ratecap'; inp.hidden=true; inp.onchange=e=>{ const f=e.target.files[0]; e.target.value=''; if(f) scanRun(f); }; document.body.appendChild(inp); }
+  inp.click();
+}
+async function scanRun(file){
+  const box=$('ratebox');
+  box.innerHTML=`<div class="rt-hero"><div class="rt-big" style="font-size:22px;">Reading your face…</div><div class="rt-sub">A few seconds. Honest and kind.</div></div><div class="ring" style="--p:6;"><b>…</b></div>`;
+  try{
+    const img=await fileToImg(file);
+    const d=await rateCall('physical',{image:{data:img.b64,media_type:img.mime}});
+    if(d.needsRetake){ box.innerHTML=`<div class="rt-hero"><div class="rt-big" style="font-size:20px;">Let's get a clearer shot</div><div class="rt-sub">${esc(d.headline||'Good light, face to camera, no cap.')}</div></div><button class="cta" onclick="scanStart()">Retake</button>`; return; }
+    saveRating({physical:d.score, detail:Object.assign({},rating().detail,{physical:d})});
+    revealPhysical(d);
+  }catch(e){ box.innerHTML=`<div class="rt-hero"><div class="rt-sub">${e&&/limit/.test(e.message)?"Sorted's hit its safety limit for today — try again tomorrow.":"That didn't go through — try again in a moment."}</div></div><button class="cta" onclick="scanStart()">Try again</button>`; }
+}
+function revealPhysical(d){
+  $('ratebox').innerHTML=`<div class="rt-hero"><div class="rt-kicker">Pillar 1 of 4 · Physical</div></div>
+    ${scoreBlock(d)}
+    <div class="sccard" style="text-align:center;">
+      <div style="font-size:15px;font-weight:700;color:var(--rolex-dk);">That's 1 of 4.</div>
+      <p style="font-size:13.5px;color:var(--dim);line-height:1.5;margin:6px 0 12px;">A real Sorted-Man Rating also weighs your <b>Voice</b>, <b>Mental</b> and <b>Emotional</b> game. Looks alone caps you at “Sharp”. Unlock the full rating to see all four — and your tier.</p>
+      <button class="cta" onclick="unlockFull()">Unlock my full rating →</button>
+    </div>
+    <div class="rt-disc">AI-generated · a guide, not a verdict on your worth.</div>`;
+}
+function unlockFull(){
+  $('sheet-body').innerHTML=`<h3>Unlock your full Sorted-Man Rating</h3>
+    <p class="small">Voice, Mental and Emotional — plus your overall tier and a plan to raise each. Three short steps.</p>
+    <div style="background:var(--rolex-lt);border:1px solid var(--edge);border-radius:12px;padding:12px 14px;margin:12px 0;font-size:13px;color:var(--rolex-dk);">You're in the free pilot — the full rating is on us while we finish setting up payments. 🤝</div>
+    <button class="cta" onclick="$('sheet').classList.remove('on');runTests();">Start — free in the pilot</button>
+    <button class="cta ghost" style="margin-top:8px;" onclick="$('sheet').classList.remove('on')">Later</button>`;
+  $('sheet').classList.add('on');
+}
+function runTests(){ nextTest(); }
+function nextTest(){
+  const r=rating();
+  if(r.voice==null) return voiceTest();
+  if(r.mental==null) return sjtTest('mental');
+  if(r.emotional==null) return sjtTest('emotional');
+  renderRating();
+}
+function stepResult(d, then){
+  $('ratebox').innerHTML=scoreBlock(d)+`<button class="cta" id="contbtn">Continue →</button><div class="rt-disc">AI-generated · a guide, not a verdict.</div>`;
+  $('contbtn').onclick=then;
+}
+/* Voice test */
+const VOICE_PASSAGE="I don't wait for the right moment — I make the moment right. When I speak, I keep it clear and calm. I look people in the eye, and I mean what I say. Respect isn't demanded, it's earned.";
+let vrec=null, vstart=0, vtext='';
+function voiceTest(){
+  $('ratebox').innerHTML=`<div class="rt-hero"><div class="rt-kicker">Pillar 2 · Voice</div><div class="rt-big" style="font-size:22px;">Read this out loud</div><div class="rt-sub">Tap start, read it in your normal voice, tap done. We score clarity and pace — never your accent.</div></div>
+    <div class="rt-passage">${VOICE_PASSAGE}</div>
+    <button class="cta has-ic" id="vbtn" onclick="voiceToggle()">${ic('mic')}Start reading</button>
+    <div class="rt-disc">Your voice is transcribed on your phone; only the text is sent for scoring.</div>`;
+}
+function voiceToggle(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){ rateVoiceFromText('',0); return; }
+  if(!vrec){
+    try{ vrec=new SR(); }catch(e){ rateVoiceFromText('',0); return; }
+    vrec.lang=langCode(P.lang); vrec.continuous=true; vrec.interimResults=true; vtext=''; vstart=Date.now();
+    vrec.onresult=e=>{ let t=''; for(let i=0;i<e.results.length;i++) t+=e.results[i][0].transcript+' '; vtext=t.trim(); };
+    vrec.onerror=()=>{};
+    try{ vrec.start(); }catch(e){ vrec=null; rateVoiceFromText('',0); return; }
+    const b=$('vbtn'); if(b){ b.innerHTML=ic('check')+'Done reading'; b.classList.add('rec'); }
+  } else {
+    try{ vrec.stop(); }catch(e){}
+    const secs=Math.max(4,(Date.now()-vstart)/1000), words=(vtext.match(/\S+/g)||[]).length, wpm=Math.round(words/(secs/60));
+    vrec=null; rateVoiceFromText(vtext, wpm);
+  }
+}
+async function rateVoiceFromText(t, wpm){
+  $('ratebox').innerHTML=`<div class="rt-hero"><div class="rt-big" style="font-size:20px;">Scoring your voice…</div></div>`;
+  try{
+    const txt = (t && t.length>8) ? `Transcript of him reading the passage aloud (~${wpm} words/min): "${t.slice(0,600)}"` : `He could not record on this device. Score conservatively around a neutral baseline and coach him on clarity, pace and filler words.`;
+    const d=await rateCall('voice',{text:txt});
+    saveRating({voice:d.score, detail:Object.assign({},rating().detail,{voice:d})});
+    stepResult(d, nextTest);
+  }catch(e){ $('ratebox').innerHTML=`<div class="rt-hero"><div class="rt-sub">Scoring hiccup — try again.</div></div><button class="cta" onclick="voiceTest()">Retry</button>`; }
+}
+/* Situational-judgement tests (Mental / Emotional) */
+const SJT={
+ mental:[
+  {q:"A decision is due and you don't have every fact. You…",a:["Wait until you're 100% certain","Gather what you can fast, decide, and adjust as you learn","Ask someone else to decide for you","Go on gut and ignore the details"]},
+  {q:"A call you made went wrong, in front of others. Next move?",a:["Blame the circumstances","Own it plainly, fix what you can, keep the lesson","Go quiet and hope it blows over","Double down so you look consistent"]},
+  {q:"Two good options, limited time. You…",a:["Freeze and keep overthinking","Set a deadline, pick the one that ages best, commit","Flip a coin","Pick whichever is easiest right now"]},
+ ],
+ emotional:[
+  {q:"Someone close snaps at you unfairly. You…",a:["Snap back harder","Pause, read what's really going on, respond calm","Go cold and hold the grudge","Act like it never happened"]},
+  {q:"You feel a flash of envy at a friend's win. Honestly…",a:["Play it down and stay bitter","Notice it, be genuinely glad for him, ask how he did it","Quietly compete","Start avoiding him"]},
+  {q:"You're stretched thin and running low. You…",a:["Push through and take it out on people near you","Name it, cover your basics, ask for help if needed","Bottle it and carry on","Numb out and check out"]},
+ ]
+};
+let sjtState=null;
+function sjtTest(pillar){ sjtState={pillar,i:0,picks:[]}; sjtRender(); }
+function sjtRender(){
+  const st=sjtState, bank=SJT[st.pillar], q=bank[st.i];
+  const label = st.pillar==='mental'?'Pillar 3 · Mental':'Pillar 4 · Emotional';
+  $('ratebox').innerHTML=`<div class="rt-hero"><div class="rt-kicker">${label}</div><div class="rt-big" style="font-size:20px;">Quick call</div></div>
+    <div class="stepdots">${bank.map((_,i)=>`<i class="${i<=st.i?'on':''}"></i>`).join('')}</div>
+    <div style="font-size:16.5px;font-weight:600;color:var(--text);line-height:1.5;margin:6px 4px 16px;">${esc(q.q)}</div>
+    ${q.a.map((a,i)=>`<button class="qopt" onclick="sjtPick(${i})">${esc(a)}</button>`).join('')}`;
+}
+function sjtPick(i){
+  const st=sjtState, q=SJT[st.pillar][st.i];
+  st.picks.push({q:q.q, chose:q.a[i]}); st.i++;
+  if(st.i<SJT[st.pillar].length) sjtRender(); else sjtScore();
+}
+async function sjtScore(){
+  const st=sjtState;
+  $('ratebox').innerHTML=`<div class="rt-hero"><div class="rt-big" style="font-size:20px;">Scoring…</div></div>`;
+  const txt=st.picks.map((p,n)=>`Q${n+1}: ${p.q}\nHe chose: "${p.chose}"`).join('\n');
+  try{
+    const d=await rateCall(st.pillar,{text:`His situational-judgement answers:\n${txt}`});
+    const upd={}; upd[st.pillar]=d.score; upd.detail=Object.assign({},rating().detail,{[st.pillar]:d}); saveRating(upd);
+    stepResult(d, nextTest);
+  }catch(e){ $('ratebox').innerHTML=`<div class="rt-hero"><div class="rt-sub">Scoring hiccup — try again.</div></div><button class="cta" onclick="sjtTest('${st.pillar}')">Retry</button>`; }
+}
+/* Scorecard */
+function scorecardHTML(r, done){
+  const vals=PILLARS.map(p=>r[p.k]).filter(v=>v!=null);
+  const overall=Math.round(vals.reduce((a,b)=>a+b,0)/vals.length);
+  const pres=avg([r.physical,r.voice]), char=avg([r.mental,r.emotional]);
+  const allFour=done.length===4;
+  const tier = allFour ? tierOf(overall) : (overall>84?'Sharp':tierOf(overall));
+  return `<div class="rt-hero" style="padding-bottom:0;"><div class="rt-kicker">Your Sorted-Man Rating</div></div>
+   <div class="ring" style="--p:${overall};"><b>${overall}<i>/100</i></b></div>
+   <div style="text-align:center;margin:8px 0 2px;"><span class="tierchip tier-${tier}">${tier}</span></div>
+   <div class="ladder">${TIERS.map(t=>`<div class="rung ${t===tier?'act':''}">${t}</div>`).join('')}</div>
+   ${allFour?'':`<div style="text-align:center;font-size:12.5px;color:var(--gold-dk);margin:6px 0 2px;">Finish all four to unlock your true tier — looks alone caps at Sharp.</div>`}
+   <div class="dimrow"><div class="dim"><h5>Presentation</h5><div class="dv">${pres!=null?pres:'—'}</div></div><div class="dim"><h5>Character</h5><div class="dv">${char!=null?char:'—'}</div></div></div>
+   <div class="sccard">${PILLARS.map(p=>{const v=r[p.k]; return `<div class="pillar" onclick="${v!=null?`pillarDetail('${p.k}')`:`missingPillar('${p.k}')`}"><div class="pic">${ic(p.ic)}</div><div class="pmid"><div class="pname">${p.name}</div><div class="pbar"><i style="width:${v!=null?v:0}%"></i></div></div>${v!=null?`<div class="psc">${v}</div>`:`<div class="plock">Start →</div>`}</div>`;}).join('')}</div>
+   <button class="cta has-ic" onclick="go('gyms')">${ic('dumbbell')}Train in the Gyms →</button>
+   <button class="cta ghost" style="margin-top:8px;" onclick="reRate()">Retake a pillar</button>
+   <div class="rt-disc">AI-generated · a guide, not a verdict on your worth. Being “Sorted” takes all four — keep training.</div>`;
+}
+function pillarDetail(k){ const d=(rating().detail||{})[k]; if(!d) return; const p=PILLARS.find(x=>x.k===k);
+  $('sheet-body').innerHTML=`<h3>${p.name} — ${d.score}/100 · ${d.tier}</h3><div style="font-size:14px;color:var(--rolex-dk);font-weight:700;margin-top:4px;">${esc(d.headline||'')}</div>
+   ${d.improvements&&d.improvements.length?`<ul class="plist imp" style="margin-top:10px;">${d.improvements.map(s=>`<li>${esc(s)}</li>`).join('')}</ul>`:''}
+   ${d.next?`<div class="nextbox"><b>Do this first</b>${esc(d.next)}</div>`:''}
+   <button class="cta has-ic" style="margin-top:12px;" onclick="$('sheet').classList.remove('on');openGym('${k}')">${ic('dumbbell')}Train this in the gym</button>
+   <button class="cta ghost" style="margin-top:8px;" onclick="$('sheet').classList.remove('on')">Close</button>`;
+  $('sheet').classList.add('on'); }
+function missingPillar(k){ if(k==='physical') return scanStart(); if(k==='voice') return voiceTest(); return sjtTest(k); }
+function reRate(){ $('sheet-body').innerHTML=`<h3>Retake a pillar</h3><p class="small">Fresh scan or test — your score updates.</p>${PILLARS.map(p=>`<button class="cta ghost" style="margin-top:8px;" onclick="$('sheet').classList.remove('on');retakePillar('${p.k}')">${p.name}${rating()[p.k]!=null?' · '+rating()[p.k]:''}</button>`).join('')}<button class="cta ghost" style="margin-top:12px;" onclick="$('sheet').classList.remove('on')">Cancel</button>`; $('sheet').classList.add('on'); }
+function retakePillar(k){ const r=rating(); delete r[k]; if(r.detail) delete r.detail[k]; P.rating=r; save(); missingPillar(k); }
+
+/* ============ GYMS ============ */
+function gymBlurb(k){ return {physical:'Grooming, style, posture & presence drills.',voice:'Clarity, pace, filler-words, strong openings.',mental:'Decisions, composure, sharper judgement.',emotional:'Read the room, handle heat, self-awareness.'}[k]; }
+function renderGyms(){
+  const box=$('gymsbox'); if(!box) return; const r=rating();
+  box.innerHTML=`<div class="rt-hero" style="padding-top:2px;"><div class="rt-big" style="font-size:24px;">Train your edge</div><div class="rt-sub">Short, practical drills with your coach. Raise each pillar, then re-take your rating.</div></div>
+   ${PILLARS.map(p=>`<div class="gymcard" onclick="openGym('${p.k}')"><div class="gic">${ic(p.ic)}</div><div><h4>${p.name} Gym</h4><p>${gymBlurb(p.k)}</p></div><div class="gsc">${r[p.k]!=null?`<b>${r[p.k]}</b><span>NOW</span>`:`<span>—</span>`}</div></div>`).join('')}
+   <div class="gymcard" onclick="openGym('passport')"><div class="gic" style="background:var(--gold-lt);color:var(--gold-dk);">${ic('pin')}</div><div><h4>Passport</h4><p>Speak & carry yourself right abroad — accents, etiquette, first meetings.</p></div><div class="gsc"><span>travel</span></div></div>
+   <div class="rt-disc">AI-generated coaching · practise, then re-take your rating to watch it move.</div>`;
+}
+function gymOpener(k){ return {
+  physical:"Physical Gym. Tell me one thing about your look you want sharper — hair, skin, style or posture — and I'll give you a drill for it.",
+  voice:"Voice Gym. Want to cut filler words, sound calmer, or nail a strong opening line? Pick one and we'll drill it.",
+  mental:"Mental Gym. Give me a real decision you're chewing on and I'll walk you through thinking it cleanly.",
+  emotional:"Emotional Gym. Tell me a situation that got under your skin lately — we'll work out how you handle the next one.",
+  passport:"Passport. Where are you headed, or where do you struggle to fit in? I'll coach the accent, etiquette and first-meeting moves for there."
+}[k]; }
+function openGym(k){
+  gymPillar=k;
+  const label = k==='passport'?'cross-cultural communication':k;
+  threads.gym=[{role:'user',content:`PILLAR: ${k}. Be my ${label} coach — keep it practical, one drill at a time.`},{role:'assistant',content:gymOpener(k)}];
+  $('chat-gym').innerHTML='';
+  go('gym');
+  const bk=$('scr-gym').querySelector('.back'); const names={physical:'Physical Gym',voice:'Voice Gym',mental:'Mental Gym',emotional:'Emotional Gym',passport:'Passport'};
+  if(bk) bk.textContent='‹ '+(names[k]||'Gym');
+  addThem(gymOpener(k), true);
+}
 
 /* ============ CHAT RENDER ============ */
 function addThem(text, instant){
@@ -1524,7 +1850,7 @@ function exportData(){
 }
 function deleteEverything(){
   if(!confirm('Sure? Gone in 5 seconds, no recovery.')) return;
-  localStorage.clear(); privThread=[]; threads={verdict:[],product:[],barber:[],remind:[],buddy:[]};
+  localStorage.clear(); privThread=[]; threads={verdict:[],product:[],barber:[],remind:[],buddy:[],gym:[]};
   toast('Done. Nothing remains.');
   setTimeout(()=>location.reload(),1200);
 }
@@ -1708,7 +2034,7 @@ document.addEventListener('keydown', e=>{
 if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
 // Secure the device id (and migrate any legacy reminders) BEFORE first render, so home data loads under the signed id.
 ensureDevice().finally(()=>{
-  if(P){ go('home'); } else { $('scr-onboard').classList.add('on'); $('askbar').style.display='none'; }
+  if(P){ go('rating'); } else { $('scr-onboard').classList.add('on'); $('askbar').style.display='none'; }
 });
 </script>
 </body>
