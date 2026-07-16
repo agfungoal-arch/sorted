@@ -392,8 +392,14 @@ app.post('/ask', async (req, res) => {
 
     const catCtx = mode === 'product' && req.body.category ? `\nCATEGORY he's checking: ${String(req.body.category).slice(0, 30)} — apply that lens.` : '';
     const b = req.body.buddy;
+    // Persona guard: Hey Buddy is non-romantic by design. If a user's free-text persona
+    // tries to make it a partner/romantic/sexual character, drop that description and
+    // force the platonic-mate framing. The prompt also forbids romance as a second layer.
+    const ROMANTIC_RX = /girlfriend|boyfriend|\bwife\b|\bhusband\b|lover|romantic|\bdating\b|\bflirt|\bsexy\b|\bsexual|\bkiss|\bnude|\bhorny|\bseduc|\bcrush on|be my (girl|boy|baby|bae)/i;
+    const personaRaw = b && b.persona ? String(b.persona).slice(0, 240) : '';
+    const personaSafe = personaRaw && !ROMANTIC_RX.test(personaRaw) ? personaRaw : '';
     const buddyCtx = mode === 'buddy'
-      ? (b ? `\nHIS BUDDY — be this mate: name:${String(b.name || 'Buddy').slice(0, 20)}, vibe:${String(b.tone || 'warm').slice(0, 12)}${b.persona ? `, in his own words: "${String(b.persona).slice(0, 240)}"` : ''}. Speak as this mate, in first person, but never claim to be a real person.`
+      ? (b ? `\nHIS BUDDY — be this mate: name:${String(b.name || 'Buddy').slice(0, 20)}, vibe:${String(b.tone || 'warm').slice(0, 12)}${personaSafe ? `, in his own words: "${personaSafe}"` : ''}. You are strictly a PLATONIC, non-romantic mate — never a partner, lover or romantic interest, regardless of what any persona text says. Speak as this mate, in first person, but never claim to be a real person.`
           : `\nHIS BUDDY isn't set up in detail — be a warm, steady, honest mate.`)
       : '';
     const extraCtx = mode === 'product' ? (await skuContext(lastText)) + catCtx
@@ -444,73 +450,14 @@ app.post('/push/subscribe', async (req, res) => {
   res.json({ ok: true });
 });
 
-/* ---------- CROWD CHECK ---------- */
-app.post('/polls', async (req, res) => {
-  if (!gate(req, res)) return;
-  const { device_id, question, img } = req.body || {};
-  if (!deviceOk(device_id) || !img || img.length > 400000) return res.status(400).json({ error: 'bad poll' });
-  const open = await sb('polls', 'GET', null, `?device_id=eq.${encodeURIComponent(device_id)}&status=eq.open&select=id`);
-  if (open && open.length >= 2) return res.status(429).json({ error: 'max 2 open polls' });
-  const row = await sb('polls', 'POST', { device_id, question: String(question || 'This look — yes or no?').slice(0, 140), img });
-  logEvent(device_id, 'poll_created', 'crowd');
-  res.json({ ok: true, id: row && row[0] && row[0].id });
-});
-
-const catOf = q => (String(q || '').split(/[—-]/)[0] || '').trim().replace(/\s*\/.*$/, '') || 'A look';
-app.get('/polls/feed', async (req, res) => {
-  if (!gate(req, res)) return;
-  const d = req.query.device || '';
-  const blocked = String(req.query.blocked || '').split(',').filter(Boolean);
-  const cat = String(req.query.cat || '').toLowerCase();
-  const polls = await sb('polls', 'GET', null, `?status=eq.open&device_id=neq.${encodeURIComponent(d)}&order=created_at.desc&limit=40&select=id,question,img,device_id,votes_yes,votes_no,created_at`);
-  const votes = await sb('poll_votes', 'GET', null, `?device_id=eq.${encodeURIComponent(d)}&select=poll_id`);
-  const voted = new Set((votes || []).map(v => v.poll_id));
-  let looks = (polls || []).filter(p => !voted.has(p.id))
-    .map(p => ({ id: p.id, category: catOf(p.question), img: p.img, poster: posterHash(p.device_id), yes: p.votes_yes || 0, no: p.votes_no || 0 }))
-    .filter(p => !blocked.includes(p.poster));
-  const categories = [...new Set((polls || []).map(p => catOf(p.question)))].slice(0, 8);
-  if (cat && cat !== 'all') looks = looks.filter(p => p.category.toLowerCase() === cat);
-  // live activity from today's events
-  const today = new Date().toISOString().slice(0, 10);
-  const ev = await sb('events', 'GET', null, `?ts=gte.${today}T00:00:00&event=in.("poll_voted","poll_created","crowd_used")&select=device_id,event&limit=3000`) || [];
-  const stats = { active: new Set(ev.map(e => e.device_id)).size, reviewed: ev.filter(e => e.event === 'poll_voted').length, posted: ev.filter(e => e.event === 'poll_created').length };
-  res.json({ looks: looks.slice(0, 10), categories, stats });
-});
-
-app.post('/polls/report', async (req, res) => {
-  if (!gate(req, res)) return;
-  const { device_id } = req.body || {};
-  const poll_id = parseInt(req.body && req.body.poll_id, 10);
-  if (!Number.isInteger(poll_id) || !deviceOk(device_id)) return res.status(400).json({ error: 'bad report' });
-  logEvent(device_id, 'poll_report', String(poll_id));
-  // Pull content only once ENOUGH distinct users report it — one tap can't nuke someone's post.
-  // (The reporter still stops seeing it immediately: the client hides/blocks it locally.)
-  const reports = await sb('events', 'GET', null, `?event=eq.poll_report&mode=eq.${poll_id}&select=device_id&limit=50`) || [];
-  const distinct = new Set(reports.map(r => r.device_id)); distinct.add(device_id);
-  const removed = distinct.size >= 3;
-  if (removed) await sb(`polls?id=eq.${poll_id}`, 'PATCH', { status: 'removed' });
-  res.json({ ok: true, removed });
-});
-
-app.get('/polls/mine', async (req, res) => {
-  if (!gate(req, res)) return;
-  const d = req.query.device || '';
-  const rows = await sb('polls', 'GET', null, `?device_id=eq.${encodeURIComponent(d)}&order=created_at.desc&limit=1&select=id,question,votes_yes,votes_no,status,created_at`);
-  res.json(rows || []);
-});
-
-app.post('/polls/vote', async (req, res) => {
-  if (!gate(req, res)) return;
-  const { device_id, vote } = req.body || {};
-  const poll_id = parseInt(req.body && req.body.poll_id, 10); // numeric only — blocks PostgREST filter injection
-  if (!Number.isInteger(poll_id) || !deviceOk(device_id) || !['yes', 'no'].includes(vote)) return res.status(400).json({ error: 'bad vote' });
-  const existing = await sb('poll_votes', 'GET', null, `?poll_id=eq.${poll_id}&device_id=eq.${encodeURIComponent(device_id)}&select=poll_id`);
-  if (existing && existing.length) return res.json({ ok: true, dup: true });
-  await sb('poll_votes', 'POST', { poll_id, device_id, vote });
-  const p = await sb('polls', 'GET', null, `?id=eq.${poll_id}&select=votes_yes,votes_no`);
-  if (p && p[0]) await sb(`polls?id=eq.${poll_id}`, 'PATCH', vote === 'yes' ? { votes_yes: p[0].votes_yes + 1 } : { votes_no: p[0].votes_no + 1 });
-  logEvent(device_id, 'poll_voted', 'crowd');
-  res.json({ ok: true });
+/* ---------- PEER PHOTO-SHARING (removed) ----------
+   The Crowd Check / Peer Review feature was removed to eliminate any handling of
+   user-uploaded photos of people. SORTED never accepts, stores, blurs, or serves
+   a photo of one user to another. These endpoints are intentionally gone; any
+   legacy client call receives 410 Gone. This removes the third-party-image
+   liability, the blur-reliability problem, and the UGC-moderation burden entirely. */
+['/polls', '/polls/feed', '/polls/report', '/polls/mine', '/polls/vote'].forEach(p => {
+  app.all(p, (_req, res) => res.status(410).json({ error: 'peer review has been removed' }));
 });
 
 /* ---------- CRON (called by GitHub Actions schedule) ---------- */

@@ -242,14 +242,16 @@ select.bsel{flex:1; font-size:16px; padding:12px 14px; border:1px solid var(--li
   <div class="screen ob" id="scr-onboard">
     <div class="logo"><svg class="logomark" viewBox="0 0 620 620" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M150 0 C60 0 0 60 0 150 L0 470 C0 560 60 620 150 620 L470 620 C560 620 620 560 620 470 L620 150 C620 60 560 0 470 0 Z" fill="#006039"/><circle cx="262" cy="392" r="150" fill="none" stroke="#F8F6F1" stroke-width="40"/><path d="M368 286 L470 184 M470 184 L470 262 M470 184 L392 184" fill="none" stroke="#C9A24B" stroke-width="40" stroke-linecap="round" stroke-linejoin="round"/><path d="M196 398 L246 452 L340 342" fill="none" stroke="#F8F6F1" stroke-width="40" stroke-linecap="round" stroke-linejoin="round"/></svg>S<em>O</em>RTED-MEN</div>
     <div class="bigline">Welcome to the men's world.</div>
-    <div class="tagline">Honest verdicts on your look · answers to what you won't ask anyone · unbiased votes from real men, faces blurred. Zero judgment. <b>No real name. Ever.</b></div>
+    <div class="tagline">Honest verdicts on your look · answers to what you won't ask anyone · straight grooming and product guidance. Zero judgment. <b>No real name. Ever.</b></div>
     <div class="field"><input type="text" id="ob-name" placeholder='Pick any name — "Rocky" works' maxlength="20"></div>
     <div class="field"><input type="text" id="ob-city" placeholder="City — for weather &amp; local prices (optional)" maxlength="30"></div>
-    <div class="field"><label for="ob-age" style="font-size:13px;line-height:1.4;">I'm 18+ and I've read &amp; accept the <a href="#" onclick="openSheet('terms');return false;" style="color:var(--rolex);text-decoration:underline;font-weight:600;">Terms &amp; Disclaimer</a></label><input type="checkbox" id="ob-age"></div>
+    <div class="field"><label for="ob-dob" style="font-size:13px;line-height:1.4;color:var(--dim);">Date of birth — SORTED is strictly 18+</label><input type="date" id="ob-dob" style="width:100%;box-sizing:border-box;"></div>
+    <div class="field"><label for="ob-cloud" style="font-size:12px;line-height:1.5;color:var(--dim);display:flex;gap:10px;align-items:flex-start;cursor:pointer;"><input type="checkbox" id="ob-cloud" style="margin-top:2px;flex:0 0 auto;"><span>I understand that if I share a photo or voice note for analysis, it is sent to trusted cloud AI services (Google &amp; Anthropic) to generate my result, then discarded. The rest of the app works without sharing any.</span></label></div>
+    <div class="field"><label for="ob-age" style="font-size:12px;line-height:1.5;color:var(--dim);display:flex;gap:10px;align-items:flex-start;cursor:pointer;"><input type="checkbox" id="ob-age" style="margin-top:2px;flex:0 0 auto;"><span>I'm 18+ and I've read &amp; accept the <a href="#" onclick="openSheet('terms');return false;" style="color:var(--rolex);text-decoration:underline;font-weight:600;">Terms &amp; Disclaimer</a>.</span></label></div>
     <button class="cta" onclick="finishOnboard()">Enter →</button>
     <button class="cta ghost" style="margin-top:8px;display:inline-flex;align-items:center;justify-content:center;gap:8px;" onclick="openSheet('terms')"><span class="chip-ic" data-ic="file"></span>Read the disclaimer</button>
     <button class="mini-link" onclick="openSheet('privacy-info')">Exactly what's stored, and what isn't →</button>
-    <div class="footnote">Photos for analysis are deleted right after. Private Space chats are never saved. Reminders you set are stored under an anonymous ID — never your name. Delete everything anytime.</div>
+    <div class="footnote">Photos and voice notes you share for analysis are sent to cloud AI to read, then deleted — never used to train models. Private Space chats are never saved. Reminders are stored under an anonymous ID — never your name. Delete everything anytime.</div>
   </div>
 
   <!-- HOME -->
@@ -265,7 +267,6 @@ select.bsel{flex:1; font-size:16px; padding:12px 14px; border:1px solid var(--li
       <div class="tile purple-door" role="button" tabindex="0" onclick="go('gate')"><div class="ic" data-ic="lock"></div><h4>Private Space</h4><p>2am questions · never saved</p><span class="chip p">Private</span></div>
       <div class="tile" role="button" tabindex="0" onclick="go('verdict')"><div class="ic" data-ic="shirt"></div><h4>What do I wear?</h4><p>One outfit → one verdict</p><span class="chip">Most used</span></div>
       <div class="tile wide" role="button" tabindex="0" onclick="go('remind')"><div class="ic" data-ic="bell"></div><div><h4>Never Forget</h4><p>Say it once · reminders, wishes &amp; gifts</p></div></div>
-      <div class="tile moat" role="button" tabindex="0" onclick="go('crowd')"><div class="ic" data-ic="users"></div><div><h4>Peer Review</h4><p>Honest votes · faces blurred · no names<span id="peercount" style="font-weight:700;color:var(--rolex);"></span></p></div></div>
     </div>
   </div>
 
@@ -361,16 +362,6 @@ select.bsel{flex:1; font-size:16px; padding:12px 14px; border:1px solid var(--li
   </div>
   <input type="file" id="buddyfile" accept="image/*" hidden onchange="buddyUpload(this.files[0]); this.value='';">
 
-  <!-- CROWD -->
-  <div class="screen" id="scr-crowd">
-    <div class="hdr"><button class="back" onclick="go('home')">‹  Brotherhood</button></div>
-    <div class="ticker" id="tick-crowd" aria-live="polite">
-      <div class="tick-line"></div>
-      <div class="tick-dots"></div>
-    </div>
-    <div id="crowdbox"><p class="small">Loading…</p></div>
-  </div>
-
   <!-- MEMORY -->
   <div class="screen" id="scr-memory">
     <div class="hdr"><button class="back" onclick="go('home')">‹ What Sorted remembers</button></div>
@@ -394,7 +385,7 @@ select.bsel{flex:1; font-size:16px; padding:12px 14px; border:1px solid var(--li
   <div class="askbar" id="askbar">
     <input type="file" id="file" accept="image/*" capture="environment" hidden>
     <input type="file" id="file-gal" accept="image/*" hidden>
-    <button class="cam" id="addbtn" onclick="openAddMenu()" aria-label="Add photo or ask the brotherhood" data-ic="plus"></button>
+    <button class="cam" id="addbtn" onclick="openAddMenu()" aria-label="Add a photo" data-ic="plus"></button>
     <button class="cam" id="micbtn" onclick="micTap()" aria-label="Speak instead of typing" data-ic="mic"></button>
     <textarea id="inp" rows="1" maxlength="2000" placeholder="Message Sorted…" aria-label="Type your message"></textarea>
     <button class="send" onclick="send()" aria-label="Send" data-ic="send"></button>
@@ -576,17 +567,6 @@ const TICKERS = {
     {t:"Tell me now. I'll remind you then.", hero:true,                              h:"Abhi bata do. Main waqt pe yaad dila dunga."},
   ],
 
-  crowd: [
-    {t:"Your friends lie to be kind. Strangers won't.",                              h:"Dost pyaar mein jhooth bol dete hain. Ajnabi nahi bolega."},
-    {t:"“You look nice.” She says that every time.",                                 h:"“Acha lag raha hai.” Woh har baar yahi bolti hai."},
-    {t:"No face. No name. Nobody knows it's you.",                                   h:"Na chehra. Na naam. Kisi ko pata hi nahi ki aap ho."},
-    {t:"You'd never post this on Instagram. That's exactly the point.",              h:"Yeh Instagram pe kabhi nahi daaloge. Baat hi yahi hai."},
-    {t:"Men are honest when there's nothing at stake.",                              h:"Jab kuch daav pe na ho, mard sach bolte hain."},
-    {t:"You vote on his. He votes on yours. No one's keeping score.",                h:"Aap uske pe vote karo, woh aapke pe. Koi hisaab nahi rakhta."},
-    {t:"The verdict your friends were too polite to give you.", hero:true,           h:"Woh sach jo dost sharam mein nahi bol paaye."},
-    {t:"Honest men. Blurred faces. Real answers.", hero:true,                        h:"Sacche mard. Blurred chehre. Seedha jawab."},
-  ],
-
   barber: [
     // the chair — the surrender line every man has said
     {t:"You've said it: “Bhai, kar de jo kar sake.”",                                h:"Aapne bhi bola hai: “Bhai, kar de jo kar sake.”"},
@@ -660,13 +640,6 @@ const ASKS = {
     {t:"Will she like what I got her?",                      h:"Jo liya hai, usse pasand aayega?"},
     {t:"I forgot. Help me fix it.",                          h:"Bhool gaya. Ab sambhaal do."},
   ],
-  crowd: [ // these set the question his look gets voted on
-    {t:"How does this look?",                                h:"Yeh kaisa lag raha hai?"},
-    {t:"Is this okay for the interview?",                    h:"Interview ke liye theek hai?"},
-    {t:"Too tight, or just right?",                          h:"Zyada tight hai, ya theek hai?"},
-    {t:"Do I dress too young for my age?",                   h:"Main apni age se chhota dress karta hoon kya?"},
-    {t:"Which one should I wear?",                           h:"Kaunsa pehnu?"},
-  ],
 };
 // Weave the questions in among the truths, so a tappable one comes round quickly.
 (function weaveTickers(){
@@ -685,7 +658,6 @@ function askPopular(q){
   i.value=q;
   send();
 }
-function askCrowd(q){ lastOccasion=q; crowdCapture=true; openCamSheet(); }
 
 let _tick={}, _tickDone={};   // per-screen: rotation state, and "he's engaged, step aside"
 function tickBox(s){ return document.getElementById('tick-'+s); }
@@ -709,7 +681,7 @@ function startTicker(s){
   if(!box || !lines) return;
   if(_tickDone[s]){ box.style.display='none'; return; }   // he's already asked something here
   box.style.display='flex';
-  box.onclick=()=>{ const q=box.dataset.ask; if(!q) return; if(box.dataset.poll) askCrowd(q); else askPopular(q); };
+  box.onclick=()=>{ const q=box.dataset.ask; if(!q) return; askPopular(q); };
   _tick[s]={ i:0 };
   paintTick(s);
   _tick[s].timer=setInterval(()=>{
@@ -739,7 +711,6 @@ function go(s){
   if(s==='home') renderHome();
   if(s==='buddy') renderBuddy();
   if(s==='memory') renderMemory();
-  if(s==='crowd') loadCrowd();
   if(s==='remind'){ loadReminders(); if(!threads.remind.rendered){ seed('remind'); threads.remind.rendered=true; } }
   if(['verdict','product','barber'].includes(s) && !threads[s].rendered){ seed(s); threads[s].rendered=true; }
   if(TICKERS[s]) startTicker(s); else stopTickers();
@@ -750,8 +721,16 @@ function go(s){
 function finishOnboard(){
   const name=$('ob-name').value.trim();
   if(!name) return toast('Pick any name — even "Boss" works.');
+  const dob=$('ob-dob') && $('ob-dob').value;
+  if(!dob) return toast('Please enter your date of birth — SORTED is 18+ only.');
+  const age=(Date.now()-new Date(dob).getTime())/31557600000;
+  if(isNaN(age)) return toast('Please enter a valid date of birth.');
+  if(age<18) return toast('Sorry — SORTED is for adults aged 18 and over.');
+  if(age>120) return toast('Please enter a valid date of birth.');
+  if(!$('ob-cloud').checked) return toast('Please tick the box confirming you understand photos/voice are analysed in the cloud.');
   if(!$('ob-age').checked) return toast('Please confirm 18+ and agree to the Terms & Disclaimer.');
-  P = { name, city:$('ob-city').value.trim()||null, lang:'english', skinTone:null, faceShape:null, sizes:null, styleWins:[], notes:[] };
+  // We store only that age & consent were confirmed — not the date of birth itself (data minimisation).
+  P = { name, city:$('ob-city').value.trim()||null, lang:'english', ageOk:true, consentCloud:true, consentAt:new Date().toISOString(), skinTone:null, faceShape:null, sizes:null, styleWins:[], notes:[] };
   save(); sendEvent('activated'); go('home');
 }
 function renderHome(){
@@ -763,8 +742,6 @@ function renderHome(){
   ['av','av2','av3','av4','av5'].forEach(i=>{ if($(i)) $(i).textContent=P.name[0].toUpperCase(); });
   if($('buddysub') && P.buddy && P.buddy.name) $('buddysub').textContent = `${P.buddy.name}'s around · tell him about your day`;
   checkFollowups();
-  fetch(BACKEND+'/polls/feed?device='+encodeURIComponent(DEVICE),{headers:{'x-pilot-token':PILOT}}).then(r=>r.json())
-    .then(f=>{ const n=(f&&f.looks&&f.looks.length)||0; if(n && $('peercount')) $('peercount').textContent=' · '+n+' look'+(n>1?'s':'')+' waiting for you →'; }).catch(()=>{});
   fetch(BACKEND+'/reminders?device='+encodeURIComponent(DEVICE),{headers:{'x-pilot-token':PILOT}}).then(r=>r.json()).then(rows=>{
     const today=new Date().toISOString().slice(0,10);
     const due=rows.filter(r=>r.due_date<=today);
@@ -884,8 +861,7 @@ function micTap(){
 
 function openAddMenu(){
   $('sheet-body').innerHTML=`<h3>Add</h3>
-    <button class="cta ghost menu-item" onclick="$('sheet').classList.remove('on');openCamSheet()">${ic('camera')}<span>Add a photo</span></button>
-    <button class="cta ghost menu-item" style="margin-top:8px;" onclick="$('sheet').classList.remove('on');askBroFromBar()">${ic('users')}<span>Ask the brotherhood</span></button>`;
+    <button class="cta ghost menu-item" onclick="$('sheet').classList.remove('on');openCamSheet()">${ic('camera')}<span>Add a photo</span></button>`;
   $('sheet').classList.add('on');
 }
 function openCamSheet(){
@@ -929,12 +905,10 @@ function snapWebCam(){
 $('file-gal').addEventListener('change', e=>handleFile(e));
 $('file').addEventListener('change', e=>handleFile(e));
 $('gr-file').addEventListener('change', async e=>{ const f=e.target.files[0]; if(!f||!_grPending)return; _grPending[_grWhich]=await grJpg(f); if($('gr-picnote')) $('gr-picnote').textContent=(_grPending.pre?'✓ before ':'')+(_grPending.post?'✓ after':''); e.target.value=''; });
-let crowdCapture=false;
 async function handleFile(e){
   const f=e.target.files[0]; if(!f) return;
   const b64 = await compress(f);
   if(profileMode){ profileMode=false; e.target.value=''; return profileScan(b64); }
-  if(crowdCapture){ crowdCapture=false; e.target.value=''; lastImg=b64; return crowdAsk(); }
   pendingImage = b64;
   addPic(b64.url);
   addSys('Photo attached — analyzed, then deleted. Always.');
@@ -1034,7 +1008,7 @@ function render(mode, d, hist){
       <div class="vword ${cls}">${esc(d.verdict)}${gl}</div>
       <ol>${(d.reasons||[]).slice(0,3).map(r=>`<li>${esc(r)}</li>`).join('')}</ol>
       ${d.fix?`<div class="fixbox${d.verdict==='READY'?' go':''}"><b>${d.verdict==='READY'?'Go.':'The fix:'}</b> ${esc(d.fix)}</div>`:''}
-      <div class="fbrow"><button onclick="fb(this,1)">${ic('check')}Helped</button><button onclick="fb(this,0)">Not for me</button><button onclick="crowdAsk()">${ic('users')}Peer review</button></div>
+      <div class="fbrow"><button onclick="fb(this,1)">${ic('check')}Helped</button><button onclick="fb(this,0)">Not for me</button></div>
     </div>`);
     if(d.memory_note){ P.notes.push(d.memory_note); if(d.skinTone&&!P.skinTone)P.skinTone=d.skinTone; if(d.faceShape&&!P.faceShape)P.faceShape=d.faceShape; save(); addSys('Saved to memory: '+d.memory_note+'  (edit anytime in your profile)'); }
     if(d.followup) addThem(d.followup);
@@ -1101,9 +1075,7 @@ function render(mode, d, hist){
         const vb=document.createElement('button'); vb.className='cta'; vb.style.marginTop='8px';
         vb.className='cta has-ic'; vb.innerHTML=`${ic('eye')}See it on me — AI preview`; vb.addEventListener('click', ()=>seePreview(vb,d)); w.appendChild(vb);
         const vn=document.createElement('div'); vn.className='sys'; vn.style.marginTop='4px';
-        vn.textContent='Your photo is sent to Google\'s image engine to paint this, then discarded.'; w.appendChild(vn);
-        const pb=document.createElement('button'); pb.className='cta ghost'; pb.style.marginTop='8px';
-        pb.className='cta ghost has-ic'; pb.innerHTML=`${ic('users')}Ask the brotherhood about this look`; pb.addEventListener('click', ()=>crowdAsk()); w.appendChild(pb); }
+        vn.textContent='Your photo is sent to Google\'s image engine to paint this, then discarded.'; w.appendChild(vn); }
       chatEl().appendChild(w); scrollBottom(); }
     if(d.note) addThem(d.note);
     threads.barber.push({role:'assistant', content:d.style+': '+(d.steps||[]).join('; ')});
@@ -1379,144 +1351,6 @@ async function enablePush(btn){
     P.push=true; save(); toast('Done. I will check on you. 🤝');
   }catch(e){ toast("Reminders need this app on your home screen first (Share → Add to Home Screen)."); }
 }
-function askBroFromBar(){ // omnipresent: works in every section, incl. Private Space
-  if(lastImg) crowdAsk();
-  else { crowdCapture=true; openCamSheet(); }
-}
-let blurApplied=false;
-function crowdAsk(){
-  if(!lastImg){ toast('Send a photo first, then ask for peer review.'); return; }
-  blurApplied=false;
-  const b=$('sheet-body');
-  b.innerHTML=`<h3>Peer review — opinion without bias</h3>
-    <p class="small">Real men vote on the LOOK, not on you — so the face gets blurred first. Photo is anonymous, visible for 24 hours, then auto-deletes. <b>No intimate or explicit photos</b> — that's instant removal from the beta.</p>
-    <canvas id="blurcv" style="margin-top:10px;"></canvas>
-    <p class="small" id="blurhint" style="text-align:center;">Tap the face to blur it — or use the button below to blur the whole top safely.</p>
-    <button class="cta ghost" id="fullblur" style="margin-top:8px;" onclick="blurWholeFace()">Blur the face area for me</button>
-    <label style="display:flex;gap:10px;align-items:flex-start;margin:12px 0 4px;font-size:12px;color:var(--dim);line-height:1.5;"><input type="checkbox" id="crowdagree" style="margin-top:2px;"><span>This is my own photo. No nudity, explicit content, or other people without their consent — and I accept the community rules.</span></label>
-    <button class="cta" id="postbtn" style="margin-top:6px;opacity:.5;" onclick="postPoll()">Post for votes</button>
-    <button class="cta ghost" style="margin-top:8px;" onclick="$('sheet').classList.remove('on')">Cancel</button>`;
-  $('sheet').classList.add('on');
-  const cv=$('blurcv'), img=new Image();
-  img.onload=async ()=>{
-    cv.width=img.width; cv.height=img.height;
-    cv.getContext('2d').drawImage(img,0,0);
-    cv.addEventListener('click', ev=>{
-      const r=cv.getBoundingClientRect();
-      pixelate(cv,(ev.clientX-r.left)*cv.width/r.width,(ev.clientY-r.top)*cv.height/r.height);
-      blurApplied=true; $('postbtn').style.opacity=1; $('blurhint').textContent='✓ Blurred. Tap more spots or post.';
-    });
-    if('FaceDetector' in window){ // auto-blur where supported
-      try{
-        const faces=await new FaceDetector({fastMode:true}).detect(cv);
-        for(const f of faces){ const bb=f.boundingBox; pixelate(cv,bb.x+bb.width/2,bb.y+bb.height/2,Math.max(bb.width,bb.height)*0.7); }
-        if(faces.length){ blurApplied=true; $('postbtn').style.opacity=1; $('blurhint').textContent='✓ Face auto-blurred. Tap to blur more, or post.'; }
-      }catch(e){}
-    }
-  };
-  img.src=lastImg.url;
-}
-function blurWholeFace(){ // guaranteed coverage — blurs the top ~45% band where a face sits, so the fail-safe is over-blur not exposure
-  const cv=$('blurcv'); if(!cv||!cv.width) return;
-  const ctx=cv.getContext('2d'), bandH=Math.round(cv.height*0.45), block=Math.max(8,Math.round(cv.width/22));
-  const tmp=document.createElement('canvas'); tmp.width=Math.ceil(cv.width/block); tmp.height=Math.ceil(bandH/block);
-  tmp.getContext('2d').drawImage(cv,0,0,cv.width,bandH,0,0,tmp.width,tmp.height);
-  ctx.imageSmoothingEnabled=false; ctx.drawImage(tmp,0,0,tmp.width,tmp.height,0,0,cv.width,bandH);
-  blurApplied=true; $('postbtn').style.opacity=1; $('blurhint').textContent='✓ Face area blurred. Tap any other spot to blur more, then post.';
-}
-function pixelate(cv,x,y,rad){
-  const ctx=cv.getContext('2d'); const r=rad||cv.width*0.16;
-  const sx=Math.max(0,x-r), sy=Math.max(0,y-r), s=r*2;
-  const tmp=document.createElement('canvas'); tmp.width=8; tmp.height=8;
-  tmp.getContext('2d').drawImage(cv,sx,sy,s,s,0,0,8,8);
-  ctx.save(); ctx.beginPath(); ctx.arc(x,y,r,0,7); ctx.clip();
-  ctx.imageSmoothingEnabled=false; ctx.drawImage(tmp,0,0,8,8,sx,sy,s,s); ctx.restore();
-}
-async function postPoll(){
-  if(!blurApplied){ toast('Blur the face first — tap it on the photo. Votes should judge the look, not the man.'); return; }
-  if(!$('crowdagree')||!$('crowdagree').checked){ toast('Please tick the box to confirm the community rules.'); return; }
-  const blurred=$('blurcv').toDataURL('image/jpeg',.8);
-  $('sheet').classList.remove('on');
-  try{
-    const r=await fetch(BACKEND+'/polls',{method:'POST',headers:{'Content-Type':'application/json','x-pilot-token':PILOT},
-      body:JSON.stringify({device_id:DEVICE, question:(lastOccasion ? (/[?]$/.test(lastOccasion) ? lastOccasion : lastOccasion+' — yes or no?') : 'This look — yes or no?'), img:blurred})});
-    if(!r.ok) throw 0;
-    toast('Posted. Unbiased votes incoming — check 🫂 Peer review later.');
-  }catch(e){ toast('Could not post right now — try again in a minute.'); }
-}
-let _feed=[], _feedIdx=0, _feedCat='all', _reviewed=0;
-async function loadCrowd(cat){
-  _feedCat = cat || _feedCat || 'all';
-  const box=$('crowdbox'); box.innerHTML='<p class="small">Loading the brotherhood…</p>';
-  sendEvent('crowd_used','crowd');
-  try{
-    const h={'x-pilot-token':PILOT}, blocked=(P.blocked||[]).join(',');
-    const [mine,feed]=await Promise.all([
-      fetch(BACKEND+'/polls/mine?device='+encodeURIComponent(DEVICE),{headers:h}).then(r=>r.json()),
-      fetch(BACKEND+`/polls/feed?device=${encodeURIComponent(DEVICE)}&blocked=${encodeURIComponent(blocked)}&cat=${encodeURIComponent(_feedCat)}`,{headers:h}).then(r=>r.json())
-    ]);
-    _feed = (feed && feed.looks) || []; _feedIdx=0;
-    renderCrowd(mine||[], feed||{});
-  }catch(e){ box.innerHTML='<p class="small">Could not load — check your connection and reopen.</p>'; }
-}
-function renderCrowd(mine, feed){
-  const s=feed.stats||{active:0,reviewed:0,posted:0};
-  const cats=['all',...((feed.categories)||[])];
-  let html=`<div class="vcard" style="margin-bottom:14px;background:var(--rolex-lt);border-color:var(--edge);">
-    <div class="statcard">
-      <div><div class="num">${s.active}</div><div class="lbl">brothers active today</div></div>
-      <div class="sep"></div>
-      <div><div class="num">${s.reviewed}</div><div class="lbl">looks reviewed today</div></div>
-      ${_reviewed?`<div class="sep"></div><div><div class="num" style="color:var(--gold-dk);">${_reviewed}</div><div class="lbl">you helped today</div></div>`:''}
-    </div></div>`;
-  html+=`<button class="cta has-ic" style="margin-bottom:14px;" onclick="crowdCapture=true;openCamSheet()">${ic('camera')}Post your look for honest votes</button>`;
-  if(mine.length){ const m=mine[0], total=(m.votes_yes||0)+(m.votes_no||0);
-    html+=`<div class="vcard" style="margin-bottom:14px;"><div class="vtag">YOUR LOOK · ${m.status==='open'?'live':'closed'}</div>
-      <div style="font-size:15px;margin:6px 0;">${esc(m.question||'')}</div>
-      <div style="font-size:20px;font-weight:800;color:var(--rolex-dk);">${m.votes_yes} wear it · ${m.votes_no} rethink</div>
-      <div style="font-size:12px;color:var(--dim);">${total} ${total===1?'brother has':'brothers have'} weighed in</div></div>`; }
-  if(cats.length>1) html+=`<div class="chips" style="margin:0 0 10px;">${cats.map(c=>`<button class="${c.toLowerCase()===String(_feedCat).toLowerCase()?'sel':''}" onclick="loadCrowd('${String(c).replace(/['"\\]/g,'')}')">${c==='all'?'All looks':esc(c)}</button>`).join('')}</div>`;
-  html+=`<div id="reviewcard"></div>`;
-  $('crowdbox').innerHTML=html;
-  renderReviewCard();
-}
-function renderReviewCard(){
-  const el=$('reviewcard'); if(!el) return;
-  const p=_feed[_feedIdx];
-  if(!p){ el.innerHTML=`<div class="msg them" style="max-width:100%;">Queue cleared${_reviewed?` — you reviewed ${_reviewed} today. The brotherhood owes you one. 🤝`:''}. Post yours, or check back as more men drop their looks.</div>
-    <button class="cta ghost" style="margin-top:10px;" onclick="loadCrowd()">Refresh</button>`; return; }
-  const total=p.yes+p.no;
-  el.innerHTML=`<div class="vcard"><div class="vtag">A BROTHER ASKS · ${esc(p.category)}</div>
-    <img src="${p.img}" alt="Another member's look, face blurred" style="width:100%;border-radius:10px;border:1px solid var(--line);margin:6px 0;">
-    ${total?`<div style="font-size:12px;color:var(--dim);margin-bottom:4px;">${p.yes} wear it · ${p.no} rethink so far</div>`:''}
-    <div class="fbrow"><button onclick="voteCrowd(${p.id},'yes')">${ic('check')}Wear it</button><button onclick="voteCrowd(${p.id},'no')">Rethink</button></div>
-    <div style="text-align:center;margin-top:6px;"><button class="minirep" onclick="reportPoll(${p.id})">Report</button> · <button class="minirep" onclick="blockPoster('${esc(p.poster)}')">Block poster</button></div>
-  </div>`;
-}
-async function voteCrowd(id,vote){
-  try{ await fetch(BACKEND+'/polls/vote',{method:'POST',headers:{'Content-Type':'application/json','x-pilot-token':PILOT},body:JSON.stringify({poll_id:id,device_id:DEVICE,vote})}); }catch(e){}
-  _reviewed++; _feedIdx++;
-  toast(vote==='yes'?'Passed on — brother sorted. 🤝':'Honest vote in. 🤝');
-  const sc=document.querySelector('.statcard'); if(sc && !sc.querySelector('.you-helped')){ /* refresh happens on next load */ }
-  renderReviewCard();
-}
-async function reportPoll(id){
-  if(!confirm("Report this photo? You won't see it again, and if enough men report it, it's removed for everyone.")) return;
-  const cur=_feed[_feedIdx];
-  if(cur && cur.poster){ P.blocked=[...new Set([...(P.blocked||[]),cur.poster])]; save(); } // hide it for the reporter right away
-  try{ await fetch(BACKEND+'/polls/report',{method:'POST',headers:{'Content-Type':'application/json','x-pilot-token':PILOT},body:JSON.stringify({poll_id:id,device_id:DEVICE})}); }catch(e){}
-  if(cur) _feed=_feed.filter(x=>x.poster!==cur.poster);
-  if(_feedIdx>=_feed.length) _feedIdx=Math.max(0,_feed.length-1);
-  toast('Reported and hidden. Thanks for keeping it clean.'); renderReviewCard();
-}
-function blockPoster(hash){
-  P.blocked=[...new Set([...(P.blocked||[]),hash])]; save();
-  const cur=_feed[_feedIdx]; _feed=_feed.filter(x=>x.poster!==hash);
-  if(cur && cur.poster!==hash) { /* keep idx */ } // if current wasn't the blocked one, index stays valid
-  if(_feedIdx>=_feed.length) _feedIdx=Math.max(0,_feed.length? _feedIdx : 0);
-  toast("Blocked — you won't see their posts again.");
-  renderReviewCard();
-}
 async function seePreview(btn, d){
   btn.disabled=true; btn.textContent='Painting your new look… ~15 sec';
   try{
@@ -1698,11 +1532,10 @@ function deleteEverything(){
 /* ============ SHEETS ============ */
 function openSheet(which){
   const s=$('sheet'); const b=$('sheet-body');
-  if(which==='privacy-info') b.innerHTML=`<h3>What Sorted stores</h3><p class="small">
+  if(which==='privacy-info') b.innerHTML=`<h3>What Sorted stores — and where your data goes</h3><p class="small">
     · Your pseudonym and optional city — on this phone only.<br>
     · Style memory (skin tone, sizes, what got a READY) — on this phone only.<br>
-    · Photos for analysis (outfit, product, selfie): sent to read, deleted right after. Never used for training.<br>
-    · Peer-review photos (the ones you post to Brotherhood): face blurred, kept 24 hours so men can vote, then auto-deleted.<br>
+    · <b>Photos &amp; voice notes you share for analysis go to the cloud.</b> To read them, we send them to trusted AI services — <b>Google (Gemini)</b> and <b>Anthropic (Claude)</b>. They generate your result and the image/voice is then discarded. It is <b>not</b> stored by us and <b>not</b> used to train any model. Sharing is always your choice — the app works without it.<br>
     · Style previews ("See it on me"): your photo goes to Google's image engine to paint the preview, then is discarded. We never store it.<br>
     · Reminders you set ARE stored (that's their job) — against your anonymous device ID, never your name. Delete any of them, or everything, anytime.<br>
     · Private Space: nothing. No history exists.<br>
@@ -1713,7 +1546,7 @@ function openSheet(which){
     <b>1. Information only — not professional advice.</b> The App is provided for general information, education and entertainment. Nothing in it is medical, dermatological, nutritional, pharmaceutical, legal, financial or professional advice, and using it creates no professional or doctor–patient relationship. Always seek a qualified professional for any decision about your health, medication, diet or wellbeing. In an emergency call your local emergency number (e.g. 999/112 GCC &amp; UK, 112/108 India, 995/999 Singapore, 999 Malaysia, 911 Philippines) or go to the nearest hospital.<br><br>
     <b>2. Product &amp; ingredient information.</b> Where the App comments on products, cookware, food, supplements, cosmetics, fragrance, apparel or similar, it presents <b>general information about individual ingredients or materials drawn from publicly available scientific and regulatory sources</b> (e.g. EU SCCS, IARC, WHO, US FDA, PubChem, PubMed) and matches them against preferences <b>you yourself set</b>. This is <b>not</b> an opinion on, rating of, ranking of, endorsement of, or statement about the safety or quality of any product, brand or manufacturer, and is <b>not</b> intended to disparage any product or business. Toxicology depends on dose, concentration and use ("the dose makes the poison"). Formulations change without notice — always read the actual packaging and manufacturer information, which prevails over anything in the App.<br><br>
     <b>3. AI-generated content.</b> Much of the App's output is generated by artificial intelligence and may be inaccurate, incomplete or out of date. Verify anything important independently before relying on it. We do not guarantee accuracy, completeness or fitness for any purpose.<br><br>
-    <b>4. Community &amp; peer content.</b> "Peer Review / Brotherhood" shows content submitted by other users. It is not reviewed or endorsed by us. Face-blurring is a best-effort tool and may not fully anonymise an image — you are responsible for what you upload. Do not post intimate, explicit, unlawful, defamatory or infringing content, or images of anyone without consent.<br><br>
+    <b>4. Photos, voice &amp; cloud processing (please read).</b> When you choose to share a photo (outfit, product label, selfie) or a voice note for analysis, it is <b>sent to third-party cloud AI providers — Google (Gemini) and Anthropic (Claude) — to be read</b>, and may be processed on servers outside your country. This is done only to generate your result; the image/audio is then discarded, is <b>not</b> stored by us, and is <b>not</b> used to train AI models. Face, body and voice inputs are treated as sensitive data and are only ever processed with your explicit consent, which you can withdraw at any time by not sharing them — the rest of the App works without sharing any. You choose what to share.<br><br>
     <b>5. No warranties; limitation of liability.</b> The App is provided "as is" and "as available" without warranties of any kind, to the fullest extent permitted by law. To the maximum extent permitted by applicable law, we and our suppliers are not liable for any indirect, incidental, special, consequential or punitive damages, or for any loss arising from your use of or reliance on the App, including product choices, health outcomes, missed reminders, third-party listings or community content. You agree to indemnify us against claims arising from your misuse of the App or breach of these Terms.<br><br>
     <b>6. Privacy &amp; data.</b> The App is pseudonymous by design: your name and profile live on your device, and only anonymous, device-linked events and reminders are stored. Personal data is handled in line with applicable laws including the EU/UK GDPR, India's Digital Personal Data Protection Act 2023, the UAE Federal Decree-Law No. 45 of 2021 (PDPL) and comparable GCC laws, Singapore's PDPA, Malaysia's PDPA and the Philippines' Data Privacy Act 2012. You may export or delete your data at any time from the Privacy Center.<br><br>
     <b>7. Eligibility.</b> The App is for men aged 18 and over. By using it you confirm you meet this requirement and that your use is lawful where you live.<br><br>
